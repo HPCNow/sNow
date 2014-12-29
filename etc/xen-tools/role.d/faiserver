@@ -1,0 +1,76 @@
+#!/bin/sh
+
+# create a self-replicating faiserver.
+
+# assumption: /usr/local/share/fai contains the master faiserver fai configspace
+
+# TODO: 
+#    * ? add sources.list with fai mirror server -> put in skel!
+#    * adjust fai config for softupdates or copy from skel?
+#      * FAI_LOCATION is "/usr/lib/fai/nfsroot -o bind"
+
+prefix=$1
+
+ROOTCMD="chroot ${prefix}"
+
+function install_package
+{
+    package=$1
+    #aptopt='-y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
+    aptopt='-y'
+    
+    #DEBIAN_FRONTEND=noninteractive chroot ${prefix} /usr/bin/apt-get $aptopt install $package
+    echo "installing with aptopt= $aptopt"
+    $ROOTCMD /usr/bin/apt-get $aptopt --fix-missing install $package
+
+}
+
+#  and here we go...
+
+mount -t proc proc ${prefix}/proc
+
+$ROOTCMD apt-get update
+install_package fai-client
+
+echo "after install package"
+
+
+# TODO: try to check out fai configdir from svn,
+#       if this doesn's work,keep the one from skel in /usr/local/share/fai
+$ROOTCMD mkdir /fai
+$ROOTCMD mkdir -p /var/log/fai
+
+# TODO: better read these from 50-host-classes script? hmm, ... we should
+#       in any case have a script that does just minimal fai softupdate 
+#       preparations - defining which classes should be installed
+#       oin softupdate should/could be handled by defining an additonal role.
+#       (in case xen-tools let's us define multiple roles).
+#       for the faiserver we'd then define the roles "faisoftupdate, faiserver"
+cat <<END_OF_FAI_CLASSES > ${prefix}/var/log/fai/FAI_CLASSES
+FAIBASE
+DEMO
+FAISERVER
+DHCPC
+HENNING_BASE
+XENU
+END_OF_FAI_CLASSES
+
+echo "FAI_CLASSES generated"
+
+# could use --new if we had a way to map the suggested hostname to classes...
+# hmm, xen-tools has the hostname - we just need to parse it somehow to 50-host-classes
+#$ROOTCMD fai --new softupdate
+$ROOTCMD mv /etc/fai /etc/fai-default
+$ROOTCMD mv /etc/fai-henning /etc/fai
+echo "running softupdate"
+$ROOTCMD fai softupdate
+
+#$ROOTCMD /etc/init.d/exim4 stop
+$ROOTCMD killall exim4
+$ROOTCMD /etc/init.d/nscd stop
+$ROOTCMD /etc/init.d/nfs-common stop
+
+sleep 10
+umount ${prefix}/proc
+
+#sleep 500000

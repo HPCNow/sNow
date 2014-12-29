@@ -1,9 +1,8 @@
 #!/bin/sh
 #
-#  This role installs Puppet upon the new guest system.
-#
-#  It must make sure that the server is not running before it exits
-# otherwise the temporary mounted directory will not be unmountable.
+#  This role installs FAI Server required by sNow! Cluster Suite
+#  Developed by HPCNow!
+#  More information @ www.hpcnow.com/snow
 #
 
 prefix=$1
@@ -36,7 +35,14 @@ installDebianPackage ${prefix} fai-server
 #  Make sure sshd isn't running, this will cause our unmounting of the
 # disk image to fail..
 #
-#chroot ${prefix} /etc/init.d/fai-server stop
+chroot ${prefix} /etc/init.d/fai-server stop
+
+#
+# Clone the public GIT repo from sNow (HPCNow!)
+mkdir ${prefix}/srv/fai/config
+cd ${prefix}/srv/fai/config
+git clone ssh://git@bitbucket.org:hpcnow/snow-configspace.git
+cd - 
 
 #
 #  Log our finish
