@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#  Configure the new image for sNow! HPC suite
+#
+# Jordi Blasco
+# 
+#
+
+prefix=$1
+
+#
+#  Source our common functions - this will let us install a Debian package.
+#
+if [ -e /usr/lib/xen-tools/common.sh ]; then
+    . /usr/lib/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+
+#
+#  Update APT lists.
+#
+chroot ${prefix} /usr/bin/apt-get update
+# Puppet repos
+wget https://apt.puppetlabs.com/puppetlabs-release-squeeze.deb -o ${prefix}/tmp/puppetlabs-release-squeeze.deb
+chroot ${prefix} /usr/bin/dpkg -i /tmp/puppetlabs-release-squeeze.deb
+chroot ${prefix} /usr/bin/apt-get update
+
+
+#
+#  Install the packages
+#
+installDebianPackage ${prefix} puppet
+installDebianPackage ${prefix} dpkg-dev
+installDebianPackage ${prefix} devscripts
+installDebianPackage ${prefix} fakeroot
+installDebianPackage ${prefix} debhelper
+installDebianPackage ${prefix} build-essential
+installDebianPackage ${prefix} lintian
+installDebianPackage ${prefix} linda
+installDebianPackage ${prefix} htop
+installDebianPackage ${prefix} byobu
+installDebianPackage ${prefix} gawk
+installDebianPackage ${prefix} git
+installDebianPackage ${prefix} iotop
+installDebianPackage ${prefix} lsof
+installDebianPackage ${prefix} traceroute
+installDebianPackage ${prefix} iptraf
+installDebianPackage ${prefix} vim

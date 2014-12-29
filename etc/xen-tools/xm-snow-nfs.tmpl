@@ -1,0 +1,92 @@
+#
+# Configuration file for sNow NFS-root instance {$hostname}.
+# Created by xen-tools {$xen_tools_version} on { scalar localtime }.
+# Modified by sNow! Cluster Suite www.hpcnow.com/snow
+#
+
+#  Kernel to be used
+{ if ( $kernel )
+  {
+    $OUT.= "kernel  = '$kernel'";
+  }
+}
+{ if ( $initrd )
+  {
+    $OUT.= "ramdisk = '$initrd'";
+  }
+}
+
+# Memory
+memory  = '{$memory}'
+
+# Name
+name        = '{$hostname}'
+hostname    = '{$hostname}'
+
+#  Networking
+{ if ( $dhcp )
+  {
+    $OUT .= "dhcp        = 'dhcp'\n";
+
+    # Setup the mac address, if present.
+    my $m = '';
+    if ( $mac )
+    { 
+      $m = "mac=$mac"
+    }
+
+    $OUT .= "vif         = [ '$m' ]";
+  }    
+  else
+  {
+    #
+    # Setup the mac address, if present.
+    #
+    my $m = '';
+    if ( $mac )
+    { 
+      $m = ",mac=$mac"
+    }
+
+    $OUT .= "vif         = [ 'ip=$ip"; 
+    $OUT .= "$m' ]\n";
+
+    $OUT .= "ip        = '$ip'\n";
+    $OUT .= "netmask   = '$netmask'\n";
+    $OUT .= "broadcast = '$broadcast'\n";
+    $OUT .= "gateway   = '$gateway'\n";
+  }
+}
+
+
+{ if ( $admins )
+  {
+    $OUT .= "xen_shell = '$admins'\n";
+  }
+}
+
+xm_vars.var('install',
+            use="Reinstall domain if value > 0.",
+            check=install_check)
+xm_vars.check()
+
+if install == 1:
+        print "instaling vm " + name
+        on_reboot   = 'destroy'
+        dhcp = 'dhcp'
+        extra = "FAI_ACTION=install FAI_FLAGS=verbose,sshd,syslogd,createvt"
+        #NFS options
+        nfs_server = '{ $fai_server }'
+        nfs_root   = '{ $fai_root }'
+        root = "/dev/nfs"
+else:
+        print "running vm " + name
+        #root    = '/dev/{$device}1 ro'
+        #need to use hda because scsi driver interferes with root nfs booting
+        #root    = '/dev/hda1 ro' 
+        on_reboot   = 'restart'
+        #NFS options
+        nfs_server = '{ $nfs_server }'
+        nfs_root   = '{ $nfs_root }'
+        root       = '/dev/nfs'
+
