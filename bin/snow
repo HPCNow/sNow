@@ -1,0 +1,208 @@
+#!/bin/bash
+
+# This is the sNow! Command Line Interface 
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+# Load the configuration
+CONFIG_FILE=../etc/snow/snow.conf
+opt1=$1
+opt2=$3
+opt3=$3
+
+if [[ -f $CONFIG_FILE ]]; then
+    source $CONFIG_FILE
+fi
+
+exit 0
+
+function help(){
+echo " 
+
+This is the sNow! Command Line Interface
+Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+For more information, visit the official website : www.hpcnow.com/snow
+
+Usage: snow [function] <option|module|server>
+
+Function List:
+
+    * update tools                 | to update the sNow! Tools from the public HPCNow! GIT repo
+    * install base                 | to install the basic software to deploy VMs, cluster filesystem nodes and compute nodes
+    * install <module|server>      |
+    * update <module|server>       |
+    * update configspace           |
+    * list                         |
+    * takeover                     |
+    * boot <module|server>         |
+    * boot services                |
+    * boot cluster <clustername>   |
+    * reboot <module|server>       |
+    * shutdown <module|server>     |
+    * destroy <module|server>      |
+    * console <module|server>      |
+    * uptime <module|sever>        |
+
+Examples:
+
+    snow update tools
+    snow install base
+    snow install ldap
+"
+}
+
+function update_tools() {
+if ! [[ -d $SNOWROOT/snow-tools ]]; then
+    mkdir -p $SNOWROOT
+    cd $SNOWROOT
+    git clone http://bitbucket.org/hpcnow/snow-tools.git
+    cd -
+else
+    cd $SNOWROOT/snow-tools
+    git pull http://bitbucket.org/hpcnow/snow-tools.git
+fi 
+}
+
+function update_configspace() {
+if ! [[ -d $SNOWROOT/snow-configspace  ]]; then
+    mkdir -p $SNOWROOT
+    cd $SNOWROOT
+    git clone http://bitbucket.org/hpcnow/snow-configspace.git
+    cd -
+else
+    cd $SNOWROOT/snow-configspace
+    git pull http://bitbucket.org/hpcnow/snow-configspace.git
+fi
+}
+
+function install_base() {
+    xen-image-create -roles=kkkk 
+}
+
+function install() {
+
+}
+
+function update() {
+
+}
+
+function list() {
+
+}
+
+function takeover() {
+
+}
+
+function boot() {
+
+}
+
+function get_server_distribution(){
+
+}
+
+function boot_services() {
+    get_server_distribution
+    for i in $(SELF_ACTIVE_MODULES)
+    do 
+        ssh server[$i] xm create $SNOWROOT/etc/xen/$i.cfg
+    done
+}
+
+function boot_cluster() {
+CLUSTERNAME=$2
+}
+
+function reboot() {
+    pdsh -w $2 reboot
+}
+
+function shutdown() {
+    ssh $2 halt
+}
+
+function destroy() {
+    get_server_distribution
+    if vm ; then 
+        xm destroy $2
+    else
+        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD power down
+    fi
+}
+
+function console() {
+    get_server_distribution
+    if vm ; then
+        xm console $2
+    else
+        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD console activate
+    fi
+}
+
+function uptime() {
+    pdsh -w $2 uptime 
+}
+
+#
+# End Functions
+#
+
+#
+# Start Cases
+#
+case $opt1 in
+    update)
+        case $opt2 in
+            tools)
+            ;;
+            configspace)
+            ;;
+            *)
+            ;;
+        esac
+    ;;
+    install)
+        case $opt2 in
+            base)
+            ;;
+            *)
+            ;;
+        esac
+    ;;
+    list)
+    ;;
+    takeover)
+    ;;
+    boot)
+        case $opt2 in
+            services)  
+            ;;
+            cluster)
+            ;;
+            *)
+            ;;
+        esac
+    ;;
+    reboot)
+    ;;
+    shutdown)
+    ;;
+    destroy)
+    ;;
+    console)
+    ;;
+    uptime)
+    ;;
+    help|\?)
+      help
+      ;;
+  esac
+
+#
+# End Cases
+#
+
+echo "$(date)    $USER    $@ >> $SNOWROOT/log/snow_actions.log 
