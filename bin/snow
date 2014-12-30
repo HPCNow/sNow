@@ -77,7 +77,12 @@ fi
 }
 
 function install_base() {
-    xen-image-create -roles=kkkk 
+    if ( $opt3 = force )
+    then 
+        FORCE="--force"
+    fi 
+    xen-create-image --hostname=fai --ip=${ip[fai]} --gateway=${gw[fai]} --netmask=${nm[fai]} \
+                     --role=udev,snow,fai  --accounts --copyhosts --genpass=0 $FORCE
 }
 
 function install() {
