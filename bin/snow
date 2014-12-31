@@ -5,8 +5,9 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
+SNOWPATH=$(dirname "$0")
 # Load the configuration
-CONFIG_FILE=../etc/snow/snow.conf
+CONFIG_FILE=$SNOWPATH/../etc/snow/snow.conf
 opt1=$1
 opt2=$3
 opt3=$3
@@ -15,9 +16,13 @@ if [[ -f $CONFIG_FILE ]]; then
     source $CONFIG_FILE
 fi
 
-exit 0
+if [[ -d $SNOWROOT/log ]]; then
+    mkdir $SNOWROOT/log
+fi
 
-function help(){
+
+
+function shelp(){
 echo " 
 
 This is the sNow! Command Line Interface
@@ -86,27 +91,27 @@ function install_base() {
 }
 
 function install() {
-
+    echo install
 }
 
 function update() {
-
+    echo update
 }
 
 function list() {
-
+    echo list
 }
 
 function takeover() {
-
+    echo takeover
 }
 
 function boot() {
-
+    echo boot
 }
 
 function get_server_distribution(){
-
+    echo get_server_distro
 }
 
 function boot_services() {
@@ -118,7 +123,8 @@ function boot_services() {
 }
 
 function boot_cluster() {
-CLUSTERNAME=$2
+    CLUSTERNAME=$2
+    echo boot_cluster 
 }
 
 function nreboot() {
@@ -217,7 +223,7 @@ case $opt1 in
         nuptime $opt2
     ;;
     help|\?)
-      help
+      shelp
       ;;
   esac
 
@@ -225,4 +231,8 @@ case $opt1 in
 # End Cases
 #
 
-echo "$(date)    $USER    $@ >> $SNOWROOT/log/snow_actions.log 
+#
+# Log the sNow! activity
+#
+
+#echo "$(date)    $USER    $@" >> $SNOWROOT/log/snow_actions.log 
