@@ -121,15 +121,15 @@ function boot_cluster() {
 CLUSTERNAME=$2
 }
 
-function reboot() {
+function nreboot() {
     pdsh -w $2 reboot
 }
 
-function shutdown() {
+function nshutdown() {
     ssh $2 halt
 }
 
-function destroy() {
+function ndestroy() {
     get_server_distribution
     if vm ; then 
         xm destroy $2
@@ -138,7 +138,7 @@ function destroy() {
     fi
 }
 
-function console() {
+function nconsole() {
     get_server_distribution
     if vm ; then
         xm console $2
@@ -147,7 +147,7 @@ function console() {
     fi
 }
 
-function uptime() {
+function nuptime() {
     pdsh -w $2 uptime 
 }
 
@@ -162,44 +162,59 @@ case $opt1 in
     update)
         case $opt2 in
             tools)
+                update_tools
             ;;
             configspace)
+                update_configspace
             ;;
             *)
+                update $opt3
             ;;
         esac
     ;;
     install)
         case $opt2 in
             base)
+                install_base
             ;;
             *)
+                install $opt3
             ;;
         esac
     ;;
     list)
+        list $opt2
     ;;
     takeover)
+        takeover $opt2
     ;;
     boot)
         case $opt2 in
             services)  
+                boot_services $opt3 
             ;;
             cluster)
+                boot_cluster $opt3 
             ;;
             *)
+                boot $opt3 
             ;;
         esac
     ;;
     reboot)
+        nreboot $opt2
     ;;
     shutdown)
+        nshutdown $opt2
     ;;
     destroy)
+        ndestroy $opt2
     ;;
     console)
+        nconsole $opt2
     ;;
     uptime)
+        nuptime $opt2
     ;;
     help|\?)
       help
