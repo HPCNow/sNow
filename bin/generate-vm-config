@@ -1,0 +1,2 @@
+#!/bin/bash
+cat available-modules.conf | grep -v ^#| gawk '{print $1"\t 08:02:81:04:01:"$2"\t  "}'

@@ -33,6 +33,7 @@ Usage: snow [function] <option|module|server>
 
 Function List:
 
+    * config                       | to update the sNow! configuration based on the snow.conf, /etc/hosts and active-modules.conf
     * update tools                 | to update the sNow! Tools from the public HPCNow! GIT repo
     * install base                 | to install the basic software to deploy VMs, cluster filesystem nodes and compute nodes
     * install <module|server>      |
@@ -55,6 +56,20 @@ Examples:
     snow install base
     snow install ldap
 "
+}
+
+function check_interfaces() {
+#ip show ${BRIDGEMAP[xpub0]}
+}
+
+function config() {
+#check_interfaces
+if ! [[ -f $SNOWROOT/snow-tools/etc/snow/active-modules.conf ]]; then
+    echo "No $SNOWROOT/snow-tools/etc/snow/active-modules.conf found"
+else
+    #fai         none  7,3
+    cat $SNOWROOT/snow-tools/etc/snow/active-modules.conf | grep -v ^# |  gawk '{print $1" "}'
+fi
 }
 
 function update_tools() {
