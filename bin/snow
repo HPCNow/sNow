@@ -24,7 +24,6 @@ fi
 
 function shelp(){
 echo " 
-
 This is the sNow! Command Line Interface
 Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 For more information, visit the official website : www.hpcnow.com/snow
@@ -33,22 +32,22 @@ Usage: snow [function] <option|module|server>
 
 Function List:
 
-    * config                       | to update the sNow! configuration based on the snow.conf, /etc/hosts and active-modules.conf
-    * update tools                 | to update the sNow! Tools from the public HPCNow! GIT repo
-    * install base                 | to install the basic software to deploy VMs, cluster filesystem nodes and compute nodes
-    * install <module|server>      |
-    * update <module|server>       |
-    * update configspace           |
-    * list                         |
-    * takeover                     |
-    * boot <module|server>         |
-    * boot services                |
-    * boot cluster <clustername>   |
-    * reboot <module|server>       |
-    * shutdown <module|server>     |
-    * destroy <module|server>      |
-    * console <module|server>      |
-    * uptime <module|sever>        |
+    * config                       | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-modules.conf
+    * update tools                 | updates the sNow! Tools from the public HPCNow! GIT repo
+    * install base                 | installs the basic software to deploy VMs, cluster filesystem nodes and compute nodes
+    * install <module|server>      | installs specific module or server 
+    * update <module|server>       | updates specific module or server
+    * update configspace           | updates configuration files from public git repo
+    * list                         | list current services and the status
+    * takeover                     | migrates VMs and critical services to other nodes
+    * boot <module|server>         | boot specific module or server
+    * boot services                | boot all the services
+    * boot cluster <clustername>   | boot all the compute nodes (by default 20 nodes at once)
+    * reboot <module|server>       | reboot specific module or server
+    * shutdown <module|server>     | shutdown specific module or server
+    * destroy <module|server>      | force to stop specific module or server
+    * console <module|server>      | console access to specific module or server
+    * uptime <module|sever>        | shows uptime of specific module or server
 
 Examples:
 
@@ -58,9 +57,9 @@ Examples:
 "
 }
 
-function check_interfaces() {
+#function check_interfaces() {
 #ip show ${BRIDGEMAP[xpub0]}
-}
+#}
 
 function config() {
 #check_interfaces
