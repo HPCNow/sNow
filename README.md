@@ -1,6 +1,6 @@
 # README #
 
-sNow! Tools includes the CLI, templates and profiles for interacting with xen-tools and several extensions of xen-tools in order to use FAI for the VM deployment.
+sNow! Tools includes the CLI, templates and profiles for interacting with xen-tools and several extensions of xen-tools in order to use multiple deployment and cloning systems.
 
 ### What is this repository for? ###
 
