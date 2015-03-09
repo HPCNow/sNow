@@ -101,11 +101,7 @@ function install_base() {
         FORCE="--force"
     fi 
      
-    wget http://s3.amazonaws.com/cfengine.package-repos/community_binaries/cfengine-community_3.6.4-1_amd64.deb
-    dpkg -i cfengine-community_3.6.4-1_amd64.deb
-    wget http://cfengine.package-repos.s3.amazonaws.com/tarballs/masterfiles-3.6.4.tar.gz
-    /var/cfengine/bin/cf-agent --bootstrap ${ip[snow01]}
-    xen-create-image --hostname=deploy01 --ip=${ip[deploy01]} --gateway=${gw[deploy01]} --netmask=${nm[deploy01]} \
+   xen-create-image --hostname=deploy01 --ip=${ip[deploy01]} --gateway=${gw[deploy01]} --netmask=${nm[deploy01]} \
                      --role=udev,snow,deploy01  --accounts --copyhosts --genpass=0 $FORCE
 }
 

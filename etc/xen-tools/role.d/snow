@@ -1,9 +1,7 @@
 #!/bin/sh
-#
-#  Configure the new image for sNow! HPC suite
-#
+# Configure the new image for sNow! HPC suite
+# Developed by NPCNow! www.hpcnow.com
 # Jordi Blasco
-# 
 #
 
 prefix=$1
@@ -22,16 +20,16 @@ fi
 #  Update APT lists.
 #
 chroot ${prefix} /usr/bin/apt-get update
-# Puppet repos
-wget https://apt.puppetlabs.com/puppetlabs-release-squeeze.deb -o ${prefix}/tmp/puppetlabs-release-squeeze.deb
-chroot ${prefix} /usr/bin/dpkg -i /tmp/puppetlabs-release-squeeze.deb
+# CFEngine community repos
+wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
+chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
+chroot ${prefix} /bin/echo \"deb http://cfengine.com/pub/apt/packages stable main\" > /etc/apt/sources.list.d/cfengine-community.list
 chroot ${prefix} /usr/bin/apt-get update
-
+chroot ${prefix} /usr/bin/apt-get install cfengine-community
 
 #
 #  Install the packages
 #
-installDebianPackage ${prefix} puppet
 installDebianPackage ${prefix} dpkg-dev
 installDebianPackage ${prefix} devscripts
 installDebianPackage ${prefix} fakeroot
