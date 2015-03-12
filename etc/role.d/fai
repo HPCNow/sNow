@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#  This role installs FAI Server required by sNow! Cluster Suite
+#  Developed by HPCNow!
+#  More information @ www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#
+#  Source our common functions - this will let us install a Debian package.
+#
+if [ -e /usr/lib/xen-tools/common.sh ]; then
+    . /usr/lib/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+#
+# Log our start
+#
+logMessage Script $0 starting
+
+
+#
+#  Install FAI
+#
+installDebianPackage ${prefix} fai-client
+installDebianPackage ${prefix} fai-doc
+installDebianPackage ${prefix} fai-quickstart
+installDebianPackage ${prefix} fai-server
+
+
+#
+#  Make sure sshd isn't running, this will cause our unmounting of the
+# disk image to fail..
+#
+chroot ${prefix} /etc/init.d/fai-server stop
+
+#
+# Clone the public GIT repo from sNow (HPCNow!)
+mkdir ${prefix}/srv/fai/config
+cd ${prefix}/srv/fai/config
+git clone ssh://git@bitbucket.org:hpcnow/snow-configspace.git
+cd - 
+
+#
+#  Log our finish
+#
+logMessage Script $0 finished
