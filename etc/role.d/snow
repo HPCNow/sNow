@@ -32,19 +32,4 @@ chroot ${prefix} /usr/sbin/update-rc.d firstboot defaults
 #
 #  Install the packages
 #
-installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential lintian linda htop byobu gawk git iotop lsof traceroute iptraf vim
-#installDebianPackage ${prefix} devscripts
-#installDebianPackage ${prefix} fakeroot
-#installDebianPackage ${prefix} debhelper
-#installDebianPackage ${prefix} build-essential
-#installDebianPackage ${prefix} lintian
-#installDebianPackage ${prefix} linda
-#installDebianPackage ${prefix} htop
-#installDebianPackage ${prefix} byobu
-#installDebianPackage ${prefix} gawk
-#installDebianPackage ${prefix} git
-#installDebianPackage ${prefix} iotop
-#installDebianPackage ${prefix} lsof
-#installDebianPackage ${prefix} traceroute
-#installDebianPackage ${prefix} iptraf
-#installDebianPackage ${prefix} vim
+installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential htop byobu gawk git iotop lsof traceroute iptraf vim
