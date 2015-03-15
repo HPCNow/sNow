@@ -26,7 +26,7 @@ function shelp(){
 echo " 
 This is the sNow! Command Line Interface
 Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-For more information, visit the official website : www.hpcnow.com/snow
+For more information, visit the official website : www.hpcnow.com
 
 Usage: snow [function] <option|module|server>
 
@@ -100,9 +100,9 @@ function install_base() {
     then 
         FORCE="--force"
     fi 
-     
-   xen-create-image --hostname=deploy01 --ip=${ip[deploy01]} --gateway=${gw[deploy01]} --netmask=${nm[deploy01]} \
-                     --role=udev,snow,deploy01  --accounts --copyhosts --genpass=0 $FORCE
+   xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d           \ 
+                    --hostname=deploy01 --ip=${ip[deploy01]} --gateway=${gw[deploy01]} --netmask=${nm[deploy01]} \
+                    --role=udev,snow,deploy  --accounts --copyhosts --genpass=0 $FORCE
 }
 
 function install() {
