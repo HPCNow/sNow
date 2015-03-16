@@ -56,4 +56,5 @@ installDebianPackage ${prefix} systemimager-server simple-state-manager
 #
 #  Install the packages
 #
-installDebianPackage ${prefix} ipmitool 
+installDebianPackage ${prefix} ipmitool openipmi freeipmi
+ 
