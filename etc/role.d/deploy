@@ -53,6 +53,19 @@ installDebianPackage ${prefix} systemimager-server simple-state-manager
 
 # Clonezilla (Cloning System and Data Recovery)
 
+echo "
+
+# The secondary secondary network interface
+allow-hotplug eth0
+auto eth0
+iface eth0 inet static
+        address 192.168.7.15
+        netmask 255.255.255.0
+        network 192.168.7.0
+        broadcast 192.168.7.255
+
+" >> ${prefix}/etc/network/interfaces
+
 #
 #  Install the packages
 #

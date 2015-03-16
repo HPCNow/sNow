@@ -1,0 +1,27 @@
+#!/bin/sh
+# Configure the new image for sNow! HPC suite
+# Developed by NPCNow! www.hpcnow.com
+# Jordi Blasco
+#
+
+prefix=$1
+
+#
+#  Source our common functions - this will let us install a Debian package.
+#
+if [ -e /usr/lib/xen-tools/common.sh ]; then
+    . /usr/lib/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+
+echo "
+
+# The secondary secondary network interface
+allow-hotplug eth1
+auto eth1
+iface eth1 inet dhcp
+
+" >> ${prefix}/etc/network/interfaces
+
