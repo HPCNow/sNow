@@ -1,0 +1,20 @@
+deploy-01=([eth0-ip]=192.168.7.15 [eth0-bridge]=xenbr07 [eth0-mac]=00:01:02:03:04:05 [eth0-gw]=none
+           [eth1-ip]=192.168.7.15 [eth1-bridge]=xenbr07 [eth1-mac]=00:01:02:03:04:05 [eth1-gw]=172.16.1.254)
+deploy-01
+ldap-01
+monitor-01
+sge-01
+slurm-01
+logi-n01
+honey-01
+syslog-01
+proxy-01
+flexlm-01
+admin-01
+puppet-01
+mysql-01
+backup-01
+git-01
+slurm-02
+mysql-02
+login-02
