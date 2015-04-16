@@ -114,7 +114,10 @@ function install_base() {
 }
 
 function install() {
-    echo install
+    echo "This will install $2. All the data contained in these nodes will be removed"
+    # confirmation required! read if yes ->
+    ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_pxe
+    ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power cycle
 }
 
 function update() {
@@ -122,7 +125,7 @@ function update() {
 }
 
 function list() {
-    echo list
+    xm list $opt2
 }
 
 function takeover() {
@@ -163,7 +166,7 @@ function ndestroy() {
     if vm ; then 
         xm destroy $2
     else
-        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD power down
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power down
     fi
 }
 
@@ -172,7 +175,7 @@ function nconsole() {
     if vm ; then
         xm console $2
     else
-        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD console activate
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD sol activate
     fi
 }
 
