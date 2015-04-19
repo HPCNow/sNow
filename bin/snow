@@ -9,6 +9,7 @@ SNOWPATH=$(dirname "$0")
 # Load the configuration
 CONFIG_FILE=$SNOWPATH/../etc/snow/snow.conf
 SNOW_MODULES=$SNOWPATH/../etc/active-modules.conf
+SELF_ACTIVE_MODULES=$(cat $SNOW_MODULES | grep -v ^# | cut -d= -f1 | gawk '{print $1}')
 opt1=$1
 opt2=$2
 opt3=$3
@@ -37,8 +38,10 @@ Function List:
 
     * config                       | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-modules.conf
     * update tools                 | updates the sNow! Tools from the public HPCNow! GIT repo
-    * install base                 | installs the basic software to deploy VMs, cluster filesystem nodes and compute nodes
-    * install <module|server>      | installs specific module or server 
+    * create base                  | installs the basic software to deploy VMs, cluster filesystem nodes and compute nodes
+    * create <module>              | installs specific module (Xen VM)
+    * deploy <server>              | deploy specific server 
+    * clone <server> <image_name>  | clone server with specific image file 
     * update <module|server>       | updates specific module or server
     * update configspace           | updates configuration files from public git repo
     * list                         | list current services and the status
@@ -55,8 +58,8 @@ Function List:
 Examples:
 
     snow update tools
-    snow install base
-    snow install ldap
+    snow create base
+    snow create ldap01
 "
 }
 
@@ -70,7 +73,7 @@ if ! [[ -f $SNOW_MODULES ]]; then
     echo "No $SNOW_MODULES found"
 else
     cat $SNOWROOT/snow-tools/etc/snow.conf
-    cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v ^# |  gawk '{print $1" "}'
+    cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v ^# |  gawk '{print $0}'
 fi
 }
 
@@ -99,13 +102,18 @@ fi
 }
 
 function xen_create() {
-    VNAME=$1
-    echo xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d                \
+    get_server_distribution $1 
+    if $IS_VM; then
+        echo "The VM $1 already exist, please use force option to overwrite the VM"
+        exit 1
+    else
+        echo xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d                \
                     --hostname=$1 --mac=${VNAME[4]} --bridge=${VNAME[3]} --ip=${VNAME[2]} --gateway=${VNAME[5]} --netmask=${VNAME[6]} \
                     --role=udev,snow,${VNAME[0]} --accounts --copyhosts --genpass=0 $FORCE
+    fi
 }
 
-function install_base() {
+function create_base() {
     if [[ "$opt3" == "force" ]]
     then 
         FORCE="--force"
@@ -113,7 +121,7 @@ function install_base() {
     xen_create deploy
 }
 
-function install() {
+function deploy() {
     echo "This will install $2. All the data contained in these nodes will be removed"
     read -p "Are you sure? " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
@@ -136,54 +144,61 @@ function takeover() {
 }
 
 function boot() {
-    echo boot
+    get_server_distribution $1
+    if $IS_WM ; then
+        xm create $SNOWROOT/etc/xen/$1.cfg
+    else
+        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD power up
+    fi
 }
 
 function get_server_distribution(){
-    echo get_server_distro
+    IS_VM=$(cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v "^$1" |  gawk '{print $0}')
 }
 
 function boot_services() {
-    get_server_distribution
+    #get_server_distribution 
     for i in $(SELF_ACTIVE_MODULES)
     do 
-        ssh server[$i] xm create $SNOWROOT/etc/xen/$i.cfg
+        #ssh server[$i] xm create $SNOWROOT/etc/xen/$i.cfg
+        xm create $SNOWROOT/etc/xen/$i.cfg
     done
 }
 
 function boot_cluster() {
-    CLUSTERNAME=$2
+    CLUSTERNAME=$1
+    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of 4 nodes with a delayed (5 seconds) timing between blocks 
     echo boot_cluster 
 }
 
 function nreboot() {
-    pdsh -w $2 reboot
+    pdsh -w $1 reboot
 }
 
 function nshutdown() {
-    ssh $2 halt
+    pdsh -w $1 halt
 }
 
 function ndestroy() {
-    get_server_distribution
-    if vm ; then 
-        xm destroy $2
+    get_server_distribution $1
+    if $IS_WM ; then 
+        xm destroy $1
     else
-        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power down
+        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD power down
     fi
 }
 
 function nconsole() {
-    get_server_distribution
-    if vm ; then
-        xm console $2
+    get_server_distribution $1
+    if $IS_VM ; then
+        xm console $1
     else
-        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD sol activate
     fi
 }
 
 function nuptime() {
-    pdsh -w $2 uptime 
+    pdsh -w $1 uptime 
 }
 
 #
@@ -194,6 +209,9 @@ function nuptime() {
 # Start Cases
 #
 case $opt1 in
+    config)
+        config
+    ;;
     update)
         case $opt2 in
             tools)
@@ -207,13 +225,19 @@ case $opt1 in
             ;;
         esac
     ;;
-    install)
+    deploy)
+        deploy $opt2
+    ;;
+    clone)
+        clone $opt2 $opt3
+    ;;
+    create)
         case $opt2 in
             base)
-                install_base
+                create_base
             ;;
             *)
-                install $opt2
+                create $opt2
             ;;
         esac
     ;;
