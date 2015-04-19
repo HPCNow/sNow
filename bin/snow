@@ -73,6 +73,7 @@ if ! [[ -f $SNOW_MODULES ]]; then
     echo "No $SNOW_MODULES found"
 else
     cat $SNOWROOT/snow-tools/etc/snow.conf
+    echo "==== Active Modules ===="
     cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v ^# |  gawk '{print $0}'
 fi
 }
@@ -153,7 +154,7 @@ function boot() {
 }
 
 function get_server_distribution(){
-    IS_VM=$(cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v "^$1" |  gawk '{print $0}')
+    IS_VM=$(cat $SNOWROOT/snow-tools/etc/active-modules.conf | gawk -v vm="^$1=" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
 }
 
 function boot_services() {
