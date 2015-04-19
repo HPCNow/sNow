@@ -69,8 +69,8 @@ function config() {
 if ! [[ -f $SNOW_MODULES ]]; then
     echo "No $SNOW_MODULES found"
 else
-    #fai         none  7,3
-    cat $SNOWROOT/snow-tools/etc/snow/active-modules.conf | grep -v ^# |  gawk '{print $1" "}'
+    cat $SNOWROOT/snow-tools/etc/snow.conf
+    cat $SNOWROOT/snow-tools/etc/active-modules.conf | grep -v ^# |  gawk '{print $1" "}'
 fi
 }
 
@@ -114,7 +114,13 @@ function install_base() {
 }
 
 function install() {
-    echo install
+    echo "This will install $2. All the data contained in these nodes will be removed"
+    read -p "Are you sure? " -n 1 -r
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_pxe
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power cycle
+    fi
 }
 
 function update() {
@@ -122,7 +128,7 @@ function update() {
 }
 
 function list() {
-    echo list
+    xm list $opt2
 }
 
 function takeover() {
@@ -163,7 +169,7 @@ function ndestroy() {
     if vm ; then 
         xm destroy $2
     else
-        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD power down
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power down
     fi
 }
 
@@ -172,7 +178,7 @@ function nconsole() {
     if vm ; then
         xm console $2
     else
-        ipmitool -H $2 -U $IPMIUSER -P $PIMIPWD console activate
+        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD sol activate
     fi
 }
 
