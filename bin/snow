@@ -154,7 +154,7 @@ function boot() {
 }
 
 function get_server_distribution(){
-    IS_VM=$(cat $SNOWROOT/snow-tools/etc/active-modules.conf | gawk -v vm="^$1=" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
+    IS_VM=$(cat $SNOW_MODULES | gawk -v vm="^$1=" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
 }
 
 function boot_services() {
