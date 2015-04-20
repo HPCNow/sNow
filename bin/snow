@@ -38,12 +38,12 @@ Function List:
 
     * config                       | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-modules.conf
     * update tools                 | updates the sNow! Tools from the public HPCNow! GIT repo
+    * update configspace           | updates configuration files from public git repo
+    * update <module|server>       | updates specific module or server
     * create base                  | installs the basic software to deploy VMs, cluster filesystem nodes and compute nodes
     * create <module>              | installs specific module (Xen VM)
     * deploy <server>              | deploy specific server 
     * clone <server> <image_name>  | clone server with specific image file 
-    * update <module|server>       | updates specific module or server
-    * update configspace           | updates configuration files from public git repo
     * list                         | list current services and the status
     * takeover                     | migrates VMs and critical services to other nodes
     * boot <module|server>         | boot specific module or server
@@ -123,12 +123,18 @@ function create_base() {
 }
 
 function deploy() {
-    echo "This will install $2. All the data contained in these nodes will be removed"
+    BLOCKN=$2
+    BLOCKD=$3
+    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks
+    # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
+    # BlockD is the delay between one block and the following one (default 5 seconds)
+    # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
+    echo "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_pxe
-        ipmitool -I $IPMITYPE -H $2 -U $IPMIUSER -P $PIMIPWD power cycle
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_pxe
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power cycle
     fi
 }
 
@@ -149,7 +155,8 @@ function boot() {
     if $IS_WM ; then
         xm create $SNOWROOT/etc/xen/$1.cfg
     else
-        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD power up
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_disk
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power up
     fi
 }
 
@@ -168,7 +175,12 @@ function boot_services() {
 
 function boot_cluster() {
     CLUSTERNAME=$1
-    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of 4 nodes with a delayed (5 seconds) timing between blocks 
+    BLOCKN=$2
+    BLOCKD=$3
+    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks 
+    # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
+    # BlockD is the delay between one block and the following one (default 5 seconds)
+    # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
     echo boot_cluster 
 }
 
@@ -185,7 +197,7 @@ function ndestroy() {
     if $IS_WM ; then 
         xm destroy $1
     else
-        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD power down
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power down
     fi
 }
 
@@ -194,7 +206,7 @@ function nconsole() {
     if $IS_VM ; then
         xm console $1
     else
-        ipmitool -I $IPMITYPE -H $1 -U $IPMIUSER -P $PIMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD sol activate
     fi
 }
 
