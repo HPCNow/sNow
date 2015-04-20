@@ -7,7 +7,7 @@
 
 SNOWPATH=$(dirname "$0")
 # Load the configuration
-CONFIG_FILE=$SNOWPATH/../etc/snow/snow.conf
+CONFIG_FILE=$SNOWPATH/../etc/snow.conf
 SNOW_MODULES=$SNOWPATH/../etc/active-modules.conf
 SELF_ACTIVE_MODULES=$(cat $SNOW_MODULES | grep -v ^# | cut -d= -f1 | gawk '{print $1}')
 opt1=$1
@@ -104,7 +104,7 @@ fi
 
 function xen_create() {
     get_server_distribution $1 
-    if $IS_VM; then
+    if (($IS_VM)) ; then
         echo "The VM $1 already exist, please use force option to overwrite the VM"
         exit 1
     else
@@ -133,8 +133,8 @@ function deploy() {
     read -p "Are you sure? " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_pxe
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power cycle
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
     fi
 }
 
@@ -152,11 +152,11 @@ function takeover() {
 
 function boot() {
     get_server_distribution $1
-    if $IS_WM ; then
+    if (($IS_VM)) ; then
         xm create $SNOWROOT/etc/xen/$1.cfg
     else
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD chassis bootparam set bootflag force_disk
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power up
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
     fi
 }
 
@@ -197,16 +197,18 @@ function ndestroy() {
     if $IS_WM ; then 
         xm destroy $1
     else
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD power down
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power down
     fi
 }
 
 function nconsole() {
     get_server_distribution $1
-    if $IS_VM ; then
+    if (($IS_VM)) ; then
         xm console $1
     else
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $PIMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol deactivate
+        sleep 1
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol activate
     fi
 }
 
