@@ -129,6 +129,8 @@ function node_rank() {
         NPREFIX=$(echo $1 | cut -d[ -f1)
         NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
         NLENG=$(echo ${NRANK[1]}-${NRANK[0]} | bc -l)
+    else 
+        NLENG=0
     fi
 }
 
