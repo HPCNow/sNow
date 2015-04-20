@@ -13,6 +13,8 @@ SELF_ACTIVE_MODULES=$(cat $SNOW_MODULES | grep -v ^# | cut -d= -f1 | gawk '{prin
 opt1=$1
 opt2=$2
 opt3=$3
+opt4=$4
+opt5=$5
 
 if [[ -f $CONFIG_FILE ]]; then
     source $CONFIG_FILE
@@ -122,13 +124,23 @@ function create_base() {
     xen_create deploy
 }
 
+function node_rank() {
+    if [[ $1 =~ \] ]]; then
+        NPREFIX=$(echo $1 | cut -d[ -f1)
+        NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
+        NLENG=$(echo ${NRANK[1]}-${NRANK[0]} | bc -l)
+    fi
+}
+
 function deploy() {
-    BLOCKN=$2
-    BLOCKD=$3
+    node_rank $1
+    BLOCKN=${2:-$BLOCKN}
+    BLOCKD=${3:-$BLOCKD}
     # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks
     # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
     # BlockD is the delay between one block and the following one (default 5 seconds)
     # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
+    # echo "$NPREFIX $NLENG $BLOCKN $BLOCKD" 
     echo "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? (y/n) : " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
@@ -164,13 +176,31 @@ function boot() {
     if (($IS_VM)) ; then
         xm create $SNOWROOT/etc/xen/$1.cfg
     else
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
+        node_rank $1
+        BLOCKN=${2:-$BLOCKN}
+        BLOCKD=${3:-$BLOCKD}
+        if (( $NLENG > 1 )); then
+            #parallel --delay $BLOCKD -N $BLOCKN -j 4 echo "$NPREFIX{}-bmc" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+            #exit 1
+            parallel --delay $BLOCKD -N $BLOCKN -j 4 \
+            ipmitool -I $IPMITYPE -H $NPREFIX{}-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \; \
+            ipmitool -I $IPMITYPE -H $NPREFIX{}-bmc -U $IPMIUSER -P $IPMIPWD power up \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}") 
+        else 
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
+        fi
     fi
 }
 
 function get_server_distribution(){
-    IS_VM=$(cat $SNOW_MODULES | gawk -v vm="^$1=" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
+    node_rank $1
+    if (( $NLENG > 1 )); then
+        # VM ranks are not yet supported
+        IS_VM=0
+    else
+        IS_VM=$(cat $SNOW_MODULES | gawk -v vm="^$1=" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
+    fi
 }
 
 function boot_services() {
@@ -184,8 +214,8 @@ function boot_services() {
 
 function boot_cluster() {
     CLUSTERNAME=$1
-    BLOCKN=$2
-    BLOCKD=$3
+    BLOCKN=${2:-$BLOCKN}
+    BLOCKD=${3:-$BLOCKD}
     # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks 
     # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
     # BlockD is the delay between one block and the following one (default 5 seconds)
@@ -250,7 +280,7 @@ case $opt1 in
         esac
     ;;
     deploy)
-        deploy $opt2
+        deploy $opt2 $opt3 $opt4 $opt5
     ;;
     clone)
         clone $opt2 $opt3
@@ -277,10 +307,10 @@ case $opt1 in
                 boot_services $opt3 
             ;;
             cluster)
-                boot_cluster $opt3 
+                boot_cluster $opt3 $opt4 $opt5 
             ;;
             *)
-                boot $opt3 
+                boot $opt2 $opt3 $opt4
             ;;
         esac
     ;;
