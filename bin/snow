@@ -130,11 +130,20 @@ function deploy() {
     # BlockD is the delay between one block and the following one (default 5 seconds)
     # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
     echo "This will install $1. All the data contained in these nodes will be removed"
-    read -p "Are you sure? " -n 1 -r
+    read -p "Are you sure? (y/n) : " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
+        echo
+        echo "Setting up node : $1"
         ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
         ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
+        # Some IPMI versions doesn't work from the localhost, via IP allways works, so 2 minutes per block of nodes
+        echo "Deploying node : $1 ... Please wait"
+        sleep 120
+        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+    else
+        echo
+        echo "Well done. It's better to be sure."
     fi
 }
 
