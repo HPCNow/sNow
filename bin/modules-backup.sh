@@ -24,11 +24,11 @@ if [[ -f $SNOW_MODULES ]]; then
     source $SNOW_MODULES
 fi
 
-if [[ -d ! $SNOWROOT/log ]]; then
+if ! [[ -d $SNOWROOT/log ]]; then
     mkdir $SNOWROOT/log
 fi
 
-f [[ -d ! $SNOWROOT/backup ]]; then
+if ! [[ -d $SNOWROOT/backup ]]; then
     mkdir $SNOWROOT/backup
 fi
 
