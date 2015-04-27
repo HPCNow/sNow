@@ -176,7 +176,7 @@ function takeover() {
 function boot() {
     get_server_distribution $1
     if (($IS_VM)) ; then
-        xm create $SNOWROOT/etc/xen/$1.cfg
+        xm create $SNOWROOT/etc/xen/$1-nfs.cfg
     else
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
