@@ -135,26 +135,37 @@ function node_rank() {
 }
 
 function deploy() {
-    node_rank $1
-    BLOCKN=${2:-$BLOCKN}
-    BLOCKD=${3:-$BLOCKD}
-    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks
-    # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
-    # BlockD is the delay between one block and the following one (default 5 seconds)
-    # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
-    # echo "$NPREFIX $NLENG $BLOCKN $BLOCKD" 
+    get_server_distribution $1
     echo "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? (y/n) : " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-        echo
-        echo "Setting up node : $1"
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
-        # Some IPMI versions doesn't work from the localhost, via IP allways works, so 2 minutes per block of nodes
-        echo "Deploying node : $1 ... Please wait"
-        sleep 120
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+        if (($IS_VM)) ; then
+            xen-image-create yariyara xm create $SNOWROOT/snow-tools/etc/modules/$1-nfs.cfg
+        else
+            node_rank $1
+            BLOCKN=${2:-$BLOCKN}
+            BLOCKD=${3:-$BLOCKD}
+            if (( $NLENG > 1 )); then
+                parallel -j $BLOCKN \
+                echo "Deploying node : $NPREFIX{} ... Please wait" \; \
+                sleep $BLOCKD \; \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe \; \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power cycle \
+                ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+                sleep 120
+                parallel -j $BLOCKN \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \
+                ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+            else
+                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
+                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
+                echo "Deploying node : $1 ... Please wait"
+                sleep 120
+                # Some IPMI versions doesn't work from the localhost, via IP allways works, so 2 minutes per block of nodes
+                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+            fi
+        fi
     else
         echo
         echo "Well done. It's better to be sure."
@@ -182,12 +193,12 @@ function boot() {
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 1 )); then
-            #parallel --delay $BLOCKD -N $BLOCKN -j 4 echo "$NPREFIX{}-bmc" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-            #exit 1
-            parallel --delay $BLOCKD -N $BLOCKN -j 4 \
-            ipmitool -I $IPMITYPE -H $NPREFIX{}-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \; \
-            ipmitool -I $IPMITYPE -H $NPREFIX{}-bmc -U $IPMIUSER -P $IPMIPWD power up \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}") 
+            parallel -j $BLOCKN \
+            echo "$NPREFIX{}-bmc" \; \
+            sleep $BLOCKD \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power up \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
             ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
             ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
