@@ -24,7 +24,7 @@ if [[ -f $SNOW_MODULES ]]; then
     source $SNOW_MODULES
 fi
 
-if [[ -d $SNOWROOT/log ]]; then
+if ! [[ -d $SNOWROOT/log ]]; then
     mkdir $SNOWROOT/log
 fi
 
@@ -356,4 +356,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-#echo "$(date)    $USER    $@" >> $SNOWROOT/log/snow_actions.log 
+echo "$(date)    $USER    $@" >> $SNOWROOT/log/snow_actions.log 
