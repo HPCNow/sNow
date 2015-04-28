@@ -141,7 +141,7 @@ function deploy() {
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
         if (($IS_VM)) ; then
-            xen-image-create yariyara xm create $SNOWROOT/snow-tools/etc/modules/$1-nfs.cfg
+            xen_create $1 $2
         else
             node_rank $1
             BLOCKN=${2:-$BLOCKN}
