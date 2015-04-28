@@ -147,6 +147,7 @@ function deploy() {
             BLOCKN=${2:-$BLOCKN}
             BLOCKD=${3:-$BLOCKD}
             if (( $NLENG > 1 )); then
+                echo "Deploying node range $1 ... This will take a while, Please wait"
                 parallel -j $BLOCKN \
                 echo "Deploying node : $NPREFIX{} ... Please wait" \; \
                 sleep $BLOCKD \; \
