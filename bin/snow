@@ -138,6 +138,7 @@ function deploy() {
     get_server_distribution $1
     echo "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? (y/n) : " -n 1 -r
+    echo 
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
         if (($IS_VM)) ; then
@@ -150,21 +151,25 @@ function deploy() {
                 echo "Deploying node range $1 ... This will take a while, Please wait"
                 parallel -j $BLOCKN \
                 echo "Deploying node : $NPREFIX{} ... Please wait" \; \
-                sleep $BLOCKD \; \
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe \; \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power cycle \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power cycle \; \
+                sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 sleep 120
-                parallel -j $BLOCKN \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \
-                ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+                echo "Setting up disk as boot device... Please wait"
+                boot $1 
+                # Due bad behavior of some IPMI last commands needs to be executed twice
+                sleep 10
+                boot $1 
             else
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
                 echo "Deploying node : $1 ... Please wait"
                 sleep 120
-                # Some IPMI versions doesn't work from the localhost, via IP allways works, so 2 minutes per block of nodes
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
+                boot $1 
+                # Due bad behavior of some IPMI last commands needs to be executed twice
+                sleep 10
+                boot $1 
             fi
         fi
     else
@@ -197,10 +202,12 @@ function boot() {
             parallel -j $BLOCKN \
             echo "$NPREFIX{}-bmc" \; \
             sleep $BLOCKD \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootdev disk \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power up \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootdev disk
             ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
             ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
         fi
