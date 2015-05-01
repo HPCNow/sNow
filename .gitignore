@@ -26,6 +26,7 @@ Temporary Items
 # Avoid to overwrite production config files
 etc/modules/*.cfg
 etc/*.conf
+etc/active-modules.conf
 
 # Temporary vi and emacs files 
 *.swp
