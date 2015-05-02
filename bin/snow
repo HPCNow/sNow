@@ -155,6 +155,10 @@ function deploy() {
             #BLOCKN=${2:-$BLOCKN}
             #BLOCKD=${3:-$BLOCKD}
             DEPLOYTMPL=${2:-$DEPLOYTMPL}
+            if ! [[ -f $SNOWROOT/OS/deploy/pxelinux.cfg/$DEPLOYTMPL ]] ; then
+                echo "No template $DEPLOYTMPL available in $SNOWROOT/OS/deploy/pxelinux.cfg"
+                exit 1
+            fi
             if (( $NLENG > 0 )); then
                 echo "Deploying node range $1 ... This will take a while, Please wait"
                 deploy_copy $DEPLOYTMPL
