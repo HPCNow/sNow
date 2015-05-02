@@ -134,6 +134,13 @@ function node_rank() {
     fi
 }
 
+function deploy_copy() {
+    for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+    do 
+        cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$1 $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
+    done
+}
+
 function deploy() {
     get_server_distribution $1
     echo "This will install $1. All the data contained in these nodes will be removed"
@@ -145,31 +152,30 @@ function deploy() {
             xen_create $1 $2
         else
             node_rank $1
-            BLOCKN=${2:-$BLOCKN}
-            BLOCKD=${3:-$BLOCKD}
-            if (( $NLENG > 1 )); then
+            #BLOCKN=${2:-$BLOCKN}
+            #BLOCKD=${3:-$BLOCKD}
+            DEPLOYTMPL=${2:-$DEPLOYTMPL}
+            if (( $NLENG > 0 )); then
                 echo "Deploying node range $1 ... This will take a while, Please wait"
+                deploy_copy $DEPLOYTMPL
                 parallel -j $BLOCKN \
                 echo "Deploying node : $NPREFIX{} ... Please wait" \; \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe \; \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power cycle \; \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power reset \; \
+                sleep 5 \; \
+                ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power on \; \
                 sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 sleep 120
-                echo "Setting up disk as boot device... Please wait"
-                boot $1 
-                # Due bad behavior of some IPMI last commands needs to be executed twice
-                sleep 10
-                boot $1 
+                echo "Setting up dis as boot device... Please wait"
+                deploy_copy $DEFAULTBOOT
             else
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_pxe
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power cycle
+                cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$DEPLOYTMPL $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+                sleep 5
+                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
                 sleep 120
-                boot $1 
-                # Due bad behavior of some IPMI last commands needs to be executed twice
-                sleep 10
-                boot $1 
+                cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$DEFAULTBOOT $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
     else
@@ -202,14 +208,10 @@ function boot() {
             parallel -j $BLOCKN \
             echo "$NPREFIX{}-bmc" \; \
             sleep $BLOCKD \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootdev disk \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power up \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power on \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootdev disk
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD chassis bootparam set bootflag force_disk
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power up
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
         fi
     fi
 }
@@ -253,11 +255,20 @@ function nshutdown() {
 }
 
 function ndestroy() {
-    get_server_distribution $1
-    if $IS_WM ; then 
+    if (($IS_VM)) ; then
         xm destroy $1
     else
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power down
+        node_rank $1
+        BLOCKN=${2:-$BLOCKN}
+        BLOCKD=${3:-$BLOCKD}
+        if (( $NLENG > 1 )); then
+            parallel -j $BLOCKN \
+            echo "$NPREFIX{}-bmc" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power off \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+        else
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power off
+        fi
     fi
 }
 
