@@ -92,7 +92,7 @@ install-method = debootstrap
 #
 # You may specify that with a line such as:
 #
-#install-source = /sNow/modules/debian-template
+#install-source = /sNow/domains/debian-template
 # install-source = /some/path/img.tar
 #
 #
@@ -128,13 +128,15 @@ install-method = debootstrap
 #  Disk and Sizing options.
 ##
 #
-size   = 4Gb      # Disk image size.
-memory = 2Gb      # Memory size
-#swap   = 256Mb    # Swap size
-noswap = 1      # Don't use swap at all for the new system.
-fs     = ext3     # use the EXT3 filesystem for the disk image.
-dist   = `xt-guess-suite-and-mirror --suite` # Default distribution to install.
-image  = sparse   # Specify sparse vs. full disk images.
+size   = 4G       # Root disk, suffix (G, M, k) required
+memory = 128M     # Suffix (G, M, k) required
+#maxmem = 256M     # Suffix (G, M, k) optional
+swap   = 128M     # Suffix (G, M, k) required
+# noswap = 1      # Don't use swap at all for new systems.
+fs     = ext3     # Default file system for any disk
+dist   = `xt-guess-suite-and-mirror --suite`
+                  # Default distribution is determined by Dom0's distribution
+image  = sparse   # Specify sparse vs. full disk images (file based images only)
 
 #
 #  See the README for currently supported and tested distributions. You can
@@ -238,9 +240,9 @@ accounts = 1
 #
 #kernel = /boot/vmlinuz-`uname -r`
 #initrd = /boot/initrd.img-`uname -r`
-
 kernel = /boot/vmlinuz-snow-`uname -r`
 initrd = /boot/initrd-snow-`uname -r`
+
 
 #
 #  The architecture to use when using debootstrap, rinse, or rpmstrap.
@@ -271,23 +273,29 @@ mirror = `xt-guess-suite-and-mirror --mirror`
 # mirror_sarge = http://archive.debian.org/debian
 # mirror_etch = http://archive.debian.org/debian
 # mirror_lenny = http://archive.debian.org/debian
-# mirror_squeeze = http://cdn.debian.net/debian
-# mirror_wheezy = http://cdn.debian.net/debian
-# mirror_sid = http://cdn.debian.net/debian
+# mirror_squeeze = http://http.debian.net/debian
+# mirror_wheezy = http://http.debian.net/debian
+# mirror_jessie = http://http.debian.net/debian
+# mirror_sid = http://http.debian.net/debian
 # mirror_dapper = http://old-releases.ubuntu.com/ubuntu
 # mirror_edgy = http://old-releases.ubuntu.com/ubuntu
 # mirror_feisty = http://old-releases.ubuntu.com/ubuntu
 # mirror_gutsy = http://old-releases.ubuntu.com/ubuntu
-# mirror_hardy = http://archive.ubuntu.com/ubuntu
+# mirror_hardy = http://old-releases.ubuntu.com/ubuntu
 # mirror_intrepid = http://old-releases.ubuntu.com/ubuntu
 # mirror_jaunty = http://old-releases.ubuntu.com/ubuntu
 # mirror_karmic = http://old-releases.ubuntu.com/ubuntu
 # mirror_lucid = http://archive.ubuntu.com/ubuntu
 # mirror_maverick = http://old-releases.ubuntu.com/ubuntu
-# mirror_natty = http://archive.ubuntu.com/ubuntu
+# mirror_natty = http://old-releases.ubuntu.com/ubuntu
 # mirror_oneiric = http://archive.ubuntu.com/ubuntu
 # mirror_precise = http://archive.ubuntu.com/ubuntu
-# mirror_quantal = http://archive.ubuntu.com/ubuntu
+# mirror_quantal = http://old-releases.ubuntu.com/ubuntu
+# mirror_raring = http://old-releases.ubuntu.com/ubuntu
+# mirror_saucy = http://old-releases.ubuntu.com/ubuntu
+# mirror_trusty = http://archive.ubuntu.com/ubuntu
+# mirror_utopic = http://archive.ubuntu.com/ubuntu
+# mirror_vivid = http://archive.ubuntu.com/ubuntu
 
 # If this is defined it will be used by debootstrap, and configured as the
 # proxy for the guest
@@ -297,6 +305,7 @@ mirror = `xt-guess-suite-and-mirror --mirror`
 #
 #  Filesystem options for the different filesystems we support.
 #
+ext4_options     = noatime,nodiratime,errors=remount-ro
 ext3_options     = noatime,nodiratime,errors=remount-ro
 ext2_options     = noatime,nodiratime,errors=remount-ro
 xfs_options      = defaults
@@ -334,7 +343,7 @@ boot = 1
 # that behaviour you may do so here.
 #
 #
-output    = /sNow/snow-tools/etc/modules
+output    = /sNow/snow-tools/etc/domains
 extension = .cfg
 #
 

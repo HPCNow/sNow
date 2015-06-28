@@ -1,31 +1,29 @@
-#  Template created by Jordi Blasco 
-#
-#  Kernel + memory size
-#
+#  Created and developed by HPCNow!##
+
 kernel      = '/sNow/boot/vmlinuz-3.2.0-4-amd64'
 ramdisk     = '/sNow/boot/initrd.img-3.2.0-4-amd64'
 
 vcpus       = '1'
-memory      = '256'
+memory      = '512'
 
 #
 #  Hostname
 #
-name        = 'sgemaster'
+name        = 'monitor'
 
 #
 #  Networking
 #
-vif         = [ 'ip=192.168.7.5,mac=00:16:3E:40:05:00,bridge=xenbr7' ]
+vif         = [ 'ip=192.168.7.12,mac=00:16:7E:AB:04:00,bridge=xenbr7','ip=172.16.1.3,mac=00:16:3E:4B:84:45,bridge=xpub0' ]
 
-ip        = '192.168.7.5'
+ip        = '192.168.7.12'
 netmask   = '255.255.255.0'
 broadcast = '192.168.7.255'
-#gateway   = '192.168.7.251'
+gateway   = '192.168.7.1'
 
 # NFS option
 nfs_server = '192.168.7.1'
-nfs_root   = '/sNow/modules/sgemaster01'
+nfs_root   = '/sNow/domains/monitor'
 root       = '/dev/nfs'
 
 #
