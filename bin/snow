@@ -110,9 +110,9 @@ function xen_create() {
         echo "The VM $1 already exist, please use force option to overwrite the VM"
         exit 1
     else
-        echo xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d                \
+        echo "xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d                \
                     --hostname=$1 --mac=${VNAME[4]} --bridge=${VNAME[3]} --ip=${VNAME[2]} --gateway=${VNAME[5]} --netmask=${VNAME[6]} \
-                    --role=udev,snow,${VNAME[0]} --accounts --copyhosts --genpass=0 $FORCE
+                    --role=udev,snow,${VNAME[0]} --accounts --copyhosts --genpass=0 $FORCE"
     fi
 }
 

@@ -27,10 +27,22 @@ chroot ${prefix} /usr/bin/apt-get update
 # TFTPBOOT
 
 # KickStart (RedHat Based)
+# http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
+wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
 
 # Preseed (Debian Based)
 # https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
 installDebianPackage ${prefix} dnsmasq
+cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+echo "
+dhcp-range=192.168.7.100,192.168.7.250,255.255.255.0,12h
+dhcp-boot=pxelinux.0
+enable-tftp
+tftp-root=/srv/tftp
+" > ${prefix}/etc/dnsmasq.conf
+
 mkdir -p ${prefix}/srv/tftp
 wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
 cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
