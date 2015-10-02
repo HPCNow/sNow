@@ -1,3 +1,0 @@
-[console_scripts]
-snow = snow.__main__:main
-

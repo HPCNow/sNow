@@ -1,4 +1,0 @@
-nose
-pony
-python2-pythondialog
-libvirt-python
