@@ -107,12 +107,23 @@ fi
 function xen_create() {
     get_server_distribution $1 
     if (($IS_VM)) ; then
-        echo "The VM $1 already exist, please use force option to overwrite the VM"
-        exit 1
+        if [[ "$opt3" != "force" ]]; then
+            echo "The VM $1 already exist, please use force option to overwrite the VM"
+            exit 1
+        else
+            FORCE="--force"
+            cat $SNOW_DOMAINS | grep "^$1" | gawk '{
+                hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; gw_nic1=$7; mask_nic1=$8
+            }
+            END{
+                system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d \
+                                         --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" \
+                                         --gateway="gw_nic1" --netmask="mask_nic1" --role=udev,snow,"role" --accounts --copyhosts --genpass=0 $FORCE")
+            }'
+        fi
     else
-        echo "xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d                \
-                    --hostname=$1 --mac=${VNAME[4]} --bridge=${VNAME[3]} --ip=${VNAME[2]} --gateway=${VNAME[5]} --netmask=${VNAME[6]} \
-                    --role=udev,snow,${VNAME[0]} --accounts --copyhosts --genpass=0 $FORCE"
+        echo "The node is not a sNow! domain"
+        exit 1
     fi
 }
 
