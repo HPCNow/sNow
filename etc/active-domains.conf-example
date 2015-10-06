@@ -24,5 +24,6 @@ mysql01		mysql
 backup01	backup
 cfs		    cfs	 	
 slurm02		slurm	
-slurmdb01	slurm
-slurmdb02	slurm
+slurmdb01	slurmdb
+slurmdb02	slurmdb
+deploy01    deploy

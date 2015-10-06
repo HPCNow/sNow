@@ -16,12 +16,29 @@ else
 fi
 
 
+#
+#  Update APT lists.
+#
+#chroot ${prefix} /usr/bin/apt-get update
+
+# DMZ NIC setup
 echo "
 
-# The secondary secondary network interface
+# The secondary network interface
 allow-hotplug eth1
 auto eth1
-iface eth1 inet dhcp
+#iface eth1 inet dhcp
+iface eth1 inet static
+        address $IP_NIC2
+        netmask $MASK_NIC2
+        network $NET_NIC2
+        broadcast $BC_NIC2
+        gateway $GW_NIC2
 
 " >> ${prefix}/etc/network/interfaces
 
+#
+#  Install the packages
+#
+#installDebianPackage ${prefix} 
+ 

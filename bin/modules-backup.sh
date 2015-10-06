@@ -12,16 +12,12 @@ DOMAINS2BKP=$(snow list| egrep -v "Name|Domain-0"|gawk '{print $1}')
 SNOWPATH=$(dirname "$0")
 # Load the configuration
 CONFIG_FILE=$SNOWPATH/../etc/snow.conf
-SNOW_DOMAINS=$SNOWPATH/../etc/active-domains.conf
-SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | cut -d= -f1 | gawk '{print $1}')
+SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
+SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}')
 #DOMAINS2BKP=${SELF_ACTIVE_DOMAINS:-$DOMAINS2BKP}
 
 if [[ -f $CONFIG_FILE ]]; then
     source $CONFIG_FILE
-fi
-
-if [[ -f $SNOW_DOMAINS ]]; then
-    source $SNOW_DOMAINS
 fi
 
 if ! [[ -d $SNOWROOT/log ]]; then
