@@ -20,6 +20,7 @@ fi
 #  Update APT lists.
 #
 chroot ${prefix} /usr/bin/apt-get update
+installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
 
 # System Imager (Cloning System)
 # http://www.systemimager.org/download/
@@ -41,11 +42,10 @@ installDebianPackage ${prefix} systemimager-server simple-state-manager
 CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
 wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
 wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-cd ${prefix}/tmp
-alien -k pykickstart-1.99.43.17-1.el7.noarch.rpm
-alien -k system-config-kickstart-2.9.2-4.el7.noarch.rpm
-dpkg -i pykickstart_1.99.43.17-1.el7_all.deb
-dpkg -i system-config-kickstart_2.9.2-4.el7_all.deb
+chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
+chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
+chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
 
 # Preseed (Debian Based)
 # https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
@@ -73,5 +73,5 @@ cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
 #
 #  Install the packages
 #
-installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
+#installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
  
