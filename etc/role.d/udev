@@ -31,5 +31,5 @@ installDebianPackage ${prefix} udev
 #
 #  Update APT lists.
 #
-chroot ${prefix} /usr/bin/apt-get update
+#chroot ${prefix} /usr/bin/apt-get update
 

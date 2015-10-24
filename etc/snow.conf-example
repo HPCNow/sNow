@@ -9,14 +9,15 @@ SNOWVG=snow_vg
 SNOWNODES=(snow-01 snow-02)
 SSHPORT=22
 SMAIL=support@hpcnow.com
-MASTERPWD=changeme
+MASTERPWD='HPCN0w!!'
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
+CFMASTER=192.168.7.1
 BLOCKN=4
 BLOCKD=5
 DEFAULTBOOT=localboot
-DEPLOYTMPL=sles11sp3-default
+DEPLOYTMPL=centos7-default
 NETLAYER=1
 BRIDGEMAP=([xdmz0]=dummy0 [xpub0]=eth0 [xdata0]=eth1.3 [snow0]=eth2 [xmon0]=eth1.4 [xadmin]=eth1.5) 
 SNOWVLAN=7

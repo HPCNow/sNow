@@ -19,16 +19,12 @@ fi
 #
 #  Update APT lists.
 #
-chroot ${prefix} /usr/bin/apt-get update
+#chroot ${prefix} /usr/bin/apt-get update
 # LDAP Install references : 
 # https://wiki.debian.org/LDAP/OpenLDAPSetup
 # http://www.server-world.info/en/note?os=Debian_8&p=openldap
 # http://www.server-world.info/en/note?os=Debian_8&p=ssl
-# https://wiki.debian.org/LDAP/PAM
-# SSSD client
-# https://wiki.ubuntu.com/Enterprise/Authentication/sssd
-#installDebianPackage ${prefix} libnss-ldap libpam-ldap nscd sssd-ldap
-installDebianPackage ${prefix} libpam-ldapd sssd-ldap sssd-tools sssd-common
+installDebianPackage ${prefix} slapd ldap-utils ldapscripts
 
 #
 #  Install the packages

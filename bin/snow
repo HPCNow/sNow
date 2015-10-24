@@ -110,11 +110,11 @@ function xen_create() {
             FORCE="--force"
         fi
     fi
-    cat $SNOW_DOMAINS | grep "$opt2" | gawk -v force="$FORCE" '{
+    cat $SNOW_DOMAINS | grep "$opt2" | gawk -v force="$FORCE" -v pwd=$MASTERPWD '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools-tmpl.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=udev,snow,"role" --accounts --copyhosts --genpass=0 "force)
+        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role="role" --accounts --copyhosts --password="pwd " "force)
         }'
 }
 
@@ -171,7 +171,7 @@ function deploy() {
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power on \; \
                 sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                sleep 120
+                sleep 180
                 echo "Setting up dis as boot device... Please wait"
                 deploy_copy $DEFAULTBOOT
             else
@@ -180,7 +180,7 @@ function deploy() {
                 sleep 5
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
-                sleep 120
+                sleep 180
                 cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$DEFAULTBOOT $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
@@ -224,7 +224,7 @@ function boot() {
 
 function get_server_distribution(){
     node_rank $1
-    if (( $NLENG > 1 )); then
+    if (( $NLENG > 0 )); then
         # VM ranks are not yet supported
         IS_VM=0
     else
