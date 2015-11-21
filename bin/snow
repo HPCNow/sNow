@@ -18,6 +18,7 @@ opt5=$5
 
 if [[ -f $CONFIG_FILE ]]; then
     source $CONFIG_FILE
+    export PDSH_RCMD_TYPE
 fi
 
 if ! [[ -d $SNOWROOT/log ]]; then
@@ -30,34 +31,34 @@ This is the sNow! Command Line Interface
 Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 For more information, visit the official website : www.hpcnow.com
 
-Usage: snow [function] <option|module|server>
+Usage: snow [function] <option|domain|server>
 
 Function List:
 
-    * config                       | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-domains.conf
-    * update tools                 | updates the sNow! Tools from the public HPCNow! GIT repo
-    * update configspace           | updates configuration files from public git repo
-    * update <module|server>       | updates specific module or server
-    * create base                  | installs the basic software to deploy VMs, cluster filesystem nodes and compute nodes
-    * create <module>              | installs specific module (Xen VM)
-    * deploy <server>              | deploy specific server 
-    * clone <server> <image_name>  | clone server with specific image file 
-    * list                         | list current services and the status
-    * takeover                     | migrates VMs and critical services to other nodes
-    * boot <module|server>         | boot specific module or server
-    * boot services                | boot all the services
-    * boot cluster <clustername>   | boot all the compute nodes (by default 20 nodes at once)
-    * reboot <module|server>       | reboot specific module or server
-    * shutdown <module|server>     | shutdown specific module or server
-    * destroy <module|server>      | force to stop specific module or server
-    * console <module|server>      | console access to specific module or server
-    * uptime <module|sever>        | shows uptime of specific module or server
+    * config                         | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-domains.conf
+    * update tools                   | updates the sNow! Tools from the public HPCNow! GIT repo (only available in sNow! Enterprise Edition)
+    * update configspace             | updates configuration files from public git (only available in sNow! Enterprise Edition)
+    * update <domain|server>         | updates specific domain or server
+    * deploy <domain|server>         | deploy specific domain/server 
+    * clone <server> <image_name>    | clone server with specific image file (only available in sNow! Enterprise Edition) 
+    * list                           | list current services and the status
+    * takeover                       | migrates domains and critical services to other sNow nodes
+    * boot <domain|server>           | boot specific domain or server
+    * boot services                  | boot all the services (not available under sNow! HA)
+    * boot cluster <clustername>     | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+    * reboot <domain|server>         | reboot specific domain or server
+    * shutdown <domain|server>       | shutdown specific domain or server
+    * shutdown cluster <clustername> | shutdown all the compute nodes of the selected cluster
+    * destroy <domain|server>        | force to stop specific domain or server
+    * console <domain|server>        | console access to specific domain or server
+    * uptime <domain|sever>          | shows uptime of specific domain or server
+    * cmd <domain|sever> <command>   | executes a command in the domain(s) or server(s)
 
 Examples:
 
     snow update tools
-    snow create base
-    snow create ldap01
+    snow deploy ldap01
+    snow cmd n[001-999] uname
 "
 }
 
@@ -114,7 +115,7 @@ function xen_create() {
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role="role" --accounts --copyhosts --password="pwd " "force)
+        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --accounts --copyhosts --password="pwd " "force)
         }'
 }
 
@@ -205,7 +206,7 @@ function takeover() {
 function boot() {
     get_server_distribution $1
     if (($IS_VM)) ; then
-        xl create $SNOWROOT/snow-tools/etc/domains/$1-nfs.cfg
+        xl create $SNOWROOT/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
     else
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
@@ -249,7 +250,11 @@ function boot_cluster() {
     # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
     # BlockD is the delay between one block and the following one (default 5 seconds)
     # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
-    echo boot_cluster 
+    boot ${CLUSTERS[$1]} 
+}
+
+function ncmd() {
+    pdsh -w $1 $2 $3 $4
 }
 
 function nreboot() {
@@ -260,7 +265,13 @@ function nshutdown() {
     pdsh -w $1 halt
 }
 
+function shutdown_cluster() {
+    CLUSTERNAME=$1
+    nshutdown ${CLUSTERS[$1]} 
+}
+
 function ndestroy() {
+    get_server_distribution $1
     if (($IS_VM)) ; then
         xl destroy $1
     else
@@ -321,7 +332,9 @@ case $opt1 in
         deploy $opt2 $opt3 $opt4 $opt5
     ;;
     clone)
-        clone $opt2 $opt3
+        echo "Option only available in sNow! Enterprise Edition. Visit www.hpcnow.com"
+        exit 1
+        #clone $opt2 $opt3
     ;;
     create)
         case $opt2 in
@@ -352,11 +365,21 @@ case $opt1 in
             ;;
         esac
     ;;
+    cmd)
+        ncmd $opt2 $opt3 $opt4 $opt5
+    ;;
     reboot)
         nreboot $opt2
     ;;
     shutdown)
-        nshutdown $opt2
+        case $opt2 in
+            cluster)
+                shutdown_cluster $opt3 
+            ;;
+            *)
+                nshutdown $opt2 
+            ;;
+        esac
     ;;
     destroy)
         ndestroy $opt2

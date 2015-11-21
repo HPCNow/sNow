@@ -1,6 +1,6 @@
 #!/bin/sh
 # Configure the new image for sNow! HPC suite
-# Developed by NPCNow! www.hpcnow.com
+# Developed by HPCNow! www.hpcnow.com
 # Jordi Blasco
 #
 
@@ -19,7 +19,7 @@ fi
 #
 #  Update APT lists.
 #
-chroot ${prefix} /usr/bin/apt-get update
+#chroot ${prefix} /usr/bin/apt-get update
 # CFEngine community repos
 wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
 chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
@@ -28,8 +28,6 @@ chroot ${prefix} /usr/bin/apt-get update
 chroot ${prefix} /usr/bin/apt-get install cfengine-community
 cp -p /sNow/snow-configspace/files/etc/init.d/firstboot ${prefix}/etc/init.d/firstboot
 chroot ${prefix} /usr/sbin/update-rc.d firstboot defaults
+mkdir -p ${prefix}/sNow
+cp -pr /sNow/snow-tools ${prefix}/sNow/
 
-#
-#  Install the packages
-#
-installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential htop byobu gawk git iotop lsof traceroute iptraf vim

@@ -3,10 +3,10 @@
 # sNow! Cluster Suite is an opensource project developed by HPCNow!
 # More information here : www.hpcnow.com/snow
 #
-NFSSERVER=snow-01
+NFSSERVER=snow01
 SNOWROOT=/sNow
 SNOWVG=snow_vg
-SNOWNODES=(snow-01 snow-02)
+SNOWNODES=(snow01 snow02)
 SSHPORT=22
 SMAIL=support@hpcnow.com
 MASTERPWD='HPCN0w!!'
@@ -18,7 +18,12 @@ BLOCKN=4
 BLOCKD=5
 DEFAULTBOOT=localboot
 DEPLOYTMPL=centos7-default
+CLUSTERS=([mycluster01]="n[001-999]")
+PDSH_RCMD_TYPE=ssh
 NETLAYER=1
+DOM_EXT=''
+#############################################################################
+#The following lines are used in development and pre-production environments.
 BRIDGEMAP=([xdmz0]=dummy0 [xpub0]=eth0 [xdata0]=eth1.3 [snow0]=eth2 [xmon0]=eth1.4 [xadmin]=eth1.5) 
 SNOWVLAN=7
 SNOWNET=192.168.7.0
@@ -32,4 +37,3 @@ MONITORVLAN=4
 MONITORNET=192.168.4.0
 ADMINVLAN=5
 ADMINNET=192.168.5.0
-
