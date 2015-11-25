@@ -1,15 +1,15 @@
 #!/bin/bash
-#set -xv
 # This is the sNow! Command Line Interface 
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
+#set -xv
 SNOWPATH=$(dirname "$0")
+PROGNAME=$(basename "$0")
 # Load the configuration
 CONFIG_FILE=$SNOWPATH/../etc/snow.conf
 SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
-SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}')
+SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 opt1=$1
 opt2=$2
 opt3=$3
@@ -24,6 +24,11 @@ fi
 if ! [[ -d $SNOWROOT/log ]]; then
     mkdir $SNOWROOT/log
 fi
+
+function error_exit(){
+    echo "${PROGNAME}: ${1:-"Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues"}" 1>&2
+    exit 1
+}
 
 function shelp(){
 echo " 
@@ -81,11 +86,11 @@ function update_tools() {
 if ! [[ -d $SNOWROOT/snow-tools ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
-    git clone http://bitbucket.org/hpcnow/snow-tools.git
+    git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
     cd -
 else
     cd $SNOWROOT/snow-tools
-    git pull http://bitbucket.org/hpcnow/snow-tools.git
+    git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
 fi 
 }
 
@@ -93,11 +98,11 @@ function update_configspace() {
 if ! [[ -d $SNOWROOT/snow-configspace  ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
-    git clone http://bitbucket.org/hpcnow/snow-configspace.git
+    git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
     cd -
 else
     cd $SNOWROOT/snow-configspace
-    git pull http://bitbucket.org/hpcnow/snow-configspace.git
+    git pull http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
 fi
 }
 
@@ -105,7 +110,7 @@ function xen_create() {
     get_server_distribution $1 
     if [[ -f $SNOWROOT/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            echo "The VM $1 already exist, please use force option to overwrite the VM"
+            echo "The domain $1 already exist, please use force option to overwrite the domain"
             exit 1
         else
             FORCE="--force"
@@ -116,7 +121,7 @@ function xen_create() {
         }
         END{
         system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --accounts --copyhosts --password="pwd " "force)
-        }'
+        }' || error_exit "ERROR: unable to install the domain, please report the issue to HPCNow!"
 }
 
 function create_base() {
