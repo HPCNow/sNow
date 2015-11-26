@@ -150,6 +150,10 @@ function deploy_copy() {
 }
 
 function deploy() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain or node to deploy"
+        exit 1
+    fi
     get_server_distribution $1
     echo "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? (y/n) : " -n 1 -r
@@ -209,6 +213,10 @@ function takeover() {
 }
 
 function boot() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain or node to boot."
+        exit 1
+    fi
     get_server_distribution $1
     if (($IS_VM)) ; then
         xl create $SNOWROOT/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
@@ -248,6 +256,10 @@ function boot_services() {
 }
 
 function boot_cluster() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No cluster to boot."
+        exit 1
+    fi
     CLUSTERNAME=$1
     BLOCKN=${2:-$BLOCKN}
     BLOCKD=${3:-$BLOCKD}
@@ -259,23 +271,43 @@ function boot_cluster() {
 }
 
 function ncmd() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to execute command."
+        exit 1
+    fi
     pdsh -w $1 $2 $3 $4
 }
 
 function nreboot() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to reboot."
+        exit 1
+    fi
     pdsh -w $1 reboot
 }
 
 function nshutdown() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to shutdown."
+        exit 1
+    fi
     pdsh -w $1 halt
 }
 
 function shutdown_cluster() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No cluster to shutdown."
+        exit 1
+    fi
     CLUSTERNAME=$1
     nshutdown ${CLUSTERS[$1]} 
 }
 
 function ndestroy() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to power down."
+        exit 1
+    fi
     get_server_distribution $1
     if (($IS_VM)) ; then
         xl destroy $1
@@ -295,6 +327,10 @@ function ndestroy() {
 }
 
 function nconsole() {
+    if [ -z "$1" ]; then
+        echo "ERROR: please specify the domain(s) or node(s) to connect."
+        exit 1
+    fi
     get_server_distribution $1
     if (($IS_VM)) ; then
         xl console $1
@@ -306,6 +342,10 @@ function nconsole() {
 }
 
 function nuptime() {
+    if [ -z "$1" ]; then
+        echo "ERROR: please, specify the domain(s) or node(s) to check the uptime."
+        exit 1
+    fi
     pdsh -w $1 uptime 
 }
 
