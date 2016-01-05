@@ -25,7 +25,8 @@ wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
 chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
 /bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
 chroot ${prefix} /usr/bin/apt-get update
-chroot ${prefix} /usr/bin/apt-get install cfengine-community
+chroot ${prefix} /usr/bin/apt-get install --force-yes -y apt-transport-https
+chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
 cp -p /sNow/snow-configspace/files/etc/init.d/firstboot ${prefix}/etc/init.d/firstboot
 chroot ${prefix} /usr/sbin/update-rc.d firstboot defaults
 mkdir -p ${prefix}/sNow
