@@ -139,17 +139,20 @@ function xen_create() {
             FORCE="--force"
         fi
     fi
+
+    if [[ -n "$IMG_DST" ]]; then
+        IMG_DST_OPT="--${IMG_DST}"
+    fi 
     cat $SNOW_DOMAINS | grep "$opt2" | gawk -v force="$FORCE" -v pwd=$MASTERPWD '{
-        hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
+        hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8; img_dst=$IMG_DST_OPT
         }
         END{
-        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --accounts --copyhosts --password="pwd " "force)
+        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --accounts --copyhosts --password="pwd " "force img_dst)
         }' || error_exit "ERROR: unable to install the domain, please report the issue to HPCNow!"
 }
 
 function create_base() {
-    if [[ "$opt3" == "force" ]]
-    then 
+    if [[ "$opt3" == "force" ]]; then
         FORCE="--force"
     fi 
     xen_create deploy
