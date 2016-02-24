@@ -42,7 +42,8 @@ Function List:
 
     * config                         | updates the sNow! configuration based on the snow.conf, /etc/hosts and active-domains.conf
     * update tools                   | updates the sNow! Tools from the public HPCNow! GIT repo (only available in sNow! Enterprise Edition)
-    * update configspace             | updates configuration files from public git (only available in sNow! Enterprise Edition)
+    * update configspace             | updates configuration files from private git (only available in sNow! Enterprise Edition)
+    * update snow_template           | updates the sNow! image used to create new domains
     * update <domain|server>         | updates specific domain or server
     * deploy <domain|server>         | deploy specific domain/server 
     * clone <server> <image_name>    | clone server with specific image file (only available in sNow! Enterprise Edition) 
@@ -102,8 +103,30 @@ if ! [[ -d $SNOWROOT/snow-configspace  ]]; then
     cd -
 else
     cd $SNOWROOT/snow-configspace
-    git pull http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
+    git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in you bitbucket."
 fi
+}
+
+function update_xen_image() {
+if ! [[ -d $SNOWROOT/domains/template ]]; then
+    mkdir -p $SNOWROOT/domains/template
+    wget http://repo.hpcnow.com/sNow/snow-template.md5 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+else
+    if [[ -f $SNOWROOT/domains/template/snow-template.tar.bzip2 ]]; then
+        MD5LOCAL=$(md5sum $SNOWROOT/domains/template/snow-template.tar.bzip2 | gawk '{ print $1 }')
+        wget http://repo.hpcnow.com/sNow/snow-template.md5 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        MD5HPCNOW=$(cat $SNOWROOT/domains/template/snow-template.md5 | gawk '{ print $1 }')
+        if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
+            echo "Downloading most recent sNow! domain template"
+            wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        else
+            echo "sNow domain template is up-to-date."
+        fi
+    else
+        wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    fi
+fi 
 }
 
 function xen_create() {
@@ -367,6 +390,9 @@ case $opt1 in
             ;;
             configspace)
                 update_configspace
+            ;;
+            snow_template)
+                update_xen_image
             ;;
             *)
                 update $opt3

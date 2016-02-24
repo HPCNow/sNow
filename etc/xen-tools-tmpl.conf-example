@@ -1,37 +1,16 @@
-##
-#  Output directory for storing loopback images.
-##
- dir = /sNow
-#
-# If you don't wish to use loopback images then you may specify an 
-# LVM volume group here instead
-##
-#lvm = snow_vg
-#  Installation method.
-#
-#   - Installation via the debootstrap command.
-#   - Installation via the rpmstrap command.
-#   - Installation via the rinse command.
-#   - Installation by copying a directory containing a previous installation.
-#   - Installation by untarring a previously archived image.
+#########################################################################################
+# sNow! config file : /sNow/snow-tools/etc/xen-tools-tmpl.conf
+# sNow! Cluster Suite is an opensource project developed by HPCNow!
+# More information here : www.hpcnow.com/snow
+#########################################################################################
+# Where to store sNow! domain images.
+# dir = /sNow
+lvm = snow_vg
 # install-method = [ debootstrap | rinse | rpmstrap | copy | tar ]
-#
 install-method = debootstrap
-
-#
-# If you're using the "copy", or "tar" installation methods you must
-# need to specify the source location to copy from, or the source
-# .tar file to unpack.
-#
-#install-source = /sNow/domains/debian-template
-#install-source = /some/path/img.tar
-#
-
-#
-##
-#  Disk and Sizing options.
-##
-#
+#install-source = /sNow/domains/template/snow-template.tar.bzip2
+#tar-cmd = /bin/tar --numeric-owner -jxf $src
+# Disk and Sizing options.
 size   = 4G       # Root disk, suffix (G, M, k) required
 memory = 128M     # Suffix (G, M, k) required
 #maxmem = 256M     # Suffix (G, M, k) optional
@@ -41,54 +20,28 @@ fs     = ext3     # Default file system for any disk
 dist   = `xt-guess-suite-and-mirror --suite`
                   # Default distribution is determined by Dom0's distribution
 image  = sparse   # Specify sparse vs. full disk images (file based images only)
-
-##
 # Networking setup values.
-##
-#
 #bridge = xdmz0
 bridge = xenbr7
-#
 # User accounts and passwords
-#
 genpass = 0
-passwd = 1
 accounts = 1
-#
-#
+passwd = 1
 # Default kernel and ramdisk to use for the virtual servers
-#
 kernel = /boot/vmlinuz-`uname -r`
 initrd = /boot/initrd.img-`uname -r`
-
-#  The architecture to use when using debootstrap, rinse, or rpmstrap.
-#
-# arch = [i386|amd64]
-#
-
-#
 # The default mirror for debootstrap to install Debian-derived distributions
-#
 mirror = `xt-guess-suite-and-mirror --mirror`
-
-# If this is defined it will be used by debootstrap, and configured as the
-# proxy for the guest
-#
+# If this is defined it will be used by debootstrap, and configured as the proxy for the guest
 # apt_proxy =
-
-#
-#  Filesystem options for the different filesystems we support.
-#
+# Filesystem options for the different filesystems we support.
 ext4_options     = noatime,nodiratime,errors=remount-ro
 ext3_options     = noatime,nodiratime,errors=remount-ro
 ext2_options     = noatime,nodiratime,errors=remount-ro
 xfs_options      = defaults
 reiserfs_options = defaults
 btrfs_options    = defaults
-
-#  Here we specify the output directory which the Xen configuration
+# Here we specify the output directory which the Xen configuration
 # files will be written to, and the suffix to give them.
-#
 output    = /sNow/snow-tools/etc/domains
 extension = .cfg
-#
