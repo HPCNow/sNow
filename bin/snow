@@ -87,11 +87,11 @@ function update_tools() {
 if ! [[ -d $SNOWROOT/snow-tools ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
-    git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
+    git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
     cd $SNOWROOT/snow-tools
-    git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
+    git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi 
 }
 
@@ -99,11 +99,11 @@ function update_configspace() {
 if ! [[ -d $SNOWROOT/snow-configspace  ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
-    git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in you bitbucket."
+    git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
     cd $SNOWROOT/snow-configspace
-    git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in you bitbucket."
+    git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
 }
 

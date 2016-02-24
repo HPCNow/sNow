@@ -4,8 +4,8 @@
 # More information here : www.hpcnow.com/snow
 #########################################################################################
 # Where to store sNow! domain images.
-# dir = /sNow
-lvm = snow_vg
+#dir = /sNow
+#lvm = snow_vg
 # install-method = [ debootstrap | rinse | rpmstrap | copy | tar ]
 install-method = tar
 install-source = /sNow/domains/template/snow-template.tar.bzip2
