@@ -19,7 +19,7 @@ fi
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential htop byobu gawk git iotop lsof traceroute iptraf vim colord
 # Minor fixes related with colord uid and gid bug
-chroot ${prefix} /usr/sbin/groupmod -g 119 colord
-chroot ${prefix} /usr/sbin/groupmod -g 1000 snow
-chroot ${prefix} /usr/sbin/usermod -u 1000 -g 1000 snow
-chroot ${prefix} /usr/sbin/addgroup --gid 109 Debian-exim --force-badname
+#chroot ${prefix} /usr/sbin/groupmod -g 119 colord
+#chroot ${prefix} /usr/sbin/groupmod -g 1000 snow
+#chroot ${prefix} /usr/sbin/usermod -u 1000 -g 1000 snow
+#chroot ${prefix} /usr/sbin/addgroup --gid 109 Debian-exim --force-badname

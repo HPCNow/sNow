@@ -110,21 +110,21 @@ fi
 function update_xen_image() {
 if ! [[ -d $SNOWROOT/domains/template ]]; then
     mkdir -p $SNOWROOT/domains/template
-    wget http://repo.hpcnow.com/sNow/snow-template.md5 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-    wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://repo.hpcnow.com/snow-template.md5sum || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://repo.hpcnow.com/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
     if [[ -f $SNOWROOT/domains/template/snow-template.tar.bzip2 ]]; then
         MD5LOCAL=$(md5sum $SNOWROOT/domains/template/snow-template.tar.bzip2 | gawk '{ print $1 }')
-        wget http://repo.hpcnow.com/sNow/snow-template.md5 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://repo.hpcnow.com/snow-template.md5sum || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         MD5HPCNOW=$(cat $SNOWROOT/domains/template/snow-template.md5 | gawk '{ print $1 }')
         if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
             echo "Downloading most recent sNow! domain template"
-            wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+            wget http://repo.hpcnow.com/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
             echo "sNow domain template is up-to-date."
         fi
     else
-        wget http://repo.hpcnow.com/sNow/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://repo.hpcnow.com/snow-template.tar.bzip2 || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
 fi 
 }
