@@ -464,7 +464,7 @@ case $opt1 in
     uptime)
         nuptime $opt2
     ;;
-    help|\?)
+    help|-help|--help|\?|*)
       shelp
       ;;
   esac
