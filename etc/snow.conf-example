@@ -6,8 +6,8 @@
 NFSSERVER=snow01
 SNOWROOT=/sNow
 SNOWVG=snow_vg
-#IMG_DST='dir=/sNow/domains'
-IMG_DST='lvm=snow_vg'
+IMG_DST='dir=/sNow/domains'
+#IMG_DST='lvm=snow_vg'
 SNOWNODES=(snow01 snow02)
 SSHPORT=22
 SMAIL=support@hpcnow.com
