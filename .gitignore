@@ -30,6 +30,8 @@ etc/domains.conf
 etc/snow.conf
 etc/xen-tools.conf
 etc/xen-tools-tmpl.conf
+etc/snow_exports.conf
+etc/vms.conf
 
 # Temporary vi and emacs files 
 *.swp
