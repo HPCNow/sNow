@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-set -xv
+#set -xv
 SNOWPATH=$(dirname "$0")
 PROGNAME=$(basename "$0")
 # Load the configuration
