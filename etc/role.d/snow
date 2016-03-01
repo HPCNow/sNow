@@ -6,9 +6,7 @@
 
 prefix=$1
 
-#
 #  Source our common functions - this will let us install a Debian package.
-#
 if [ -e /usr/share/xen-tools/common.sh ]; then
     . /usr/share/xen-tools/common.sh
 else
@@ -16,9 +14,7 @@ else
 fi
 
 
-#
 #  Update APT lists.
-#
 #chroot ${prefix} /usr/bin/apt-get update
 # CFEngine community repos
 wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key

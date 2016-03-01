@@ -6,9 +6,7 @@
 
 prefix=$1
 
-#
 #  Source our common functions - this will let us install a Debian package.
-#
 if [ -e /usr/share/xen-tools/common.sh ]; then
     . /usr/share/xen-tools/common.sh
 else
@@ -16,9 +14,7 @@ else
 fi
 
 
-#
 #  Update APT lists.
-#
 chroot ${prefix} /usr/bin/apt-get update
 # LDAP Install references : 
 # https://wiki.debian.org/LDAP/OpenLDAPSetup
@@ -26,6 +22,4 @@ chroot ${prefix} /usr/bin/apt-get update
 # http://www.server-world.info/en/note?os=Debian_8&p=ssl
 installDebianPackage ${prefix} slapd ldap-utils ldapscripts
 
-#
 #  Install the packages
-#
