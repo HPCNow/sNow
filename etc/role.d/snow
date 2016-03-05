@@ -12,19 +12,32 @@ if [ -e /usr/share/xen-tools/common.sh ]; then
 else
     echo "Installation problem"
 fi
+# Load sNow! configuration
+if [ -e /sNow/snow-tools/etc/snow.conf ]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
 
+# Default Config Manager is snow01.
+SNOWCM=${SNOWCM:-cfengine3}
+CF_SERVER=${CF_SERVER:-snow01}
 
 #  Update APT lists.
 #chroot ${prefix} /usr/bin/apt-get update
 # CFEngine community repos
-wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
-chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
-/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
-chroot ${prefix} /usr/bin/apt-get update
-chroot ${prefix} /usr/bin/apt-get install --force-yes -y apt-transport-https
-chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
-cp -p /sNow/snow-configspace/files/etc/init.d/firstboot ${prefix}/etc/init.d/firstboot
-chroot ${prefix} /usr/sbin/update-rc.d firstboot defaults
-mkdir -p ${prefix}/sNow
-cp -pr /sNow/snow-tools ${prefix}/sNow/
+if  [[ "$SNOWCM" == "cfengine3" ]]; then 
+    wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
+    chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
+    /bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
+    chroot ${prefix} /usr/bin/apt-get update
+    chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
+    cp -p /sNow/snow-tools/etc/role.d/run/cf_boot.service  ${prefix}/lib/systemd/system/cf_boot.service
+    cp -p /sNow/snow-tools/etc/role.d/run/cf_boot  ${prefix}/usr/local/bin/cf_boot
+    sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/bin/cf_boot
+    chmod 700 ${prefix}/usr/local/bin/cf_boot
+    chroot ${prefix} systemctl enable cf_boot
+fi
 
