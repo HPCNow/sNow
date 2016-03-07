@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Configure the new image for sNow! HPC suite
 # Developed by HPCNow! www.hpcnow.com
 # Jordi Blasco

@@ -8,7 +8,7 @@
 #lvm = snow_vg
 # install-method = [ debootstrap | rinse | rpmstrap | copy | tar ]
 install-method = tar
-install-source = /sNow/domains/template/snow-template.tar.bzip2
+install-source = /sNow/domains/template/snow-template.tar.bz2
 tar-cmd = /bin/tar --numeric-owner -jxf $src
 # Disk and Sizing options.
 size   = 4G       # Root disk, suffix (G, M, k) required
