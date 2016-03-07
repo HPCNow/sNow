@@ -26,3 +26,4 @@ CLUSTERS=([mycluster01]="n[001-999]")
 PDSH_RCMD_TYPE=ssh
 NETLAYER=1
 DOM_EXT=''
+DOWNLD=axel
