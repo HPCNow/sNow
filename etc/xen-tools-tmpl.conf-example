@@ -22,11 +22,11 @@ dist   = `xt-guess-suite-and-mirror --suite`
 image  = sparse   # Specify sparse vs. full disk images (file based images only)
 # Networking setup values.
 #bridge = xdmz0
-bridge = xenbr7
+#bridge = xenbr7
 # User accounts and passwords
 genpass = 0
-accounts = 1
-passwd = 1
+#accounts = 1
+#passwd = 1
 # Default kernel and ramdisk to use for the virtual servers
 kernel = /boot/vmlinuz-`uname -r`
 initrd = /boot/initrd.img-`uname -r`

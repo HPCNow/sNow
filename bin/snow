@@ -62,6 +62,8 @@ Function List:
     * shutdown <domain|server>       | shutdown specific domain or server
     * shutdown cluster <clustername> | shutdown all the compute nodes of the selected cluster
     * destroy <domain|server>        | force to stop specific domain or server
+    * reset <domain|server>          | force to reboot specific domain or server
+    * poweroff <domain|server>       | force to shutdown specific domain or server simulating a power button press
     * console <domain|server>        | console access to specific domain or server
     * uptime <domain|sever>          | shows uptime of specific domain or server
     * cmd <domain|sever> <command>   | executes a command in the domain(s) or server(s)
@@ -376,6 +378,54 @@ function ndestroy() {
     fi
 }
 
+function npoweroff() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to shutdown."
+        exit 1
+    fi
+    get_server_distribution $1
+    if (($IS_VM)) ; then
+        xl shutdown $1
+    else
+        node_rank $1
+        BLOCKN=${2:-$BLOCKN}
+        BLOCKD=${3:-$BLOCKD}
+        if (( $NLENG > 1 )); then
+            parallel -j $BLOCKN \
+            echo "$NPREFIX{}-bmc" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power soft \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+        else
+            check_host_status $1-bmc
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power soft
+        fi
+    fi
+}
+
+function nreset() {
+    if [ -z "$1" ]; then
+        echo "ERROR: No domain(s) or node(s) to reset."
+        exit 1
+    fi
+    get_server_distribution $1
+    if (($IS_VM)) ; then
+        xl reset $1
+    else
+        node_rank $1
+        BLOCKN=${2:-$BLOCKN}
+        BLOCKD=${3:-$BLOCKD}
+        if (( $NLENG > 1 )); then
+            parallel -j $BLOCKN \
+            echo "$NPREFIX{}-bmc" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power reset \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+        else
+            check_host_status $1-bmc
+            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+        fi
+    fi
+}
+
 function nconsole() {
     if [ -z "$1" ]; then
         echo "ERROR: please specify the domain(s) or node(s) to connect."
@@ -464,6 +514,12 @@ case $opt1 in
     ;;
     reboot)
         nreboot $opt2
+    ;;
+    reset)
+        nreset $opt2
+    ;;
+    poweroff)
+        npoweroff $opt2
     ;;
     shutdown)
         case $opt2 in
