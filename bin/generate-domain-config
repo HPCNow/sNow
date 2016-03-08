@@ -1,21 +1,34 @@
 #!/bin/bash
+#########################################################################################
+# sNow! helper script : /sNow/snow-tools/bin/generate-domain-config
+# sNow! Cluster Suite is an opensource project developed by HPCNow!
+# More information here : www.hpcnow.com/snow
+#########################################################################################
+#set -xv
 SNOWPATH=$(dirname "$0")
 CONFIG_FILE=$SNOWPATH/../etc/snow.conf
+EE_CONFIG_FILE=$SNOWPATH/../etc/snow_ee.conf
 SNOW_DOMAINS=$SNOWPATH/../etc/active-domains.conf
-echo "/etc/exports in the CFS / NFS server"
-echo "++++++++++++++++++++++++++++++++++++"
-is_nfsserver=true
-#get servermac
-#generate_vm_macs
-#get bridges
-#get ips
-#get masks
-#get gw
+source $CONFIG_FILE
+if [[ -f $EE_CONFIG_FILE ]]; then 
+    source $EE_CONFIG_FILE
+fi
+
+SNOWHA=${SNOWHA:-false}
+
+# NFS Exports
 cat $SNOW_DOMAINS | grep -v ^# | gawk '{if ($1 !~ /snow/){print "/sNow/"$1"\t snow01(rw,sync,no_subtree_check) snow02(rw,sync,no_subtree_check) " $1"(rw,sync,no_subtree_check)"}}' > $SNOWPATH/../etc/snow_exports.conf
+
+# sNow! Domains configuration table
 cat $SNOWPATH/../etc/domains.conf-example > $SNOWPATH/../etc/domains.conf
-cat $SNOW_DOMAINS | grep -v ^# | gawk 'BEGIN{i=0}{i=i+1; printf "%12s\t %12s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", "192.168.7."i, "xenbr07",i, "01", "255.255.255.0", "192.168.7.1", "eth1", "172.16.1."i, "xdmz0", i, "02", "255.255.255.0", "172.16.1.254"  }' > $SNOWPATH/../etc/domains.conf
-if $is_nfsserver; then
-    ln -s $SNOWPATH/../etc/snow_exports.conf /etc/exports.d/snow.exports
+cat $SNOW_DOMAINS | grep -v ^# | gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
+                                      -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+                                      'BEGIN{i=0}{i=i+1; printf "%12s\t %12s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz  }' >> $SNOWPATH/../etc/domains.conf
+
+if [[ "$(uname -n)" == "$NFSSERVER" && "$SNOWHA" == "true" ]]; then
+    ln -sf $SNOWPATH/../etc/snow_exports.conf /etc/exports.d/snow.exports
     echo "Review the following exports file : $SNOWPATH/../etc/snow_exports.conf"
     echo "Once you are done, execute exportfs -u"
 fi
+
+echo "Review the domains config file : $SNOWROOT/snow-tools/etc/domains.conf"

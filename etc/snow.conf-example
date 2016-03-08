@@ -8,22 +8,29 @@ SNOWROOT=/sNow
 SNOWVG=snow_vg
 IMG_DST='dir=/sNow/domains'
 #IMG_DST='lvm=snow_vg'
-SNOWNODES=(snow01 snow02)
+#IMG_DST='nfs=$NFSSERVER:/sNow/domains' # (experimental)
+SNOWNODES=( snow01 )
 SSHPORT=22
 SMAIL=support@hpcnow.com
 MASTERPWD='HPCN0w!!'
+# Private GIT Repo Setup
 #TOKEN=
 #PRIVATE_REPO=
+# Network Setup [ Bridge, Gateway, Network, Netmask ]
+NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' )
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' )
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' )
+# IPMI / BMC Setiup
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
-CFMASTER=192.168.7.1
 BLOCKN=4
 BLOCKD=5
+# Config Manager (CFEngine)
+CFMASTER=192.168.7.1
 DEFAULTBOOT=localboot
 DEPLOYTMPL=centos7-default
 CLUSTERS=([mycluster01]="n[001-999]")
 PDSH_RCMD_TYPE=ssh
-NETLAYER=1
-DOM_EXT=''
 DOWNLD=axel
+DOM_EXT=''
