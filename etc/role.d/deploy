@@ -9,8 +9,8 @@ prefix=$1
 #
 #  Source our common functions - this will let us install a Debian package.
 #
-if [ -e /usr/lib/xen-tools/common.sh ]; then
-    . /usr/lib/xen-tools/common.sh
+if [ -e /usr/share/xen-tools/common.sh ]; then
+    . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
@@ -20,23 +20,7 @@ fi
 #  Update APT lists.
 #
 chroot ${prefix} /usr/bin/apt-get update
-# DHCP
-
-# PXE
-
-# TFTPBOOT
-
-# KickStart (RedHat Based)
-
-# Preseed (Debian Based)
-# https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
-installDebianPackage ${prefix} dnsmasq
-mkdir -p ${prefix}/srv/tftp
-wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
-cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
-
-
-# AutoYast (SuSE Based)
+installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
 
 # System Imager (Cloning System)
 # http://www.systemimager.org/download/
@@ -48,26 +32,46 @@ wget http://systemimager.org/pub/brian@thefinleys.com.gpg.key -O ${prefix}/tmp/b
 chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} systemimager-server simple-state-manager
+
+# PXE
+
+# TFTPBOOT
+
+# KickStart (RedHat Based)
+# http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
+wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
+chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
+chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
+chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
+
+# Preseed (Debian Based)
+# https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
+installDebianPackage ${prefix} dnsmasq
+cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+echo "
+dhcp-range=192.168.7.100,192.168.7.250,255.255.255.0,12h
+dhcp-boot=pxelinux.0
+enable-tftp
+tftp-root=/srv/tftp
+" > ${prefix}/etc/dnsmasq.conf
+
+mkdir -p ${prefix}/srv/tftp
+wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
+cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
+
+
+# AutoYast (SuSE Based)
+
    
 # Kali Linux (Forensics)
 
 # Clonezilla (Cloning System and Data Recovery)
 
-echo "
-
-# The secondary secondary network interface
-allow-hotplug eth0
-auto eth0
-iface eth0 inet static
-        address 192.168.7.15
-        netmask 255.255.255.0
-        network 192.168.7.0
-        broadcast 192.168.7.255
-
-" >> ${prefix}/etc/network/interfaces
-
 #
 #  Install the packages
 #
-installDebianPackage ${prefix} ipmitool openipmi freeipmi
+#installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
  

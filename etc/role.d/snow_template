@@ -1,0 +1,17 @@
+#!/bin/sh
+# Configure the new image for sNow! HPC suite
+# Developed by HPCNow! www.hpcnow.com
+# Jordi Blasco
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [ -e /usr/share/xen-tools/common.sh ]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+chroot ${prefix} /usr/bin/apt-get update
+installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential htop byobu gawk git iotop lsof traceroute iptraf vim colord members parallel apt-transport-https

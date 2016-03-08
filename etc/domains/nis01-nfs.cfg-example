@@ -6,16 +6,16 @@ ramdisk     = '/sNow/boot/initrd-snow-nfsroot.img-3.2.0-4-amd64'
 vcpus       = '1'
 memory      = '512'
 
-name        = 'nis02'
+name        = 'nis01'
 
-vif         = [ 'ip=192.168.7.33,mac=00:16:3E:40:33:00,bridge=xenbr7','ip=172.16.1.33,mac=00:16:3E:40:33:01,bridge=xpub0' ]
-ip        = '192.168.7.33'
+vif         = [ 'ip=192.168.7.32,mac=00:16:3E:40:32:00,bridge=xenbr7','ip=172.16.1.32,mac=00:16:3E:40:32:01,bridge=xpub0' ]
+ip        = '192.168.7.32'
 netmask   = '255.255.255.0'
 broadcast = '192.168.7.255'
 #gateway   = '192.168.7.254'
 
 nfs_server = '192.168.7.1'
-nfs_root   = '/sNow/modules/nis02'
+nfs_root   = '/sNow/domains/nis01'
 root       = '/dev/nfs'
 
 on_poweroff = 'destroy'

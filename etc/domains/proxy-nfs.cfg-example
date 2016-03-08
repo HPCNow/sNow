@@ -8,15 +8,15 @@ ramdisk     = '/sNow/boot/initrd.img-3.2.0-4-amd64'
 vcpus       = '1'
 memory      = '512'
 
-name        = 'slurm01'
+name        = 'proxy01'
 
-vif         = [ 'ip=192.168.7.14,mac=00:16:7E:AB:14:00,bridge=xenbr7','ip=172.16.1.14,mac=00:16:7E:AB:14:01,bridge=xpub0' ]
-ip        = '192.168.7.14'
+vif         = [ 'ip=192.168.7.18,mac=00:16:7E:AB:A0:00,bridge=xenbr7','ip=172.16.1.4,mac=00:16:3E:57:01:27,bridge=xpub0' ]
+ip        = '192.168.7.18'
 netmask   = '255.255.255.0'
 broadcast = '192.168.7.255'
 
 nfs_server = '192.168.7.1'
-nfs_root   = '/sNow/modules/slurm01'
+nfs_root   = '/sNow/domains/proxy01'
 root       = '/dev/nfs'
 
 on_poweroff = 'destroy'

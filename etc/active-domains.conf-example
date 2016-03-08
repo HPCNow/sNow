@@ -1,0 +1,13 @@
+snow01		snow	 	
+snow02		snow	 	
+ldap01		ldap-master
+ldap02		ldap-mirror
+slurm01		slurm	
+slurm02		slurm	
+monitor01	monitor	 	
+syslog01	syslog	
+login01		login	
+login02		login	
+slurmdb01	slurmdb-ap
+slurmdb02	slurmdb-ap
+deploy01	deploy

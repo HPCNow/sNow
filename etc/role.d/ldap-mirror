@@ -6,9 +6,7 @@
 
 prefix=$1
 
-#
 #  Source our common functions - this will let us install a Debian package.
-#
 if [ -e /usr/share/xen-tools/common.sh ]; then
     . /usr/share/xen-tools/common.sh
 else
@@ -16,29 +14,14 @@ else
 fi
 
 
-#
 #  Update APT lists.
-#
 #chroot ${prefix} /usr/bin/apt-get update
-
-# DMZ NIC setup
-echo "
-
-# The secondary network interface
-allow-hotplug eth1
-auto eth1
-#iface eth1 inet dhcp
-iface eth1 inet static
-        address $IP_NIC2
-        netmask $MASK_NIC2
-        network $NET_NIC2
-        broadcast $BC_NIC2
-        gateway $GW_NIC2
-
-" >> ${prefix}/etc/network/interfaces
+# LDAP Install references : 
+# https://wiki.debian.org/LDAP/OpenLDAPSetup
+# http://www.server-world.info/en/note?os=Debian_8&p=openldap
+# http://www.server-world.info/en/note?os=Debian_8&p=ssl
+installDebianPackage ${prefix} slapd ldap-utils ldapscripts
 
 #
 #  Install the packages
 #
-#installDebianPackage ${prefix} 
- 

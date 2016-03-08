@@ -1,10 +1,7 @@
 #!/bin/sh
-#
-#  Configure the new image to be a GDM VNC server.
-#
-# Steve
-# --
-# http://www.steve.org.uk/
+# Configure the new image for sNow! HPC suite
+# Developed by NPCNow! www.hpcnow.com
+# Jordi Blasco
 #
 
 
@@ -40,7 +37,7 @@ installDebianPackage ${prefix} xfonts-75dpi
 installDebianPackage ${prefix} xfonts-base
 installDebianPackage ${prefix} rxvt
 installDebianPackage ${prefix} gdm
-installDebianPackage ${prefix} icewm-experimental
+installDebianPackage ${prefix} gnome-core libqt4-dev
 
 #
 #  Add a new section to the GDM configuration file.

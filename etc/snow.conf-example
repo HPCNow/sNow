@@ -1,34 +1,36 @@
-# 
-# sNow! config file : /etc/snow/snow.cfg
+#########################################################################################
+# sNow! config file : /sNow/snow-tools/etc/snow.conf
 # sNow! Cluster Suite is an opensource project developed by HPCNow!
 # More information here : www.hpcnow.com/snow
-#
-NFSSERVER=snow-01
+#########################################################################################
+NFSSERVER=snow01
 SNOWROOT=/sNow
 SNOWVG=snow_vg
-SNOWNODES=(snow-01 snow-02)
+IMG_DST='dir=/sNow/domains'
+#IMG_DST='lvm=snow_vg'
+#IMG_DST='nfs=$NFSSERVER:/sNow/domains' # (experimental)
+SNOWNODES=( snow01 )
 SSHPORT=22
 SMAIL=support@hpcnow.com
-MASTERPWD=changeme
+MASTERPWD='HPCN0w!!'
+# Private GIT Repo Setup
+#TOKEN=
+#PRIVATE_REPO=
+# Network Setup [ Bridge, Gateway, Network, Netmask ]
+NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' )
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' )
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' )
+# IPMI / BMC Setiup
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
 BLOCKN=4
 BLOCKD=5
+# Config Manager (CFEngine)
+CFMASTER=192.168.7.1
 DEFAULTBOOT=localboot
-DEPLOYTMPL=sles11sp3-default
-NETLAYER=1
-BRIDGEMAP=([xdmz0]=dummy0 [xpub0]=eth0 [xdata0]=eth1.3 [snow0]=eth2 [xmon0]=eth1.4 [xadmin]=eth1.5) 
-SNOWVLAN=7
-SNOWNET=192.168.7.0
-DMZVLAN=1
-DMZNET=172.16.1.0
-ACCESSVLAN=1
-ACCESSNET=192.168.1.0
-DATAVLAN=3
-DATANET=192.168.3.0
-MONITORVLAN=4
-MONITORNET=192.168.4.0
-ADMINVLAN=5
-ADMINNET=192.168.5.0
-
+DEPLOYTMPL=centos7-default
+CLUSTERS=([mycluster01]="n[001-999]")
+PDSH_RCMD_TYPE=ssh
+DOWNLD=axel
+DOM_EXT=''
