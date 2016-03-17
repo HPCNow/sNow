@@ -53,8 +53,8 @@ Function List:
     * update configspace             | updates configuration files from private git 
     * update snow_template           | updates the sNow! image used to create new domains
     * deploy <domain|server>         | deploy specific domain/server 
+    * remove <domain>                | removes an existing domain deployed with sNow!
     * list                           | list current domains (services) and their status
-    * takeover                       | migrates domains and critical services to other sNow nodes (only available in sNow! Enterprise Edition)
     * boot <domain|server>           | boot specific domain or server
     * boot domains                   | boot all the domains (all services not available under sNow! HA)
     * boot cluster <clustername>     | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
@@ -77,7 +77,7 @@ Examples:
 }
 
 function config() {
-if ! [[ -f $SNOW_DOMAINS ]]; then
+if [[ ! -f $SNOW_DOMAINS ]]; then
     echo "No $SNOW_DOMAINS found"
 else
     cat $SNOWROOT/snow-tools/etc/snow.conf
@@ -93,7 +93,7 @@ if [ ! $HAS_EE ]; then
 fi
 
 function update_tools() {
-if ! [[ -d $SNOWROOT/snow-tools ]]; then
+if [[ ! -d $SNOWROOT/snow-tools ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
     git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
@@ -105,12 +105,16 @@ fi
 }
 
 function update_configspace() {
-if ! [[ -d $SNOWROOT/snow-configspace  ]]; then
+if [[ ! -d $SNOWROOT/snow-configspace  ]]; then
     mkdir -p $SNOWROOT
     cd $SNOWROOT
     git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
+    if [[ -z "$TOKEN" || -z "$PRIVATE_REPO" ]]; then
+        error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
+        exit 1
+    fi
     cd $SNOWROOT/snow-configspace
     git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
@@ -168,6 +172,18 @@ function xen_create() {
         }' || error_exit "ERROR: unable to install the domain, please report the issue to HPCNow!"
 }
 
+function xen_delete() {
+    get_server_distribution $1 
+    if [[ ! -f $SNOWROOT/snow-tools/etc/domains/$1.cfg ]]; then
+        echo "There is no domain with this name. Please, review the name of the domain to be removed."
+    else
+        if [[ -n "$IMG_DST" ]]; then
+            IMG_DST_OPT="--${IMG_DST}"
+        fi 
+        xen-delete-image $IMG_DST_OPT --hostname=$1
+    fi
+}
+
 function create_base() {
     if [[ "$opt3" == "force" ]]; then
         FORCE="--force"
@@ -193,7 +209,7 @@ function deploy_copy() {
 }
 
 function deploy() {
-    if [ -z "$1" ]; then
+    if [[ -z "$1" ]]; then
         echo "ERROR: No domain or node to deploy"
         exit 1
     fi
@@ -409,7 +425,7 @@ function nreset() {
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
-        xl reset $1
+        xl reboot -F $1
     else
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
@@ -476,6 +492,9 @@ case $opt1 in
                 echo "Update available options : update_tools, configspace, snow_template"
             ;;
         esac
+    ;;
+    remove)
+        xen_delete $opt2
     ;;
     deploy)
         deploy $opt2 $opt3 $opt4 $opt5
