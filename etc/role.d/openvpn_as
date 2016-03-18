@@ -1,0 +1,34 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    source /sNow/snow-tools/etc/snow.conf
+else
+    echo "The snow.conf is not yet setup"
+fi
+
+#installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
+
+# Stage domain entrypoint script
+cp -p openvpn_as.sh ${prefix}/root/openvpn_as.sh
+sed -i "s/__MASTERPWD__/$MASTERPWD/g" ${prefix}/root/openvpn_as.sh
+
+# Domain Setup
+if [[ -d /sNow/snow-configspace/files/etc/openvpn_as ]]; then
+    cp -pr /sNow/snow-configspace/files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
+    chroot ${prefix} /root/openvpn_as.sh
+else
+    chroot ${prefix} OPENVPNAS_RECONFIGURE=true /root/openvpn_as.sh
+    cp -pr ${prefix}/usr/local/openvpn_as/etc /sNow/snow-configspace/files/etc/openvpn_as
+fi
