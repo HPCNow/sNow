@@ -34,4 +34,7 @@ else
     systemctl enable openvpnas.service
 fi
 
-echo "Visit https://$(hostname -f):943/admin and follow the instructions"
+echo "OpenVPN Access Server Installed. Next steeps to be completed:"
+echo "  1. Boot the domain : snow boot $1"
+echo "  2. Visit https://$(hostname -f):943/admin"
+echo "  3. Follow the instructions available in this GUI"
