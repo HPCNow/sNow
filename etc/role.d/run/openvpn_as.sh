@@ -1,5 +1,5 @@
 #!/bin/bash
-# This is the sNow! Command Line Interface 
+# This script is part of sNow! Tools
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
