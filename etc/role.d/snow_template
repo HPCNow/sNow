@@ -15,3 +15,4 @@ fi
 
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} dpkg-dev devscripts fakeroot debhelper build-essential htop byobu gawk git iotop lsof traceroute iptraf vim colord members parallel apt-transport-https
+sed -i "s/#PermitRootLogin yes/PermitRootLogin yes/g" ${prefix}/etc/ssh/sshd_config
