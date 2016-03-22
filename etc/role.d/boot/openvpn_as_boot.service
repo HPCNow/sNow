@@ -1,0 +1,10 @@
+[Unit]
+Description=First boot of nodes managed by sNow!
+After=network.target
+[Service]
+Type=forking
+PIDFile=/run/snow.pid
+ExecStart=/usr/local/bin/openvpn_as_boot start
+ExecStop=/bin/rm /usr/local/bin/openvpn_as_boot
+[Install]
+WantedBy=multi-user.target

@@ -181,6 +181,7 @@ function xen_delete() {
             IMG_DST_OPT="--${IMG_DST}"
         fi 
         xen-delete-image $IMG_DST_OPT --hostname=$1
+        rm -f $SNOWROOT/snow-tools/etc/domains/$1.cfg
     fi
 }
 
