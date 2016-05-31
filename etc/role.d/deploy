@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Configure the new image for sNow! HPC suite
 # Developed by NPCNow! www.hpcnow.com
 # Jordi Blasco
@@ -9,10 +9,16 @@ prefix=$1
 #
 #  Source our common functions - this will let us install a Debian package.
 #
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
+fi
+
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    source /sNow/snow-tools/etc/snow.conf
+else
+    echo "The snow.conf is not yet setup"
 fi
 
 
@@ -35,8 +41,6 @@ installDebianPackage ${prefix} systemimager-server simple-state-manager
 
 # PXE
 
-# TFTPBOOT
-
 # KickStart (RedHat Based)
 # http://www.tecmint.com/multiple-centos-installations-using-kickstart/
 CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
@@ -50,22 +54,39 @@ chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.d
 # Preseed (Debian Based)
 # https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
 installDebianPackage ${prefix} dnsmasq
-cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
-echo "
-dhcp-range=192.168.7.100,192.168.7.250,255.255.255.0,12h
+if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
+    cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+    echo "
+dhcp-range=${NET_SNOW[2]}.100,${NET_SNOW[3]},12h
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
+else
+    cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
+fi
 
 mkdir -p ${prefix}/srv/tftp
 wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
 cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
 
-
-# AutoYast (SuSE Based)
-
+if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
+    if [[ ! -d /sNow/snow-configspace ]]; then 
+        mkdir /sNow/snow-configspace
+    fi
+    cp -pr /sNow/snow-tools/etc/config_template.d/deploy /sNow/snow-configspace/
+    sed -i "s/__LANG__/$LANG/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__KEYMAP__/$KEYMAP/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__TIMEZONE__/$TIMEZONE/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__MASTER_PASSWD__/$MASTERPWD/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__NFS_SERVER__/$NFS_SERVER/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__DEPLOYTMPL__/$DEPLOYTMPL/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+fi
    
+echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
+
 # Kali Linux (Forensics)
 
 # Clonezilla (Cloning System and Data Recovery)
