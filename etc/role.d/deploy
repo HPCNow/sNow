@@ -26,7 +26,7 @@ fi
 #  Update APT lists.
 #
 chroot ${prefix} /usr/bin/apt-get update
-installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
+installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien nfs-common
 
 # System Imager (Cloning System)
 # http://www.systemimager.org/download/
@@ -57,11 +57,12 @@ installDebianPackage ${prefix} dnsmasq
 if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
     echo "
-dhcp-range=${NET_SNOW[2]}.100,${NET_SNOW[3]},12h
+dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},12h
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
+    cp -p ${prefix}/etc/dnsmasq.conf /sNow/snow-configspace/system_files/etc/dnsmasq.conf
 else
     cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
@@ -75,13 +76,13 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
         mkdir /sNow/snow-configspace
     fi
     cp -pr /sNow/snow-tools/etc/config_template.d/deploy /sNow/snow-configspace/
-    sed -i "s/__LANG__/$LANG/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__KEYMAP__/$KEYMAP/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__TIMEZONE__/$TIMEZONE/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__MASTER_PASSWD__/$MASTERPWD/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__NFS_SERVER__/$NFS_SERVER/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
-    sed -i "s/__DEPLOYTMPL__/$DEPLOYTMPL/g" /sNow/snow-configspace/deploy/{autoyast,debian-installer,kickstart}/*
+    sed -i "s/__LANG__/$LANG/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__KEYMAP__/$KEYMAP/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__TIMEZONE__/$TIMEZONE/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__MASTER_PASSWD__/$MASTERPWD/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__NFS_SERVER__/$NFS_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
+    sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__DEPLOYTMPL__/$DEPLOYTMPL/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default} 
 fi
    
 echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
