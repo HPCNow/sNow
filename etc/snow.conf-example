@@ -26,8 +26,11 @@ IPMIUSER=admin
 IPMIPWD=admin
 BLOCKN=4
 BLOCKD=5
-# Config Manager (CFEngine)
+# Config Manager 
+SNOWCM=none
+CF_SERVER=
 CFMASTER=192.168.7.1
+#CFENGINE_VER="3.7.2-1"
 # Cluster provisioning : deploy / cloning system
 DEFAULTBOOT=localboot
 DEPLOYTMPL=centos7-default

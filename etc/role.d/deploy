@@ -7,7 +7,7 @@
 prefix=$1
 
 #
-#  Source our common functions - this will let us install a Debian package.
+#  Source common functions and parameters
 #
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
@@ -28,8 +28,10 @@ fi
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien nfs-common
 
-# System Imager (Cloning System)
-# http://www.systemimager.org/download/
+# KickStart (RedHat Based) - Ref : http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+# Preseed (Debian Based) - Ref :  https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
+
+# Install System Imager (Cloning System)
 REPOFILE=systemimager.org.list
 URL=http://download.systemimager.org/sources.list.d/$REPOFILE
 cd /etc/apt/sources.list.d/
@@ -39,10 +41,7 @@ chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} systemimager-server simple-state-manager
 
-# PXE
-
-# KickStart (RedHat Based)
-# http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+# Install KickStart (RedHat and CentOS Based) 
 CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
 wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
 wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
@@ -51,8 +50,16 @@ chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noar
 chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
 chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
 
-# Preseed (Debian Based)
-# https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
+# Setup TFTP
+ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
+echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+mkdir -p ${prefix}/srv/tftp
+
+# Install Debian Pressed (Debian and Ubuntu based)
+wget http://ftp.debian.org/debian/dists/jessie/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
+cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
+
+# Setup DNSMASQ
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
@@ -67,10 +74,7 @@ else
     cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
 
-mkdir -p ${prefix}/srv/tftp
-wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
-cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
-
+# Install and setup sNow! deploy system
 if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     if [[ ! -d /sNow/snow-configspace ]]; then 
         mkdir /sNow/snow-configspace
@@ -84,16 +88,4 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
     sed -i "s/__DEPLOYTMPL__/$DEPLOYTMPL/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default} 
 fi
-   
-echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
-ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 
-# Kali Linux (Forensics)
-
-# Clonezilla (Cloning System and Data Recovery)
-
-#
-#  Install the packages
-#
-#installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
- 
