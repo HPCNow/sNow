@@ -6,6 +6,15 @@
 #set -xv
 export TEMPLATE=${1:-default}
 
+# sNow! paths
+# SNOW_HOME and SNOW_SOFT can be setup in different paths
+SNOW_PATH=/sNow
+SNOW_HOME=$SNOW_PATH/home
+SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_UTIL=$SNOW_PATH/snow-utils
+SNOW_TOOL=$SNOW_PATH/snow-tools
+
 if [[ -f /sNow/snow-tools/etc/snow.conf ]]; then
     echo "Loading sNow! configuration ..."
     source /sNow/snow-tools/etc/snow.conf
@@ -102,8 +111,14 @@ error_check()
 # Returns 0 if this node is the first worker node.
 is_first_worker()
 {
-    hostname | grep "${WORKER_HOSTNAME_PREFIX}0"
-    return $?
+    gn=0
+    for i in "${GOLDEN_NODES[@]}"
+    do
+        if [[ "$(hostname -n)" == "$i" ]]; then 
+            gn=1
+        fi
+    done
+    return $gn
 } &>/dev/null
 
 add_repo()
@@ -187,20 +202,19 @@ setup_snow_user()
     # Check UIDs and GIDs
     if [[ -z $(getent passwd $sNow_USER) ]]; then
         groupadd -g $sNow_GID $sNow_GROUP
-        useradd -u $sNow_UID -g $sNow_GID -c "sNow! Admin User" -s /bin/bash -d $SHARE_HOME/$sNow_USER  $sNow_USER 
+        useradd -u $sNow_UID -g $sNow_GID -c "sNow! Admin User" -s /bin/bash -d $SNOW_HOME/$sNow_USER  $sNow_USER 
     elif [[ "$(id -u $sNow_USER)" != "$sNow_UID"  &&  "$(id -g $sNow_USER)" != "$sNow_GID" ]]; then
         groupmod -g $sNow_GID $sNow_GROUP
         usermod -u $sNow_UID -g $sNow_GID $sNow_USER
-        usermod -c "sNow! Admin User" -g $sNow_GID -d $SHARE_HOME/$sNow_USER -s /bin/bash -m -u $sNow_UID $sNow_USER
+        usermod -c "sNow! Admin User" -g $sNow_GID -d $SNOW_HOME/$sNow_USER -s /bin/bash -m -u $sNow_UID $sNow_USER
     fi
     # Don't require password for sNow! Admin user sudo
     echo "$sNow_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
     if is_first_worker; then
-        # Setup the ACLs to the right user
-        chown $sNow_USER:$sNow_GROUP $SHARE_PROJ
         # Configure public key auth for the sNow! Admin User
-        mkdir -p $SHARE_HOME/$sNow_USER/.ssh
-        chown -R $sNow_USER:$sNow_GROUP $SHARE_HOME/$sNow_USER
+        mkdir -p $SNOW_HOME/$sNow_USER/.ssh
+        # Setup the ACLs to the right user
+        chown -R $sNow_USER:$sNow_GROUP $SNOW_HOME/$sNow_USER
     fi
 }
 
@@ -208,9 +222,9 @@ setup_hpcnow_user()
 {
     # Check UIDs and GIDs
     if [[ -z $(getent passwd $HPCNow_USER) ]]; then
-        useradd -u $HPCNow_UID -g $HPCNow_GID -c "HPCNow! User" -s /bin/bash -d $SHARE_HOME/$HPCNow_USER  $HPCNow_USER 
+        useradd -u $HPCNow_UID -g $HPCNow_GID -c "HPCNow! User" -s /bin/bash -d $SNOW_HOME/$HPCNow_USER  $HPCNow_USER 
     elif [[ "$(id -u $HPCNow_USER)" != "$HPCNow_UID"  &&  "$(id -g $HPCNow_USER)" != "$HPCNow_GID" ]]; then
-        usermod -c "HPCNow! User" -g $HPCNow_GID -d $SHARE_HOME/$HPCNow_USER -s /bin/bash -m -u $HPCNow_UID $HPCNow_USER
+        usermod -c "HPCNow! User" -g $HPCNow_GID -d $SNOW_HOME/$HPCNow_USER -s /bin/bash -m -u $HPCNow_UID $HPCNow_USER
     fi
     # Don't require password for sNow! Admin user sudo
     echo "$HPCNow_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -224,13 +238,13 @@ setup_ssh()
         setup_hpcnow_user
     fi
     mkdir -p /root/.ssh
-    cp -p $SHARE_HOME/$sNow_USER/.ssh/authorized_keys /root/.ssh/authorized_keys
+    cp -p $SNOW_HOME/$sNow_USER/.ssh/authorized_keys /root/.ssh/authorized_keys
     chown -R root:root /root/.ssh
     chmod 700 /root/.ssh
     chmod 640 /root/.ssh/authorized_keys
-    cp -pr $SHARE_CONF/system_files/etc/ssh/ssh_host_* /etc/ssh/
-    cp -p $SHARE_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/
-    cp -p $SHARE_CONF/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+    cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* /etc/ssh/
+    cp -p $SNOW_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/
+    cp -p $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
     chmod u+s /usr/lib64/ssh/ssh-keysign
     cp -p /etc/ssh/shosts.equiv /root/.shosts
     sed -i "s/RhostsRSAAuthentication no/RhostsRSAAuthentication yes/g" /etc/ssh/sshd_config
@@ -250,18 +264,18 @@ setup_env()
     echo "* hard memlock unlimited" >> /etc/security/limits.conf
     echo "* soft memlock unlimited" >> /etc/security/limits.conf
     # User enviroment setup
-    ln -sf $SHARE_UTIL/bin/slurm-source.sh /etc/profile.d/slurm.sh
-    ln -sf $SHARE_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
-    ln -sf $SHARE_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
-    #ln -sf $SHARE_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
-    ln -sf $SHARE_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
-    ln -sf $SHARE_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
+    ln -sf $SNOW_UTIL/bin/slurm-source.sh /etc/profile.d/slurm.sh
+    ln -sf $SNOW_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
+    ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
+    #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
+    ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
+    ln -sf $SNOW_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
 }
 
 install_lmod()
 {
     if is_first_worker; then
-        su - $HPC_USER -c "git clone https://github.com/TACC/Lmod.git; cd Lmod; ./configure --prefix=/share/utils; make; make install"
+        su - $HPC_USER -c "git clone https://github.com/TACC/Lmod.git; cd Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
         echo "Lmod installed"
     fi
     ln -sf /share/utils/lmod/lmod/init/profile /etc/profile.d/lmod.sh
@@ -270,9 +284,9 @@ install_lmod()
 
 install_easybuild()
 {
-    ln -sf $SHARE_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
-    #ln -sf $SHARE_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
-    ln -sf $SHARE_UTIL/etc/cpu-id-map.conf /etc/
+    ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
+    #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
+    ln -sf $SNOW_UTIL/etc/cpu-id-map.conf /etc/
     if is_first_worker; then
         chown -R $HPC_USER:$HPC_GROUP $SHARE_SOFT
         cd $SHARE_SOFT
@@ -284,8 +298,8 @@ install_easybuild()
 
 setup_ldap_client()
 {
-    if [[ -f i/share/configspace/system_files/etc/sssd/sssd.conf.cn ]]; then
-        cp -p /share/configspace/system_files/etc/sssd/sssd.conf.cn /etc/sssd/sssd.conf
+    if [[ -f $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn ]]; then
+        cp -p $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn /etc/sssd/sssd.conf
         chown root:root /etc/sssd/sssd.conf
         chmod 600 /etc/sssd/sssd.conf
         systemctl enable sssd.service
@@ -295,8 +309,8 @@ setup_ldap_client()
 
 setup_ganglia_client()
 {
-    if [[ -f /share/configspace/system_files/etc/ganglia/gmond.conf ]]; then
-        cp -p /share/configspace/system_files/etc/ganglia/gmond.conf /etc/ganglia/gmond.conf
+    if [[ -f $SNOW_CONF/system_files/etc/ganglia/gmond.conf ]]; then
+        cp -p $SNOW_CONF/system_files/etc/ganglia/gmond.conf /etc/ganglia/gmond.conf
         chown root:root /etc/ganglia/gmond.conf
         chmod 640 /etc/ganglia/gmond.conf
         systemctl enable gmond.service
@@ -307,7 +321,7 @@ setup_ganglia_client()
 install_workload_client()
 {
     #Slurm Workload Manager
-    if [[ -f /share/configspace/system_files/etc/slurm/slurm.conf ]]; then
+    if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
         groupadd -g $SLURM_GID slurm
         adduser -u $SLURM_UID -g $SLURM_GID -s /bin/false slurm
         case $1 in
@@ -340,12 +354,12 @@ install_workload_client()
              ;;
         esac
         $INSTALLER $pkgs 
-        cp -p /share/configspace/system_files/etc/munge/munge.key /etc/munge/munge.key
+        cp -p $SNOW_CONF/system_files/etc/munge/munge.key /etc/munge/munge.key
         chown -R munge:munge /etc/munge
         chmod 600 /etc/munge/munge.key
         systemctl enable munge.service
         systemctl start munge.service
-        cp -pr /share/configspace/system_files/etc/slurm/* /etc/slurm/
+        cp -pr $SNOW_CONF/system_files/etc/slurm/* /etc/slurm/
         mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         systemctl enable slurmd.service
