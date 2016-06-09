@@ -7,13 +7,13 @@
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [ -e /sNow/snow-tools/etc/snow.conf ]; then
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
     . /sNow/snow-tools/etc/snow.conf
 else
     echo "The /sNow/snow-tools/etc/snow.conf is not available."
@@ -21,12 +21,10 @@ else
     exit 1
 fi
 
-# Default Config Manager is snow01.
+# Config Manager -CFEngine
 SNOWCM=${SNOWCM:-cfengine3}
 CF_SERVER=${CF_SERVER:-snow01}
 
-#  Update APT lists.
-#chroot ${prefix} /usr/bin/apt-get update
 # CFEngine community repos
 if  [[ "$SNOWCM" == "cfengine3" ]]; then 
     # There is a bug in the CFEngine debian repos. Using package instead
@@ -48,3 +46,13 @@ fi
 # SSH Keys Setup
 mkdir -p ${prefix}/root/.ssh
 cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+
+# LDAP Client Setup
+
+# NTP Client Setup
+
+# Proxy Client Setup
+
+# Syslog Client Setup
+
+# SMTP Client Setup
