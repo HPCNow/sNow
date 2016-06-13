@@ -51,7 +51,6 @@ chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
 chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
 
 # Setup TFTP
-ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
 
@@ -64,7 +63,17 @@ installDebianPackage ${prefix} dnsmasq
 if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
     echo "
-dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},12h
+interface=$DHCP_NIC
+# Gateway
+dhcp-option=3,$GATEWAY
+# DNS
+dhcp-option=6,$DNS_SERVERS
+# Domain Name
+dhcp-option=15,$DOMAIN
+# Broadcast Address
+# dhcp-option=28,__BROADCAST__
+# 0.0.0.0 Means to reference self for this option
+dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},static,infinite
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
@@ -73,6 +82,7 @@ tftp-root=/srv/tftp
 else
     cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
+cp -p /etc/hosts ${prefix}/etc/hosts
 
 # Install and setup sNow! deploy system
 if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
@@ -87,5 +97,6 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s/__NFS_SERVER__/$NFS_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
     sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
     sed -i "s/__DEPLOYTMPL__/$DEPLOYTMPL/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default} 
+    ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 fi
 
