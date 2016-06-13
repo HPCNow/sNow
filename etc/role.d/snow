@@ -43,7 +43,8 @@ if  [[ "$SNOWCM" == "cfengine3" ]]; then
     chroot ${prefix} systemctl enable cf_boot
 fi
 
-# SSH Keys Setup
+# SSH Setup
+echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
 mkdir -p ${prefix}/root/.ssh
 cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 
