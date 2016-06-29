@@ -25,7 +25,7 @@ cat $SNOW_DOMAINS | grep -v ^# | gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[
                                       -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
                                       'BEGIN{i=0}{i=i+1; printf "%12s\t %12s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz  }' >> $SNOWPATH/../etc/domains.conf
 
-if [[ "$(uname -n)" == "$NFSSERVER" && "$SNOWHA" == "true" ]]; then
+if [[ "$(uname -n)" == "$NFS_SERVER" && "$SNOWHA" == "true" ]]; then
     ln -sf $SNOWPATH/../etc/snow_exports.conf /etc/exports.d/snow.exports
     echo "Review the following exports file : $SNOWPATH/../etc/snow_exports.conf"
     echo "Once you are done, execute exportfs -u"

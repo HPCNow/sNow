@@ -8,7 +8,7 @@ SNOWROOT=/sNow
 SNOWVG=snow_vg
 IMG_DST='lvm=snow_vg'
 #IMG_DST='dir=/sNow/domains'
-#IMG_DST='nfs=$NFSSERVER:/sNow/domains' # (experimental)
+#IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
 SNOWNODES=( snow01 )
 SSHPORT=22
 SMAIL=support@hpcnow.com
@@ -26,14 +26,15 @@ IPMIUSER=admin
 IPMIPWD=admin
 BLOCKN=4
 BLOCKD=5
+BOOT_DELAY=300
 # Config Manager 
 SNOWCM=none
 CF_SERVER=
 CFMASTER=192.168.7.1
 #CFENGINE_VER="3.7.2-1"
 # Cluster provisioning : deploy / cloning system
-DEFAULTBOOT=localboot
-DEPLOYTMPL=centos7-default
+DEFAULT_BOOT=localboot
+DEFAULT_TEMPLATE=centos7-default
 CLUSTERS=([mycluster01]="n[001-999]")
 GOLDEN_NODES=( ivb-001 hsw-001 skl-001 )
 PDSH_RCMD_TYPE=ssh
@@ -45,7 +46,6 @@ KEYMAP=us
 TIMEZONE=Europe/Amsterdam
 GATEWAY=192.168.7.254
 DNS_SERVERS=8.8.8.8,8.8.8.4
-NFS_SERVER=192.168.7.1
 PROXY_SERVER=192.168.7.1
 DOMAIN=in.hpcnow.com
 DHCP_NIC=eth0
