@@ -4,7 +4,6 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 
 #set -xv
-export TEMPLATE=${1:-default}
 
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
@@ -22,9 +21,11 @@ else
     echo "sNow! config file NOT found!!!"
 fi
 
-if [[ -f /sNow/OS/deploy/template.d/$TEMPLATE/config ]]; then
+export TEMPLATE=${1:-$DEFAULT_TEMPLATE}
+
+if [[ -f /sNow/OS/deploy/postconfig.d/$TEMPLATE/config ]]; then
     echo "Loading $TEMPLATE configuration ..."
-    source /sNow/OS/deploy/template.d/$TEMPLATE/config
+    source /sNow/OS/deploy/postconfig.d/$TEMPLATE/config
 else
     echo "Config file not found"
 fi
@@ -108,18 +109,18 @@ error_check()
         
 
 
-# Returns 0 if this node is the first worker node.
-is_first_worker()
+# Returns 0 if this node is a golden node
+is_golden_node()
 {
-    gn=0
+    gn=1
     for i in "${GOLDEN_NODES[@]}"
     do
-        if [[ "$(hostname -n)" == "$i" ]]; then 
-            gn=1
+        if [[ "$(hostname -s)" == "$i" ]]; then 
+            gn=0
         fi
     done
     return $gn
-} &>/dev/null
+} 1>>$LOGFILE 2>&1
 
 add_repo()
 {
@@ -141,7 +142,7 @@ add_repo()
 
 add_repos()
 {
-    for REPO in $(cat /sNow/OS/deploy/template.d/$TEMPLATE/repos); do
+    for REPO in $(cat /sNow/OS/deploy/postconfig.d/$TEMPLATE/repos); do
         if [[ ! -z ${!REPO} ]]; then
             add_repo $OS $REPO
         fi
@@ -151,8 +152,8 @@ add_repos()
 
 install_software()
 {
-    PKG_LIST=/sNow/OS/deploy/template.d/$TEMPLATE/packages
-    pgks=$(cat $PKG_LIST | grep -v ^# | tr '\n' ' ')
+    PKG_LIST=/sNow/OS/deploy/postconfig.d/$TEMPLATE/packages
+    pkgs=$(cat $PKG_LIST | grep -v "^#" | tr '\n' ' ')
     add_repos
     case $1 in
         DEBIAN*)
@@ -178,7 +179,7 @@ install_software()
        ;;
    esac
    $INSTALLER $pkgs 
-}
+} 1>>$LOGFILE 2>&1
 
 
 setup_software()
@@ -210,13 +211,13 @@ setup_snow_user()
     fi
     # Don't require password for sNow! Admin user sudo
     echo "$sNow_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-    if is_first_worker; then
+    if is_golden_node; then
         # Configure public key auth for the sNow! Admin User
         mkdir -p $SNOW_HOME/$sNow_USER/.ssh
         # Setup the ACLs to the right user
         chown -R $sNow_USER:$sNow_GROUP $SNOW_HOME/$sNow_USER
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 setup_hpcnow_user()
 {
@@ -228,7 +229,7 @@ setup_hpcnow_user()
     fi
     # Don't require password for sNow! Admin user sudo
     echo "$HPCNow_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-}
+} 1>>$LOGFILE 2>&1
 
 
 setup_ssh()
@@ -256,7 +257,7 @@ setup_ssh()
     echo "HostbasedUsesNameFromPacketOnly yes" >> /etc/ssh/sshd_config
     echo "UseDNS no" >> /etc/ssh/sshd_config
     systemctl restart sshd
-}
+} 1>>$LOGFILE 2>&1
 
 setup_env()
 {
@@ -270,31 +271,31 @@ setup_env()
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
     ln -sf $SNOW_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
-}
+} 1>>$LOGFILE 2>&1
 
 install_lmod()
 {
-    if is_first_worker; then
-        su - $HPC_USER -c "git clone https://github.com/TACC/Lmod.git; cd Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
-        echo "Lmod installed"
+    ln -sf $SNOW_UTIL/lmod/lmod/init/profile /etc/profile.d/lmod.sh
+    ln -sf $SNOW_UTIL/lmod/lmod/init/cshrc /etc/profile.d/lmod.csh
+    if is_golden_node; then
+        chown -R $sNow_USER:$sNow_GROUP $SNOW_UTIL
+        cd $SNOW_UTIL
+        su $sNow_USER -c "git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
     fi
-    ln -sf /share/utils/lmod/lmod/init/profile /etc/profile.d/lmod.sh
-    ln -sf /share/utils/lmod/lmod/init/cshrc /etc/profile.d/lmod.csh
-}
+} 1>>$LOGFILE 2>&1
 
 install_easybuild()
 {
     ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     ln -sf $SNOW_UTIL/etc/cpu-id-map.conf /etc/
-    if is_first_worker; then
-        chown -R $HPC_USER:$HPC_GROUP $SHARE_SOFT
-        cd $SHARE_SOFT
+    if is_golden_node; then
+        chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
+        cd $SNOW_SOFT
         curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
-        su - $HPC_USER -c "source /etc/profile.d/easybuild.sh; python $SHARE_SOFT/bootstrap_eb.py $EB_PREFIX"
-        echo "Easybuild installed"
+        su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 setup_ldap_client()
 {
@@ -305,7 +306,7 @@ setup_ldap_client()
         systemctl enable sssd.service
         systemctl start sssd.service
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 setup_ganglia_client()
 {
@@ -316,7 +317,7 @@ setup_ganglia_client()
         systemctl enable gmond.service
         systemctl start gmond.service
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 install_workload_client()
 {
@@ -365,11 +366,11 @@ install_workload_client()
         systemctl enable slurmd.service
         systemctl start slurmd.service
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 hooks()
 {
-    HOOKS=$(ls -1sn /sNow/OS/deploy/template.d/$TEMPLATE/??-*.sh)
+    HOOKS=$(ls -1sn /sNow/OS/deploy/postconfig.d/$TEMPLATE/??-*.sh &> /dev/null)
     for hook in $HOOKS
     do
         if [[ -x "$hook" ]]; then
@@ -420,7 +421,7 @@ setup_ldap_client      && error_check 0 'Stage 7/9 : LDAP client setup ' || erro
 spinner $!             'Stage 7/9 : Setting LDAP client '
 setup_ganglia_client   && error_check 0 'Stage 8/9 : Ganglia client setup ' || error_check 1 'Stage 8/9 : Ganglia client setup ' & 
 spinner $!             'Stage 8/9 : Setting Ganglia client '
-setup_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
+install_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
 spinner $!             'Stage 9/9 : Setting Workload Manager '
 hooks
 end_msg

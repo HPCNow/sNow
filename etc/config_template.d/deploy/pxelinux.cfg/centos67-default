@@ -1,0 +1,12 @@
+default hpcnow
+prompt 0
+timeout 10
+
+MENU TITLE PXE Menu
+# install
+label hpcnow
+menu label ^1) Install CentOS 6.7 x64 with Local Repo using Kickstart
+#kernel kickstart/centos-6.7/vmlinuz
+kernel kickstart/centos-7.0/vmlinuz
+append ks=http://192.168.7.1:/centos-6.7.cfg initrd=kickstart/centos-7.0/initrd.img method=http://192.168.7.1:/ loglevel=debug
+#append initrd=kickstart/centos-6.7/initrd.img method=nfs://192.168.7.1:/sNow/OS/CentOS/6.7 devfs=nomount inst.ks=nfs://192.168.7.1:/sNow/OS/deploy/kickstart/centos-6.7.cfg inst.vnc inst.vncpassword=password edd=off

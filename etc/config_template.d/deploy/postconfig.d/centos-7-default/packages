@@ -1,5 +1,3 @@
-@base
-@development-tools
 at
 bc
 bootlogd
@@ -26,6 +24,9 @@ libibverbs-devel
 locate
 lsb
 lsof
+lua-devel
+lua-filesystem
+lua-posix
 mdadm
 members
 nagios-nrpe-server

@@ -1,0 +1,6 @@
+default sNow
+
+# install
+label sNow
+kernel linux
+append initrd=initrd splash=silent showopts install=nfs://__NFS_SERVER__/sNow/OS/SLES/11SP3/DVD1 autoyast=nfs://__NFS_SERVER__/sNow/OS/deploy/autoyast/sles-11sp3.xml netdevice=eth0 console=tty0 console=ttyS0,115200n8
