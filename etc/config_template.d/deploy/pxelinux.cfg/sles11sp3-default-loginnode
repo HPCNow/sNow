@@ -1,6 +1,0 @@
-default hpcnow
-
-# install
-label hpcnow
-kernel linux
-append initrd=initrd splash=silent showopts install=nfs://192.168.7.1/sNow/OS/SLES/11SP3/DVD1 autoyast=nfs://192.168.7.1/sNow/OS/deploy/autoyast/default-loginnode.xml netdevice=eth0 console=tty0 console=ttyS1,57600

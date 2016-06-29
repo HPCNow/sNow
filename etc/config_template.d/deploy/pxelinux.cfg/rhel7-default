@@ -1,6 +1,0 @@
-default hpcnow
-# install
-label hpcnow
-menu label ^Install RHEL 7 x64 with Local Repo using Kickstart
-kernel vmlinuz
-append initrd=initrd.img inst.ks=nfs://192.168.7.1:/sNow/OS/deploy/kickstart/rhel-7.cfg inst.vnc inst.vncpassword=password
