@@ -276,15 +276,15 @@ function deploy() {
             node_rank $1
             #BLOCKN=${2:-$BLOCKN}
             #BLOCKD=${3:-$BLOCKD}
-            DEPLOYTMPL=${2:-$DEPLOYTMPL}
-            if ! [[ -f $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEPLOYTMPL ]] ; then
-                echo "No template $DEPLOYTMPL available in $SNOW_PATH/OS/deploy/pxelinux.cfg"
+            DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
+            if ! [[ -f $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
+                echo "No template $DEFAULT_TEMPLATE available in $SNOW_PATH/OS/deploy/pxelinux.cfg"
                 exit 1
             fi
             if (( $NLENG > 0 )); then
                 echo "Deploying node range $1 ... This will take a while, Please wait"
                 #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}-bmc" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                deploy_copy $DEPLOYTMPL
+                deploy_copy $DEFAULT_TEMPLATE
                 parallel -j $BLOCKN \
                 echo "Deploying node : $NPREFIX{} ... Please wait" \; \
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power reset \; \
@@ -294,16 +294,16 @@ function deploy() {
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 sleep 180
                 echo "Setting up dis as boot device... Please wait"
-                deploy_copy $DEFAULTBOOT
+                deploy_copy $DEFAULT_BOOT
             else
                 check_host_status $1-bmc
-                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEPLOYTMPL $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
                 sleep 180
-                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULTBOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_BOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
     else

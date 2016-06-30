@@ -11,9 +11,9 @@ SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_UTIL=$SNOW_PATH/snow-utils
 SNOW_TOOL=$SNOW_PATH/snow-tools
 SNOWVG=snow_vg
-IMG_DST='dir=/sNow/domains'
-#IMG_DST='lvm=snow_vg'
-#IMG_DST='nfs=$NFSSERVER:/sNow/domains' # (experimental)
+IMG_DST='lvm=snow_vg'
+#IMG_DST='dir=/sNow/domains'
+#IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
 SNOWNODES=( snow01 )
 SSHPORT=22
 SMAIL=support@hpcnow.com
@@ -31,6 +31,7 @@ IPMIUSER=admin
 IPMIPWD=admin
 BLOCKN=4
 BLOCKD=5
+BOOT_DELAY=300
 # Config Manager 
 SNOWCM=none
 CF_SERVER=
