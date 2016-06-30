@@ -262,7 +262,7 @@ function init() {
 
     # Generate /etc/ssh/ssh_known_hosts
     bkp /etc/ssh/ssh_known_hosts
-    echo "$(echo ${host[*]} | sed -e "s/ /,/g") $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
+    echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
     cp -p /etc/ssh/ssh_known_hosts $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts
     # Generate /etc/ssh/shosts.equiv
     bkp /etc/ssh/shosts.equiv
