@@ -20,6 +20,7 @@ SNOW_ACTIVE_DOMAINS=$SNOWPATH/../etc/active-domains.conf
 SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 HAS_EE=false
 DOWNLD=wget
+declare -A CLUSTERS
 opt1=$1
 opt2=$2
 opt3=$3
@@ -170,7 +171,7 @@ function generate_hostlist() {
     done
     ips=$(echo $str | sed "s, ,\\.,g"); 
     hostip=( $(eval echo $ips | tr ' ' '\n') )
-    if [[ "${#host[@]}" > "${#hostip[@]}" ]]; then
+    if (( "${#host[@]}" > "${#hostip[@]}" )); then
         error_exit "Error: the /etc/hosts can NOT be generated because the IP rank is too short!"
     fi
     for (( i=0; i<${#host[@]}; i++ ));
@@ -183,22 +184,22 @@ function generate_hostlist() {
 function init() {
     if [[ ! $HA_NFSROOT ]]; then
         # NFS_ROOT Exports
+        if [[ ! -d /etc/exports.d ]]; then
+           mkdir -p /etc/exports.d
+        fi
         if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow.exports ]]; then
             if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
                 mkdir -p $SNOW_CONF/system_files/etc/exports.d
-            fi
-            if [[ ! -d /etc/exports.d ]]; then
-                mkdir -p /etc/exports.d
             fi
             gawk -v snow01=${SNOWNODES[0]} -v snow02=${SNOWNODES[1]} '{
                 if ($1 !~ /^#|snow/){
                     print "/sNow/"$1"\t "snow01"(rw,sync,no_subtree_check,no_root_squash) "snow02"(rw,sync,no_subtree_check,no_root_squash) " $1"(rw,sync,no_subtree_check,no_root_squash)"
                 }
             }' $SNOW_ACTIVE_DOMAINS > $SNOW_CONF/system_files/etc/exports.d/snow.exports
+            ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
             echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
             echo "Once you are done, execute exportfs -u"
         fi
-        ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
     #If the master is the NFS Server it will setup the $SNOW_CONF/system_files/etc/exports.d/snow.exports
     if [[ "$(uname -n)" == "$NFS_SERVER" ]]; then
@@ -206,12 +207,12 @@ function init() {
             if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
                 mkdir -p $SNOW_CONF/system_files/etc/exports.d
             fi
-            if [[ ! -d /etc/exports.d ]]; then
-                mkdir -p /etc/exports.d
-            fi
             echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" >> $SNOW_CONF/system_files/etc/exports.d/snow.exports
             echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
             echo "Once you are done, execute exportfs -rv"
+        fi
+        if [[ ! -d /etc/exports.d ]]; then
+            mkdir -p /etc/exports.d
         fi
         ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
@@ -227,12 +228,11 @@ function init() {
         echo "Review the domains config file : $SNOW_TOOL/etc/domains.conf"
     fi
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
-    #host=( )
-    for (( i=0; i<${#CLUSTERS[@]}; i++ ));
+    host=( )
+    for i in "${!CLUSTERS[@]}"
     do 
         node_rank ${CLUSTERS[$i]}
-        #host=( $host $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
-        host=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
     done
     generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
     generate_hostlist ${NET_IPMI[2]}100/${NET_IPMI[3]} "${NET_IPMI[4]}" >> /etc/hosts
