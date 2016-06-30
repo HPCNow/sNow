@@ -4,7 +4,12 @@
 # More information here : www.hpcnow.com/snow
 #########################################################################################
 NFS_SERVER=snow01
-SNOWROOT=/sNow
+SNOW_PATH=/sNow
+SNOW_HOME=$SNOW_PATH/home
+SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_UTIL=$SNOW_PATH/snow-utils
+SNOW_TOOL=$SNOW_PATH/snow-tools
 SNOWVG=snow_vg
 IMG_DST='lvm=snow_vg'
 #IMG_DST='dir=/sNow/domains'

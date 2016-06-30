@@ -1,5 +1,5 @@
 #!/bin/bash
-SNOWROOT=/sNow
-export PATH=$SNOWROOT/snow-tools/bin:$PATH
-export MANPATH=$SNOWROOT/snow-tools/man:$MANPATH
+SNOW_PATH=/sNow
+export PATH=$SNOW_PATH/snow-tools/bin:$PATH
+export MANPATH=$SNOW_PATH/snow-tools/man:$MANPATH
 export PDSH_RCMD_TYPE=ssh
