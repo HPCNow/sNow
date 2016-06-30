@@ -25,7 +25,9 @@ MASTERPWD='HPCN0w!!'
 NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' )
 NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' )
 NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' )
-# IPMI / BMC Setiup
+NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.255.0' )
+NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.255.0' )
+# IPMI / BMC Setup
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
@@ -40,8 +42,8 @@ CFMASTER=192.168.7.1
 # Cluster provisioning : deploy / cloning system
 DEFAULT_BOOT=localboot
 DEFAULT_TEMPLATE=centos7-default
-CLUSTERS=([mycluster01]="n[001-999]")
-GOLDEN_NODES=( ivb-001 hsw-001 skl-001 )
+CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
+GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
 DOWNLD=axel
 DOM_EXT=''
@@ -50,7 +52,7 @@ LANG=en_US
 KEYMAP=us
 TIMEZONE=Europe/Amsterdam
 GATEWAY=192.168.7.254
-DNS_SERVERS=8.8.8.8,8.8.8.4
+DNS_SERVERS=8.8.8.8,8.8.4.4
 PROXY_SERVER=192.168.7.1
 DOMAIN=in.hpcnow.com
 DHCP_NIC=eth0

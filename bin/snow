@@ -140,6 +140,12 @@ function init() {
             }' -f $SNOW_ACTIVE_DOMAINS >> $SNOW_TOOL/etc/domains.conf
         echo "Review the domains config file : $SNOW_TOOL/etc/domains.conf"
     fi
+    # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
+
+    # Download linux kernel to boot OS from PXE defined in snow.conf
+
+    # Download the ISO in order to create the local repo defined in snow.conf
+
 }
 
 function update_tools() {
