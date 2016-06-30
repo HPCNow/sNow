@@ -101,6 +101,20 @@ if [[ ! $HAS_EE ]]; then
     }
 fi
 
+function download() {
+    case $DOWNLD in
+        axel) 
+            axel -q -n 10 $1 -o $2 
+        ;;
+        wget)
+            wget -q -P $2 $1
+        ;;
+        *) 
+            error_exit "Error: $DOWNLD is not supported"
+        ;;
+    esac
+}
+
 function prefix_to_bit_netmask() {
     prefix=$1;
     shift=$(( 32 - prefix ));
@@ -239,7 +253,12 @@ function init() {
     generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> /etc/hosts
 
     # Download linux kernel to boot OS from PXE defined in snow.conf
-
+    # CentOS 7
+    if [[ ! -d $SNOW_PATH/OS/deploy/kickstart/centos-7.0 ]]; then
+        mkdir -p $SNOW_PATH/OS/deploy/kickstart/centos-7.0
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img $SNOW_PATH/OS/deploy/kickstart/centos-7.0/ 
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz $SNOW_PATH/OS/deploy/kickstart/centos-7.0/
+    fi
     # Download the ISO in order to create the local repo defined in snow.conf
 
 }
