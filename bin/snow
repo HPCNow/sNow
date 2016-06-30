@@ -59,7 +59,7 @@ Function List:
     * config                         | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
     * update tools                   | updates the sNow! Tools 
     * update configspace             | updates configuration files from private git 
-    * update snow_template           | updates the sNow! image used to create new domains
+    * update template                | updates the sNow! image used to create new domains
     * deploy <domain|server>         | deploy specific domain/server 
     * remove <domain>                | removes an existing domain deployed with sNow!
     * list                           | list current domains (services) and their status
@@ -539,7 +539,7 @@ case $opt1 in
             configspace)
                 update_configspace
             ;;
-            snow_template)
+            template)
                 update_xen_image
             ;;
             *)
