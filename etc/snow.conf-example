@@ -21,12 +21,12 @@ MASTERPWD='HPCN0w!!'
 # Private GIT Repo Setup
 #TOKEN=
 #PRIVATE_REPO=
-# Network Setup [ Bridge, Gateway, Network, Netmask ]
-NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' )
-NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' )
-NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' )
-NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.255.0' )
-NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.255.0' )
+# Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
+NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.240.0' '' )
+NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.240.0' '-ipmi' )
+NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
 # IPMI / BMC Setup
 IPMITYPE=lanplus
 IPMIUSER=admin
