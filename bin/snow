@@ -520,7 +520,7 @@ function get_server_distribution(){
 }
 
 function boot_domains() {
-    for i in $(SELF_ACTIVE_DOMAINS)
+    for i in $SELF_ACTIVE_DOMAINS
     do 
         boot $i
     done
