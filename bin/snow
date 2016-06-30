@@ -413,17 +413,17 @@ function deploy() {
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power on \; \
                 sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                sleep 180
+                sleep $BOOT_DELAY
                 echo "Setting up dis as boot device... Please wait"
                 deploy_copy $DEFAULT_BOOT
             else
                 check_host_status $1-bmc
                 cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+                ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
+                ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
-                sleep 180
+                sleep $BOOT_DELAY
                 cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_BOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
@@ -472,7 +472,7 @@ function boot() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power on
         fi
     fi
 }
@@ -561,7 +561,7 @@ function ndestroy() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power off
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power off
         fi
     fi
 }
@@ -585,7 +585,7 @@ function npoweroff() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power soft
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power soft
         fi
     fi
 }
@@ -609,7 +609,7 @@ function nreset() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power reset
         fi
     fi
 }
@@ -624,9 +624,9 @@ function nconsole() {
         xl console $1
     else
         check_host_status $1-bmc
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol deactivate
+        ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD sol activate
     fi
 }
 
