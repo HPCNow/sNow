@@ -254,8 +254,14 @@ function init() {
 
     # Download linux kernel to boot OS from PXE defined in snow.conf
     # CentOS 7
-    if [[ ! -d $SNOW_PATH/OS/deploy/kickstart/centos-7.0 ]]; then
-        mkdir -p $SNOW_PATH/OS/deploy/kickstart/centos-7.0
+    read -p "Do you want to download PXE bootable kernels (Y/n)? " -n 1 -r
+    echo    ## move to a new line
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        echo "PXE boot will not work unless you use a proper kernel. Manual setup will be required."
+    else
+        if [[ ! -d $SNOW_PATH/OS/deploy/kickstart/centos-7.0 ]]; then
+            mkdir -p $SNOW_PATH/OS/deploy/kickstart/centos-7.0
+        fi
         download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img $SNOW_PATH/OS/deploy/kickstart/centos-7.0/ 
         download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz $SNOW_PATH/OS/deploy/kickstart/centos-7.0/
     fi
