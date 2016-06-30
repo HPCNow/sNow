@@ -63,7 +63,7 @@ Function List:
     * update template                | updates the sNow! image used to create new domains
     * deploy <domain|server>         | deploy specific domain/server 
     * remove <domain>                | removes an existing domain deployed with sNow!
-    * list                           | list current domains (services) and their status
+    * list <all>                     | list current domains (services) and their status
     * boot <domain|server>           | boot specific domain or server
     * boot domains                   | boot all the domains (all services not available under sNow! HA)
     * boot cluster <clustername>     | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
@@ -470,6 +470,9 @@ function list() {
     xl list $opt2
 }
 
+function avail_domains() {
+    xen-list-images --test /sNow/snow-tools/etc/domains
+}
 
 function check_host_status(){
     PING=$(ping -c 1 $1 &> /dev/null)
@@ -717,7 +720,14 @@ case $opt1 in
         esac
     ;;
     list)
-        list $opt2
+        case $opt2 in
+            all)
+                avail_domains
+            ;;
+            *)
+                list $opt2
+            ;;
+        esac
     ;;
     takeover)
         takeover $opt2
