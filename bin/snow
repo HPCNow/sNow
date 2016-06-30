@@ -7,9 +7,16 @@
 SNOWPATH=$(dirname "$0")
 PROGNAME=$(basename "$0")
 # Load the configuration
+SNOW_PATH=/sNow
+SNOW_HOME=$SNOW_PATH/home
+SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_UTIL=$SNOW_PATH/snow-utils
+SNOW_TOOL=$SNOW_PATH/snow-tools
 CONFIG_FILE=$SNOWPATH/../etc/snow.conf
 ENTERPRISE_EXTENSIONS=$SNOWPATH/enterprise_extensions.sh
 SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
+SNOW_ACTIVE_DOMAINS=$SNOWPATH/../etc/active-domains.conf
 SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 HAS_EE=false
 DOWNLD=wget
@@ -29,8 +36,8 @@ if [[ -f $ENTERPRISE_EXTENSIONS ]]; then
     HAS_EE=true
 fi
 
-if ! [[ -d $SNOWROOT/log ]]; then
-    mkdir $SNOWROOT/log
+if ! [[ -d $SNOW_PATH/log ]]; then
+    mkdir $SNOW_PATH/log
 fi
 
 function error_exit(){
@@ -48,7 +55,8 @@ Usage: snow [function] <option|domain|server>
 
 Function List:
 
-    * config                         | updates the sNow! configuration based on the changes applied in snow.conf and domains.conf
+    * init                           | setup the system according to the parameters defined in snow.conf and active-domains.conf
+    * config                         | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
     * update tools                   | updates the sNow! Tools 
     * update configspace             | updates configuration files from private git 
     * update snow_template           | updates the sNow! image used to create new domains
@@ -80,34 +88,76 @@ function config() {
 if [[ ! -f $SNOW_DOMAINS ]]; then
     echo "No $SNOW_DOMAINS found"
 else
-    cat $SNOWROOT/snow-tools/etc/snow.conf
+    cat $SNOW_PATH/snow-tools/etc/snow.conf
     echo "==== Active Domains ===="
-    cat $SNOWROOT/snow-tools/etc/active-domains.conf | grep -v ^# |  gawk '{print $0}'
+    cat $SNOW_PATH/snow-tools/etc/active-domains.conf | grep -v ^# |  gawk '{print $0}'
 fi
 }
 
-if [ ! $HAS_EE ]; then
+if [[ ! $HAS_EE ]]; then
     function takeover() {
         echo "The takeover feature is only available in sNow! Enterprise Edition"
     }
 fi
 
+function init() {
+    if [[ ! $HA_NFSROOT ]]; then
+        # NFS_ROOT Exports
+        if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow.exports ]]; then
+            if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
+                mkdir -p $SNOW_CONF/system_files/etc/exports.d
+            fi
+            gawk -v snow01=${SNOWNODES[0]} -v snow02=${SNOWNODES[1]} '{
+                if ($1 !~ /^#|snow/){
+                    print "/sNow/"$1"\t "snow01"(rw,sync,no_subtree_check,no_root_squash) "snow02"(rw,sync,no_subtree_check,no_root_squash) " $1"(rw,sync,no_subtree_check,no_root_squash)"
+                }
+            }' $SNOW_ACTIVE_DOMAINS > $SNOW_CONF/system_files/etc/exports.d/snow.exports
+            echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
+            echo "Once you are done, execute exportfs -u"
+        fi
+        ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
+    fi
+    #If the master is the NFS Server it will setup the $SNOW_CONF/system_files/etc/exports.d/snow.exports
+    if [[ "$(uname -n)" == "$NFS_SERVER" ]]; then
+        if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow.exports ]]; then 
+            if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
+                mkdir -p $SNOW_CONF/system_files/etc/exports.d
+            fi
+            echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" >> $SNOW_CONF/system_files/etc/exports.d/snow.exports
+            echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
+            echo "Once you are done, execute exportfs -rv"
+        fi
+        ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
+    fi
+    # sNow! Domains configuration table
+    if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
+        cat $SNOW_TOOL/etc/domains.conf-example > $SNOW_TOOL/etc/domains.conf
+        gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
+             -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+            'BEGIN{i=0}{
+                i=i+1
+                printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz  
+            }' -f $SNOW_ACTIVE_DOMAINS >> $SNOW_TOOL/etc/domains.conf
+        echo "Review the domains config file : $SNOW_TOOL/etc/domains.conf"
+    fi
+}
+
 function update_tools() {
-if [[ ! -d $SNOWROOT/snow-tools ]]; then
-    mkdir -p $SNOWROOT
-    cd $SNOWROOT
+if [[ ! -d $SNOW_TOOL ]]; then
+    mkdir -p $SNOW_TOOL
+    cd $SNOW_TOOL
     git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
-    cd $SNOWROOT/snow-tools
+    cd $SNOW_TOOL
     git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi 
 }
 
 function update_configspace() {
-if [[ ! -d $SNOWROOT/snow-configspace  ]]; then
-    mkdir -p $SNOWROOT
-    cd $SNOWROOT
+if [[ ! -d $SNOW_CONF  ]]; then
+    mkdir -p $SNOW_CONF
+    cd $SNOW_CONF
     git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
@@ -115,36 +165,36 @@ else
         error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
         exit 1
     fi
-    cd $SNOWROOT/snow-configspace
+    cd $SNOW_CONF
     git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
 }
 
 function update_xen_image() {
-if [[ ! -d $SNOWROOT/domains/template ]]; then
-    mkdir -p $SNOWROOT/domains/template
-    wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOWROOT/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-    wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOWROOT/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+if [[ ! -d $SNOW_PATH/domains/template ]]; then
+    mkdir -p $SNOW_PATH/domains/template
+    wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
-    if [[ -f $SNOWROOT/domains/template/snow-template.tar.bz2 ]]; then
-        MD5LOCAL=$(md5sum $SNOWROOT/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
-        wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOWROOT/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-        MD5HPCNOW=$(cat $SNOWROOT/domains/template/snow-template.md5sum | gawk '{ print $1 }')
+    if [[ -f $SNOW_PATH/domains/template/snow-template.tar.bz2 ]]; then
+        MD5LOCAL=$(md5sum $SNOW_PATH/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
+        wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        MD5HPCNOW=$(cat $SNOW_PATH/domains/template/snow-template.md5sum | gawk '{ print $1 }')
         if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
             echo "Downloading most recent sNow! domain template"
-            wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOWROOT/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+            wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
             echo "sNow domain template is up-to-date."
         fi
     else
-        wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOWROOT/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
 fi 
 }
 
 function xen_create() {
     get_server_distribution $1 
-    if [[ -f $SNOWROOT/snow-tools/etc/domains/$1.cfg ]]; then
+    if [[ -f $SNOW_PATH/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
             echo "The domain $1 already exist, please use force option to overwrite the domain"
             exit 1
@@ -174,14 +224,14 @@ function xen_create() {
 
 function xen_delete() {
     get_server_distribution $1 
-    if [[ ! -f $SNOWROOT/snow-tools/etc/domains/$1.cfg ]]; then
+    if [[ ! -f $SNOW_PATH/snow-tools/etc/domains/$1.cfg ]]; then
         echo "There is no domain with this name. Please, review the name of the domain to be removed."
     else
         if [[ -n "$IMG_DST" ]]; then
             IMG_DST_OPT="--${IMG_DST}"
         fi 
         xen-delete-image $IMG_DST_OPT --hostname=$1
-        rm -f $SNOWROOT/snow-tools/etc/domains/$1.cfg
+        rm -f $SNOW_PATH/snow-tools/etc/domains/$1.cfg
     fi
 }
 
@@ -205,7 +255,7 @@ function node_rank() {
 function deploy_copy() {
     for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
     do 
-        cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$1 $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
+        cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$1 $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
     done
 }
 
@@ -227,8 +277,8 @@ function deploy() {
             #BLOCKN=${2:-$BLOCKN}
             #BLOCKD=${3:-$BLOCKD}
             DEPLOYTMPL=${2:-$DEPLOYTMPL}
-            if ! [[ -f $SNOWROOT/OS/deploy/pxelinux.cfg/$DEPLOYTMPL ]] ; then
-                echo "No template $DEPLOYTMPL available in $SNOWROOT/OS/deploy/pxelinux.cfg"
+            if ! [[ -f $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEPLOYTMPL ]] ; then
+                echo "No template $DEPLOYTMPL available in $SNOW_PATH/OS/deploy/pxelinux.cfg"
                 exit 1
             fi
             if (( $NLENG > 0 )); then
@@ -247,13 +297,13 @@ function deploy() {
                 deploy_copy $DEFAULTBOOT
             else
                 check_host_status $1-bmc
-                cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$DEPLOYTMPL $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEPLOYTMPL $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
                 ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
                 sleep 180
-                cp -p $SNOWROOT/OS/deploy/pxelinux.cfg/$DEFAULTBOOT $SNOWROOT/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULTBOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
     else
@@ -283,8 +333,8 @@ function boot() {
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
-        if [[ -f $SNOWROOT/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
-            xl create $SNOWROOT/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
+        if [[ -f $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
+            xl create $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
         else
             echo "The domain $1 needs to be deployed first: Execute : snow deploy $i"
             exit 1
@@ -475,6 +525,9 @@ function nuptime() {
 # Start Cases
 #
 case $opt1 in
+    init)
+        init
+    ;;
     config)
         config
     ;;
@@ -573,4 +626,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-echo "$(date)    $USER    $@" >> $SNOWROOT/log/snow_actions.log 
+echo "$(date)    $USER    $@" >> $SNOW_PATH/log/snow_actions.log 

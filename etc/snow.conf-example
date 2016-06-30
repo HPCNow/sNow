@@ -3,8 +3,13 @@
 # sNow! Cluster Suite is an opensource project developed by HPCNow!
 # More information here : www.hpcnow.com/snow
 #########################################################################################
-NFSSERVER=snow01
-SNOWROOT=/sNow
+NFS_SERVER=snow01
+SNOW_PATH=/sNow
+SNOW_HOME=$SNOW_PATH/home
+SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_UTIL=$SNOW_PATH/snow-utils
+SNOW_TOOL=$SNOW_PATH/snow-tools
 SNOWVG=snow_vg
 IMG_DST='dir=/sNow/domains'
 #IMG_DST='lvm=snow_vg'
@@ -26,11 +31,25 @@ IPMIUSER=admin
 IPMIPWD=admin
 BLOCKN=4
 BLOCKD=5
-# Config Manager (CFEngine)
+# Config Manager 
+SNOWCM=none
+CF_SERVER=
 CFMASTER=192.168.7.1
-DEFAULTBOOT=localboot
-DEPLOYTMPL=centos7-default
+#CFENGINE_VER="3.7.2-1"
+# Cluster provisioning : deploy / cloning system
+DEFAULT_BOOT=localboot
+DEFAULT_TEMPLATE=centos7-default
 CLUSTERS=([mycluster01]="n[001-999]")
+GOLDEN_NODES=( ivb-001 hsw-001 skl-001 )
 PDSH_RCMD_TYPE=ssh
 DOWNLD=axel
 DOM_EXT=''
+# Network services
+LANG=en_US
+KEYMAP=us
+TIMEZONE=Europe/Amsterdam
+GATEWAY=192.168.7.254
+DNS_SERVERS=8.8.8.8,8.8.8.4
+PROXY_SERVER=192.168.7.1
+DOMAIN=in.hpcnow.com
+DHCP_NIC=eth0

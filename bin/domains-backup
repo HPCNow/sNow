@@ -20,24 +20,24 @@ if [[ -f $CONFIG_FILE ]]; then
     source $CONFIG_FILE
 fi
 
-if ! [[ -d $SNOWROOT/log ]]; then
-    mkdir $SNOWROOT/log
+if ! [[ -d $SNOW_PATH/log ]]; then
+    mkdir $SNOW_PATH/log
 fi
 
-if ! [[ -d $SNOWROOT/backup ]]; then
-    mkdir $SNOWROOT/backup
+if ! [[ -d $SNOW_PATH/backup ]]; then
+    mkdir $SNOW_PATH/backup
 fi
 
 for VMNAME in $DOMAINS2BKP 
 do 
     DATE=$(date +%Y%m%d)
-    LAST=$(tail -1 $SNOWROOT/log/snapshots-$VMNAME.history)
-    /sbin/lvcreate -s -L 1G -n $VMNAME-snap-$DATE $SNOWVG/${VMNAME} &> $SNOWROOT/log/snapshots-$VMNAME.log
-    echo "$VMNAME-snap-$DATE" >> $SNOWROOT/log/snapshots-$VMNAME.history
-    dd if=/dev/$SNOWVG/$VMNAME-snap-$DATE of=$SNOWROOT/backup/$VMNAME-snap-$DATE
-    bzip2 $SNOWROOT/backup/$VMNAME-snap-$DATE
-    rm $SNOWROOT/backup/$LAST.bz2 
+    LAST=$(tail -1 $SNOW_PATH/log/snapshots-$VMNAME.history)
+    /sbin/lvcreate -s -L 1G -n $VMNAME-snap-$DATE $SNOWVG/${VMNAME} &> $SNOW_PATH/log/snapshots-$VMNAME.log
+    echo "$VMNAME-snap-$DATE" >> $SNOW_PATH/log/snapshots-$VMNAME.history
+    dd if=/dev/$SNOWVG/$VMNAME-snap-$DATE of=$SNOW_PATH/backup/$VMNAME-snap-$DATE
+    bzip2 $SNOW_PATH/backup/$VMNAME-snap-$DATE
+    rm $SNOW_PATH/backup/$LAST.bz2 
     /sbin/lvremove -f /dev/$SNOWVG/$LAST
-    #echo "Backup module $VMNAME finished" | nail -s "[sNow!] Snapshot $VMNAME" -a $SNOWROOT/log/snapshots-$VMNAME.log -r $SMAIL $SMAIL
+    #echo "Backup module $VMNAME finished" | nail -s "[sNow!] Snapshot $VMNAME" -a $SNOW_PATH/log/snapshots-$VMNAME.log -r $SMAIL $SMAIL
     echo "Backup module $VMNAME finished" | logger -t snow -p user.notice
 done
