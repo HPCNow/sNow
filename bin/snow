@@ -115,6 +115,12 @@ function download() {
     esac
 }
 
+function bkp() {
+    bkpfile=$1
+    next=$(date +%Y%m%d%H%M)
+    cp -pr $bkpfile $bkpfile.$next-snow
+}
+
 function prefix_to_bit_netmask() {
     prefix=$1;
     shift=$(( 32 - prefix ));
@@ -248,9 +254,29 @@ function init() {
         node_rank ${CLUSTERS[$i]}
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
     done
+    bkp /etc/hosts
     generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
     generate_hostlist ${NET_IPMI[2]}100/${NET_IPMI[3]} "${NET_IPMI[4]}" >> /etc/hosts
     generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> /etc/hosts
+    cp -p /etc/hosts $SNOW_CONF/system_files/etc/hosts 
+
+    # Generate /etc/ssh/ssh_known_hosts
+    bkp /etc/ssh/ssh_known_hosts
+    echo "$(echo ${host[*]} | sed -e "s/ /,/g") $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
+    cp -p /etc/ssh/ssh_known_hosts $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts
+    # Generate /etc/ssh/shosts.equiv
+    bkp /etc/ssh/shosts.equiv
+    echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
+    cp -p /etc/ssh/shosts.equiv $SNOW_CONF/system_files/etc/ssh/shosts.equiv
+    bkp /root/.shosts
+    cp /etc/ssh/shosts.equiv /root/.shosts
+    # Update /etc/ssh/ssh_config
+    bkp /etc/ssh/ssh_config
+    if [[ ! $(grep -q "HostbasedAuthentication yes" /etc/ssh/ssh_config) ]]; then
+        echo "    HostbasedAuthentication yes" >> /etc/ssh/ssh_config
+        echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
+        echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+    fi
 
     # Download linux kernel to boot OS from PXE defined in snow.conf
     # CentOS 7
