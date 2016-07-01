@@ -58,3 +58,5 @@ DOMAIN=in.hpcnow.com
 DHCP_NIC=eth0
 LDAP_SERVER=ldap01
 LDAP_BASE="dc=in,dc=hpcnow,dc=com"
+MAIL_SERVER=$PROXY_SERVER
+SYSLOG_SERVER=syslog

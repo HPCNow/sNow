@@ -105,4 +105,24 @@ if  [[ ! -z "$SYSLOG_SERVER" ]]; then
 fi
 
 # SMTP Client Setup
+if  [[ ! -z "$MAIL_SERVER" ]]; then 
+    installDebianPackage ${prefix} exim4-config
+    chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
+    exim4-config    exim4/hide_mailname: false
+    exim4-config    exim4/dc_localdelivery: mbox format in /var/mail/
+    exim4-config    exim4/dc_smarthost: $MAIL_SERVER
+    exim4-config    exim4/dc_minimaldns: false
+    exim4-config    exim4/dc_other_hostnames: $DOMAIN
+    exim4-config    exim4/exim4-config-title:
+    exim4-config    exim4/use_split_config: false
+    exim4-config    exim4/mailname: $GUEST_FQDN
+    exim4-config    exim4/dc_postmaster: snow
+    exim4-config    exim4/dc_relay_domains:
+    exim4-config    exim4/no_config: true
+    exim4-config    exim4/dc_relay_nets:
+    exim4-config    exim4/dc_readhost:
+    exim4-config    exim4/dc_local_interfaces: 127.0.0.1 ; ::1
+    exim4-config    exim4/dc_eximconfig_configtype: mail sent by smarthost; received via SMTP or fetchmail
+    CONF
+fi
 
