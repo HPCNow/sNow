@@ -16,6 +16,8 @@ IMG_DST='lvm=snow_vg'
 #IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
 SNOWNODES=( snow01 )
 SSHPORT=22
+ADMIN_USERS="root snow"
+ADMIN_GROUPS="root snow"
 SMAIL=support@hpcnow.com
 MASTERPWD='HPCN0w!!'
 # Private GIT Repo Setup

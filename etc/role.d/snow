@@ -46,9 +46,21 @@ if  [[ !-z "$CF_SERVER" ]]; then
 fi
 
 # SSH Setup
-echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
-mkdir -p ${prefix}/root/.ssh
-cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+ADMIN_USERS="${ADMIN_USERS:-root snow}"
+ADMIN_GROUPS="${ADMIN_GROUPS:-root snow}"
+if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config ${prefix}/etc/ssh/sshd_config
+    mkdir -p ${prefix}/root/.ssh
+    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+else
+    echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
+    echo "AllowUsers $ADMIN_USERS" >> ${prefix}/etc/ssh/sshd_config
+    echo "AllowGroups $ADMIN_GROUPS" >> ${prefix}/etc/ssh/sshd_config
+    mkdir -p /sNow/snow-configspace/system_files/etc/ssh
+    cp -p ${prefix}/etc/ssh/sshd_config /sNow/snow-configspace/system_files/etc/ssh/sshd_config
+    mkdir -p ${prefix}/root/.ssh
+    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+fi
 
 # LDAP Client Setup
 SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_UTIL/etc/domains.conf)
