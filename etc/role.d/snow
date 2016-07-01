@@ -94,5 +94,15 @@ if  [[ ! -z "$PROXY_SERVER" ]]; then
 fi
 
 # Syslog Client Setup
+if  [[ ! -z "$SYSLOG_SERVER" ]]; then 
+    installDebianPackage ${prefix} rsyslog
+    if [[ -e /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf ]]; then 
+        cp -p /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf ${prefix}/etc/rsyslog.d/50-default.conf
+    else
+        echo "*.*                         @@$SYSLOG_SERVER:514" >> ${prefix}/etc/rsyslog.d/50-default.conf
+        cp -p ${prefix}/etc/rsyslog.d/50-default.conf /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf
+    fi
+fi
 
 # SMTP Client Setup
+
