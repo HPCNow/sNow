@@ -80,6 +80,18 @@ if  [[ ! -z "$NTP_SERVER" ]]; then
 fi
 
 # Proxy Client Setup
+if  [[ ! -z "$PROXY_SERVER" ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ${prefix}/etc/profile.d/
+    else
+        cp -p /sNow/snow-tools/etc/config_template.d/proxy_client/proxy_profile.sh /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh
+        cp -p /sNow/snow-tools/etc/config_template.d/proxy_client/proxy_profile.csh /sNow/snow-configspace/system_files/etc/profile.d/proxy.csh
+        sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        sed -i "s/__PROXY_PORT__/$PROXY_PORT/g" /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        chmod 644 /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        cp -p /sNow/snow-configspace/system_files/etc/profile.d/proxy.* ${prefix}/etc/profile.d/
+    fi
+fi
 
 # Syslog Client Setup
 
