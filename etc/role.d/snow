@@ -1,7 +1,7 @@
 #!/bin/bash
 # Configure the new image for sNow! HPC suite
-# Developed by HPCNow! www.hpcnow.com
-# Jordi Blasco
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
@@ -21,26 +21,28 @@ else
     exit 1
 fi
 
-# Config Manager -CFEngine
-SNOWCM=${SNOWCM:-cfengine3}
-CF_SERVER=${CF_SERVER:-snow01}
-
-# CFEngine community repos
-if  [[ "$SNOWCM" == "cfengine3" ]]; then 
-    # There is a bug in the CFEngine debian repos. Using package instead
-    CFENGINE_VER="3.7.2-1"
-    #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
-    #chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
-    #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
-    #chroot ${prefix} /usr/bin/apt-get update
-    #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
-    wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-    chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-    cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot.service  ${prefix}/lib/systemd/system/cf_boot.service
-    cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot  ${prefix}/usr/local/bin/cf_boot
-    sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/bin/cf_boot
-    chmod 700 ${prefix}/usr/local/bin/cf_boot
-    chroot ${prefix} systemctl enable cf_boot
+# Config Manager
+if  [[ !-z "$CF_SERVER" ]]; then 
+    case $SNOWCF in
+        CFENGINE|cfengine)
+            # There is a bug in the CFEngine debian repos. Using package instead
+            #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
+            #chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
+            #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
+            #chroot ${prefix} /usr/bin/apt-get update
+            #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
+            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot.service  ${prefix}/lib/systemd/system/cf_boot.service
+            cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot  ${prefix}/usr/local/bin/cf_boot
+            sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/bin/cf_boot
+            chmod 700 ${prefix}/usr/local/bin/cf_boot
+            chroot ${prefix} systemctl enable cf_boot
+            ;;
+        *)
+            echo "$SNOWCF is NOT supported"
+            ;;
+    esac
 fi
 
 # SSH Setup
@@ -49,6 +51,20 @@ mkdir -p ${prefix}/root/.ssh
 cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 
 # LDAP Client Setup
+if  [[ ! -z "$LDAP_SERVER" ]]; then 
+    installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
+    if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
+    else
+        mkdir -p /sNow/snow-configspace/system_files/etc/sssd
+        cp -p /sNow/snow-tools/etc/config_template.d/ldap/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        sed -i "s/__LDAP_SERVER__/$LDAP_SERVER/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        sed -i "s/__LDAP_BASE__/$LDAP_BASE/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        chmod 755 /sNow/snow-configspace/system_files/etc/sssd
+        chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
+    fi
+fi
 
 # NTP Client Setup
 

@@ -35,9 +35,8 @@ BLOCKN=4
 BLOCKD=5
 BOOT_DELAY=300
 # Config Manager 
-SNOWCM=none
+SNOWCM=
 CF_SERVER=
-CFMASTER=192.168.7.1
 #CFENGINE_VER="3.7.2-1"
 # Cluster provisioning : deploy / cloning system
 DEFAULT_BOOT=localboot
@@ -56,3 +55,5 @@ DNS_SERVERS=8.8.8.8,8.8.4.4
 PROXY_SERVER=192.168.7.1
 DOMAIN=in.hpcnow.com
 DHCP_NIC=eth0
+LDAP_SERVER=ldap01
+LDAP_BASE="dc=in,dc=hpcnow,dc=com"
