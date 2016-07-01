@@ -57,7 +57,7 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
     else
         mkdir -p /sNow/snow-configspace/system_files/etc/sssd
-        cp -p /sNow/snow-tools/etc/config_template.d/ldap/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
         sed -i "s/__LDAP_SERVER__/$LDAP_SERVER/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
         sed -i "s/__LDAP_BASE__/$LDAP_BASE/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
         chmod 755 /sNow/snow-configspace/system_files/etc/sssd
@@ -67,6 +67,17 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
 fi
 
 # NTP Client Setup
+if  [[ ! -z "$NTP_SERVER" ]]; then 
+    installDebianPackage ${prefix} ntp
+    if [[ -e /sNow/snow-configspace/system_files/etc/ntp.conf ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/ntp.conf ${prefix}/etc/
+    else
+        cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp.conf
+        sed -i "s/__NTP_SERVER__/$NTP_SERVER/g" /sNow/snow-configspace/system_files/etc/ntp.conf
+        chmod 644 /sNow/snow-configspace/system_files/etc/ntp.conf
+        cp -pr /sNow/snow-configspace/system_files/etc/ntp.conf ${prefix}/etc/
+    fi
+fi
 
 # Proxy Client Setup
 
