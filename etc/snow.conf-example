@@ -46,17 +46,21 @@ GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
 DOWNLD=axel
 DOM_EXT=''
-# Network services
+# Locales
 LANG=en_US
+LC_ALL=C
 KEYMAP=us
 TIMEZONE=Europe/Amsterdam
+# Network services provided by sNow! (mandatory)
 GATEWAY=192.168.7.254
 DNS_SERVERS=8.8.8.8,8.8.4.4
-PROXY_SERVER=192.168.7.1
-PROXY_PORT=8080
 DOMAIN=in.hpcnow.com
 DHCP_NIC=eth0
-LDAP_SERVER=ldap01
-LDAP_BASE="dc=in,dc=hpcnow,dc=com"
-MAIL_SERVER=$PROXY_SERVER
-SYSLOG_SERVER=syslog
+# Network services provided by the site/institution (optional)
+#SITE_PROXY_SERVER=192.168.7.1
+#SITE_PROXY_PORT=8080
+#SITE_LDAP_SERVER=192.168.7.1
+#SITE_LDAP_PROTO=ldap
+#SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
+#SITE_MAIL_SERVER=192.168.7.1
+#SITE_SYSLOG_SERVER=192.168.7.1

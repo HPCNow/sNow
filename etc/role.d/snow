@@ -51,14 +51,20 @@ mkdir -p ${prefix}/root/.ssh
 cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 
 # LDAP Client Setup
+SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_UTIL/etc/domains.conf)
+LDAP_SERVER="${SITE_LDAP_SERVER:-$SNOW_LDAP_SERVER}"
+LDAP_BASE="${SITE_LDAP_PROTO:-ldap}"
+SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
+LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
 if  [[ ! -z "$LDAP_SERVER" ]]; then 
     installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
     if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
         cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
     else
+        LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_UTIL/etc/domains.conf)
         mkdir -p /sNow/snow-configspace/system_files/etc/sssd
         cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
-        sed -i "s/__LDAP_SERVER__/$LDAP_SERVER/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        sed -i "s/__LDAP_URI__/$LDAP_URI/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
         sed -i "s/__LDAP_BASE__/$LDAP_BASE/g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
         chmod 755 /sNow/snow-configspace/system_files/etc/sssd
         chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
@@ -67,6 +73,8 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
 fi
 
 # NTP Client Setup
+SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_UTIL/etc/domains.conf)
+NTP_SERVER="${SITE_NTP_SERVER:-$SNOW_NTP_SERVER}"
 if  [[ ! -z "$NTP_SERVER" ]]; then 
     installDebianPackage ${prefix} ntp
     if [[ -e /sNow/snow-configspace/system_files/etc/ntp.conf ]]; then 
@@ -80,6 +88,9 @@ if  [[ ! -z "$NTP_SERVER" ]]; then
 fi
 
 # Proxy Client Setup
+SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_UTIL/etc/domains.conf)
+PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+PROXY_PORT="${SITE_PROXY_PORT:-8080}"
 if  [[ ! -z "$PROXY_SERVER" ]]; then 
     if [[ -e /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ]]; then 
         cp -pr /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ${prefix}/etc/profile.d/
@@ -94,6 +105,8 @@ if  [[ ! -z "$PROXY_SERVER" ]]; then
 fi
 
 # Syslog Client Setup
+SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_UTIL/etc/domains.conf)
+SYSLOG_SERVER="${SITE_SYSLOG_SERVER:-$SNOW_SYSLOG_SERVER}"
 if  [[ ! -z "$SYSLOG_SERVER" ]]; then 
     installDebianPackage ${prefix} rsyslog
     if [[ -e /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf ]]; then 
@@ -105,6 +118,8 @@ if  [[ ! -z "$SYSLOG_SERVER" ]]; then
 fi
 
 # SMTP Client Setup
+SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_UTIL/etc/domains.conf)
+MAIL_SERVER="${SITE_MAIL_SERVER:-$SNOW_MAIL_SERVER}"
 if  [[ ! -z "$MAIL_SERVER" ]]; then 
     installDebianPackage ${prefix} exim4-config
     chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
