@@ -20,6 +20,7 @@ SNOW_ACTIVE_DOMAINS=$SNOWPATH/../etc/active-domains.conf
 SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 HAS_EE=false
 DOWNLD=wget
+declare -A CLUSTERS
 opt1=$1
 opt2=$2
 opt3=$3
@@ -59,7 +60,7 @@ Function List:
     * config                         | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
     * update tools                   | updates the sNow! Tools 
     * update configspace             | updates configuration files from private git 
-    * update snow_template           | updates the sNow! image used to create new domains
+    * update template                | updates the sNow! image used to create new domains
     * deploy <domain|server>         | deploy specific domain/server 
     * remove <domain>                | removes an existing domain deployed with sNow!
     * list                           | list current domains (services) and their status
@@ -100,9 +101,112 @@ if [[ ! $HAS_EE ]]; then
     }
 fi
 
+function download() {
+    case $DOWNLD in
+        axel) 
+            axel -q -n 10 $1 -o $2 
+        ;;
+        wget)
+            wget -q -P $2 $1
+        ;;
+        *) 
+            error_exit "Error: $DOWNLD is not supported"
+        ;;
+    esac
+}
+
+function bkp() {
+    bkpfile=$1
+    next=$(date +%Y%m%d%H%M)
+    cp -pr $bkpfile $bkpfile.$next-snow
+}
+
+function prefix_to_bit_netmask() {
+    prefix=$1;
+    shift=$(( 32 - prefix ));
+    bitmask=""
+    for (( i=0; i < 32; i++ )); do
+        num=0
+        if [ $i -lt $prefix ]; then
+            num=1
+        fi
+        space=
+        if [ $(( i % 8 )) -eq 0 ]; then
+            space=" ";
+        fi
+        bitmask="${bitmask}${space}${num}"
+    done
+    echo $bitmask
+}
+
+function bit_netmask_to_wildcard_netmask() {
+    bitmask=$1;
+    wildcard_mask=
+    for octet in $bitmask; do
+        wildcard_mask="${wildcard_mask} $(( 255 - 2#$octet ))"
+    done
+    echo $wildcard_mask;
+}
+
+function mask2cidr() {
+    nbits=0
+    IFS=.
+    for dec in $1 ; do
+        case $dec in
+            255) let nbits+=8;;
+            254) let nbits+=7;;
+            252) let nbits+=6;;
+            248) let nbits+=5;;
+            240) let nbits+=4;;
+            224) let nbits+=3;;
+            192) let nbits+=2;;
+            128) let nbits+=1;;
+            0);;
+            *) error_exit "Error: $dec is not recognised"
+        esac
+    done
+    echo "$nbits"
+}
+
+function generate_hostlist() {
+    ip=$1
+    host_extension=$2
+    net=$(echo $ip | cut -d '/' -f 1);
+    prefix=$(echo $ip | cut -d '/' -f 2);
+    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        cidr=$(mask2cidr $prefix)
+    else
+        cidr=$prefix
+    fi
+    bit_netmask=$(prefix_to_bit_netmask $cidr);
+    wildcard_mask=$(bit_netmask_to_wildcard_netmask "$bit_netmask");
+    str=
+    for (( i = 1; i <= 4; i++ )); do
+        range=$(echo $net | cut -d '.' -f $i)
+        mask_octet=$(echo $wildcard_mask | cut -d ' ' -f $i)
+        if [ $mask_octet -gt 0 ]; then
+            range="{$range..$(( $range | $mask_octet ))}";
+        fi
+        str="${str} $range"
+    done
+    ips=$(echo $str | sed "s, ,\\.,g"); 
+    hostip=( $(eval echo $ips | tr ' ' '\n') )
+    if (( "${#host[@]}" > "${#hostip[@]}" )); then
+        error_exit "Error: the /etc/hosts can NOT be generated because the IP rank is too short!"
+    fi
+    for (( i=0; i<${#host[@]}; i++ ));
+    do 
+        printf "%s %20s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+    done
+}
+
+
 function init() {
     if [[ ! $HA_NFSROOT ]]; then
         # NFS_ROOT Exports
+        if [[ ! -d /etc/exports.d ]]; then
+           mkdir -p /etc/exports.d
+        fi
         if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow.exports ]]; then
             if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
                 mkdir -p $SNOW_CONF/system_files/etc/exports.d
@@ -112,10 +216,10 @@ function init() {
                     print "/sNow/"$1"\t "snow01"(rw,sync,no_subtree_check,no_root_squash) "snow02"(rw,sync,no_subtree_check,no_root_squash) " $1"(rw,sync,no_subtree_check,no_root_squash)"
                 }
             }' $SNOW_ACTIVE_DOMAINS > $SNOW_CONF/system_files/etc/exports.d/snow.exports
+            ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
             echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
             echo "Once you are done, execute exportfs -u"
         fi
-        ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
     #If the master is the NFS Server it will setup the $SNOW_CONF/system_files/etc/exports.d/snow.exports
     if [[ "$(uname -n)" == "$NFS_SERVER" ]]; then
@@ -126,6 +230,9 @@ function init() {
             echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" >> $SNOW_CONF/system_files/etc/exports.d/snow.exports
             echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
             echo "Once you are done, execute exportfs -rv"
+        fi
+        if [[ ! -d /etc/exports.d ]]; then
+            mkdir -p /etc/exports.d
         fi
         ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
@@ -140,6 +247,52 @@ function init() {
             }' -f $SNOW_ACTIVE_DOMAINS >> $SNOW_TOOL/etc/domains.conf
         echo "Review the domains config file : $SNOW_TOOL/etc/domains.conf"
     fi
+    # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
+    host=( )
+    for i in "${!CLUSTERS[@]}"
+    do 
+        node_rank ${CLUSTERS[$i]}
+        host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+    done
+    bkp /etc/hosts
+    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
+    generate_hostlist ${NET_IPMI[2]}100/${NET_IPMI[3]} "${NET_IPMI[4]}" >> /etc/hosts
+    generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> /etc/hosts
+    cp -p /etc/hosts $SNOW_CONF/system_files/etc/hosts 
+
+    # Generate /etc/ssh/ssh_known_hosts
+    bkp /etc/ssh/ssh_known_hosts
+    echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
+    cp -p /etc/ssh/ssh_known_hosts $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts
+    # Generate /etc/ssh/shosts.equiv
+    bkp /etc/ssh/shosts.equiv
+    echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
+    cp -p /etc/ssh/shosts.equiv $SNOW_CONF/system_files/etc/ssh/shosts.equiv
+    bkp /root/.shosts
+    cp /etc/ssh/shosts.equiv /root/.shosts
+    # Update /etc/ssh/ssh_config
+    bkp /etc/ssh/ssh_config
+    if [[ ! $(grep -q "HostbasedAuthentication yes" /etc/ssh/ssh_config) ]]; then
+        echo "    HostbasedAuthentication yes" >> /etc/ssh/ssh_config
+        echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
+        echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+    fi
+
+    # Download linux kernel to boot OS from PXE defined in snow.conf
+    # CentOS 7
+    read -p "Do you want to download PXE bootable kernels (Y/n)? " -n 1 -r
+    echo    ## move to a new line
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        echo "PXE boot will not work unless you use a proper kernel. Manual setup will be required."
+    else
+        if [[ ! -d $SNOW_PATH/OS/deploy/kickstart/centos-7.0 ]]; then
+            mkdir -p $SNOW_PATH/OS/deploy/kickstart/centos-7.0
+        fi
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img $SNOW_PATH/OS/deploy/kickstart/centos-7.0/ 
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz $SNOW_PATH/OS/deploy/kickstart/centos-7.0/
+    fi
+    # Download the ISO in order to create the local repo defined in snow.conf
+
 }
 
 function update_tools() {
@@ -292,17 +445,17 @@ function deploy() {
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}-bmc" -U $IPMIUSER -P $IPMIPWD power on \; \
                 sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                sleep 180
+                sleep $BOOT_DELAY
                 echo "Setting up dis as boot device... Please wait"
                 deploy_copy $DEFAULT_BOOT
             else
                 check_host_status $1-bmc
                 cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+                ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
-                ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
+                ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
-                sleep 180
+                sleep $BOOT_DELAY
                 cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_BOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
@@ -351,7 +504,7 @@ function boot() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power on
         fi
     fi
 }
@@ -440,7 +593,7 @@ function ndestroy() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power off
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power off
         fi
     fi
 }
@@ -464,7 +617,7 @@ function npoweroff() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power soft
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power soft
         fi
     fi
 }
@@ -488,7 +641,7 @@ function nreset() {
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1-bmc
-            ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD power reset
         fi
     fi
 }
@@ -503,9 +656,9 @@ function nconsole() {
         xl console $1
     else
         check_host_status $1-bmc
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol deactivate
+        ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1-bmc -U $IPMIUSER -P $IPMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1-${NET_IPMI[4]}-U $IPMIUSER -P $IPMIPWD sol activate
     fi
 }
 
@@ -539,7 +692,7 @@ case $opt1 in
             configspace)
                 update_configspace
             ;;
-            snow_template)
+            template)
                 update_xen_image
             ;;
             *)
