@@ -4,7 +4,6 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
-set -xv
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
