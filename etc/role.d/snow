@@ -1,7 +1,7 @@
 #!/bin/bash
 # Configure the new image for sNow! HPC suite
-# Developed by HPCNow! www.hpcnow.com
-# Jordi Blasco
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
@@ -21,39 +21,136 @@ else
     exit 1
 fi
 
-# Config Manager -CFEngine
-SNOWCM=${SNOWCM:-cfengine3}
-CF_SERVER=${CF_SERVER:-snow01}
-
-# CFEngine community repos
-if  [[ "$SNOWCM" == "cfengine3" ]]; then 
-    # There is a bug in the CFEngine debian repos. Using package instead
-    CFENGINE_VER="3.7.2-1"
-    #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
-    #chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
-    #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
-    #chroot ${prefix} /usr/bin/apt-get update
-    #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
-    wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-    chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-    cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot.service  ${prefix}/lib/systemd/system/cf_boot.service
-    cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot  ${prefix}/usr/local/bin/cf_boot
-    sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/bin/cf_boot
-    chmod 700 ${prefix}/usr/local/bin/cf_boot
-    chroot ${prefix} systemctl enable cf_boot
+# Config Manager
+if  [[ ! -z "$CF_SERVER" ]]; then 
+    case $SNOWCF in
+        CFENGINE|cfengine)
+            # There is a bug in the CFEngine debian repos. Using package instead
+            #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
+            #chroot ${prefix} /usr/bin/apt-key add /tmp/gpg.key
+            #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
+            #chroot ${prefix} /usr/bin/apt-get update
+            #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
+            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot.service  ${prefix}/lib/systemd/system/cf_boot.service
+            cp -p /sNow/snow-tools/etc/role.d/boot/cf_boot  ${prefix}/usr/local/bin/cf_boot
+            sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/bin/cf_boot
+            chmod 700 ${prefix}/usr/local/bin/cf_boot
+            chroot ${prefix} systemctl enable cf_boot
+            ;;
+        *)
+            echo "$SNOWCF is NOT supported"
+            ;;
+    esac
 fi
 
 # SSH Setup
-echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
-mkdir -p ${prefix}/root/.ssh
-cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+ADMIN_USERS="${ADMIN_USERS:-root snow}"
+ADMIN_GROUPS="${ADMIN_GROUPS:-root snow}"
+if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config ${prefix}/etc/ssh/sshd_config
+    mkdir -p ${prefix}/root/.ssh
+    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+else
+    echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
+    echo "AllowUsers $ADMIN_USERS" >> ${prefix}/etc/ssh/sshd_config
+    echo "AllowGroups $ADMIN_GROUPS" >> ${prefix}/etc/ssh/sshd_config
+    mkdir -p /sNow/snow-configspace/system_files/etc/ssh
+    cp -p ${prefix}/etc/ssh/sshd_config /sNow/snow-configspace/system_files/etc/ssh/sshd_config
+    mkdir -p ${prefix}/root/.ssh
+    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
+fi
 
 # LDAP Client Setup
+SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+LDAP_SERVER="${SITE_LDAP_SERVER:-$SNOW_LDAP_SERVER}"
+LDAP_PROTO="${SITE_LDAP_PROTO:-ldap}"
+SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
+LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
+if  [[ ! -z "$LDAP_SERVER" ]]; then 
+    installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
+    if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
+    else
+        LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)
+        mkdir -p /sNow/snow-configspace/system_files/etc/sssd
+        cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        sed -i "s|__LDAP_URI__|$LDAP_URI|g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        sed -i "s|__LDAP_BASE__|$LDAP_BASE|g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        chmod 755 /sNow/snow-configspace/system_files/etc/sssd
+        chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+        cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
+    fi
+fi
 
 # NTP Client Setup
+SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+NTP_SERVER="${SITE_NTP_SERVER:-$SNOW_NTP_SERVER}"
+if  [[ ! -z "$NTP_SERVER" ]]; then 
+    installDebianPackage ${prefix} ntp
+    if [[ -e /sNow/snow-configspace/system_files/etc/ntp.conf ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/ntp.conf ${prefix}/etc/
+    else
+        cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp.conf
+        sed -i "s/__NTP_SERVER__/$NTP_SERVER/g" /sNow/snow-configspace/system_files/etc/ntp.conf
+        chmod 644 /sNow/snow-configspace/system_files/etc/ntp.conf
+        cp -pr /sNow/snow-configspace/system_files/etc/ntp.conf ${prefix}/etc/
+    fi
+fi
 
 # Proxy Client Setup
+SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+if  [[ ! -z "$PROXY_SERVER" ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ${prefix}/etc/profile.d/
+    else
+        mkdir -p /sNow/snow-configspace/system_files/etc/profile.d
+        cp -p /sNow/snow-tools/etc/config_template.d/proxy_client/proxy_profile.sh /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh
+        cp -p /sNow/snow-tools/etc/config_template.d/proxy_client/proxy_profile.csh /sNow/snow-configspace/system_files/etc/profile.d/proxy.csh
+        sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        sed -i "s/__PROXY_PORT__/$PROXY_PORT/g" /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        chmod 644 /sNow/snow-configspace/system_files/etc/profile.d/proxy.*
+        cp -p /sNow/snow-configspace/system_files/etc/profile.d/proxy.* ${prefix}/etc/profile.d/
+    fi
+fi
 
 # Syslog Client Setup
+SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SYSLOG_SERVER="${SITE_SYSLOG_SERVER:-$SNOW_SYSLOG_SERVER}"
+if  [[ ! -z "$SYSLOG_SERVER" ]]; then 
+    installDebianPackage ${prefix} rsyslog
+    if [[ -e /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf ]]; then 
+        cp -p /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf ${prefix}/etc/rsyslog.d/50-default.conf
+    else
+        mkdir -p /sNow/snow-configspace/system_files/etc/rsyslog.d
+        echo "*.*                         @@$SYSLOG_SERVER:514" >> ${prefix}/etc/rsyslog.d/50-default.conf
+        cp -p ${prefix}/etc/rsyslog.d/50-default.conf /sNow/snow-configspace/system_files/etc/rsyslog.d/50-default.conf
+    fi
+fi
 
 # SMTP Client Setup
+SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+MAIL_SERVER="${SITE_MAIL_SERVER:-$SNOW_MAIL_SERVER}"
+if  [[ ! -z "$MAIL_SERVER" ]]; then 
+    # The following line fixes a issue with exim installation
+    chroot ${prefix} /usr/sbin/addgroup --system Debian-exim --force-badname
+    installDebianPackage ${prefix} exim4-config
+    chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
+exim4-config    exim4/hide_mailname boolean false
+exim4-config    exim4/dc_localdelivery select mbox format in /var/mail/
+exim4-config    exim4/dc_smarthost string $MAIL_SERVER
+exim4-config    exim4/dc_minimaldns boolean false
+exim4-config    exim4/dc_other_hostnames string $DOMAIN
+exim4-config    exim4/use_split_config boolean false
+exim4-config    exim4/mailname string $GUEST_FQDN
+exim4-config    exim4/dc_postmaster string snow
+exim4-config    exim4/no_config boolean true
+exim4-config    exim4/dc_local_interfaces boolean 127.0.0.1 ; ::1
+exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail
+CONF
+
+fi
+
