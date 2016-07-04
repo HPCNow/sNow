@@ -53,7 +53,7 @@ LANG=en_US
 LC_ALL=C
 KEYMAP=us
 TIMEZONE=Europe/Amsterdam
-# Network services provided by sNow! (mandatory)
+# Network parameters and services required by sNow! (mandatory)
 GATEWAY=192.168.7.254
 DNS_SERVERS=8.8.8.8,8.8.4.4
 DOMAIN=in.hpcnow.com
