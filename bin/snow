@@ -474,7 +474,7 @@ function list() {
 }
 
 function avail_domains() {
-    xen-list-images --test /sNow/snow-tools/etc/domains
+    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains
 }
 
 function check_host_status(){
