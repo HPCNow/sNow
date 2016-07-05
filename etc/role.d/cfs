@@ -1,0 +1,63 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Check for NFS mount points in the snow.conf
+NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if (! $NFS_CLIENT); then
+    installDebianPackage ${prefix} nfs-client
+    for MOUNT_NFS in MOUNT_NFS{1..100}; do
+        if [[ ! -z $MOUNT_NFS ]]; then
+            mkdir -p $(echo ${MOUNT_NFS} | gawk '{print $2}')
+            echo "$MOUNT_NFS" >> /etc/fstab
+        fi
+    done
+fi
+                                                    
+# Check for BeeGFS mount points in the snow.conf
+BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if (! $BEEGFS_CLIENT); then
+    wget -q http://www.beegfs.com/release/beegfs_2015.03/dists/beegfs-deb8.list -P /etc/apt/sources.list.d/
+    wget -q http://www.beegfs.com/release/latest-stable/gpg/DEB-GPG-KEY-beegfs -O- | apt-key add -
+    chroot ${prefix} /usr/bin/apt-get update 
+    installDebianPackage ${prefix} beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client linux-kernel-headers
+    for MOUNT_BEEGFS in MOUNT_BEEGFS{1..100}; do
+        if [[ ! -z $MOUNT_BEEGFS ]]; then
+            mkdir -p $(echo ${MOUNT_BEEGFS} | gawk '{print $1}')
+            echo "$MOUNT_BEEGFS" >> /etc/beegfs/beegfs-mounts.conf
+        fi
+    done
+fi
+
+# Check for Lustre mount points in the snow.conf - EXPERIMENTAL
+LUSTRE_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_LUSTRE/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if (! $LUSTRE_CLIENT); then
+    wget -q http://repo.hpcnow.com/apt/lustre-deb8.list -P /etc/apt/sources.list.d/
+    wget -q http://repo.hpcnow.com/apt/latest-stable/gpg/hpcnow-GPG-KEY -O- | apt-key add -
+    installDebianPackage ${prefix} lustre-tests
+    for MOUNT_LUSTRE in MOUNT_LUSTRE{1..100}; do
+        if [[ ! -z $MOUNT_LUSTRE ]]; then
+            mkdir -p $(echo ${MOUNT_LUSTRE} | gawk '{print $2}')
+            echo "$MOUNT_LUSTRE" >> /etc/fstab
+        fi
+    done
+fi

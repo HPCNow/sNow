@@ -50,7 +50,6 @@ DOWNLD=axel
 DOM_EXT=''
 # Locales
 LANG=en_US
-LC_ALL=C
 KEYMAP=us
 TIMEZONE=Europe/Amsterdam
 # Network parameters and services required by sNow! (mandatory)
@@ -66,3 +65,11 @@ DHCP_NIC=eth0
 #SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
 #SITE_MAIL_SERVER=192.168.7.1
 #SITE_SYSLOG_SERVER=192.168.7.1
+# Shared Filesystem Support
+# NFS Clients
+MOUNT_NFS01="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
+# BeeGFS Clients
+#BEEGFSMGMT=beegfs-01
+#MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
+# Lustre Clients
+#MOUNT_LUSTRE01="192.168.3.146@o2ib:192.168.3.145@o2ib:/scratch  /scratch  lustre  defaults    0 0"
