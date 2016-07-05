@@ -118,7 +118,9 @@ function download() {
 function bkp() {
     bkpfile=$1
     next=$(date +%Y%m%d%H%M)
-    cp -pr $bkpfile $bkpfile.$next-snow
+    if [[ -e $bkpfile ]]; then 
+        cp -pr $bkpfile $bkpfile.$next-snow
+    fi
 }
 
 function prefix_to_bit_netmask() {
@@ -202,22 +204,23 @@ function generate_hostlist() {
 
 
 function init() {
-    if [[ ! $HA_NFSROOT ]]; then
+if (! $HA_NFSROOT) ; then
         # NFS_ROOT Exports
         if [[ ! -d /etc/exports.d ]]; then
            mkdir -p /etc/exports.d
         fi
-        if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow.exports ]]; then
+        if [[ ! -f $SNOW_CONF/system_files/etc/exports.d/snow_domains.exports ]]; then
             if [[ ! -d $SNOW_CONF/system_files/etc/exports.d ]]; then
                 mkdir -p $SNOW_CONF/system_files/etc/exports.d
             fi
-            gawk -v snow01=${SNOWNODES[0]} -v snow02=${SNOWNODES[1]} '{
+            snow_servers_exports=$(echo "${SNOWNODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
+            gawk -v snow_servers_exports=$snow_servers_exports '{
                 if ($1 !~ /^#|snow/){
-                    print "/sNow/"$1"\t "snow01"(rw,sync,no_subtree_check,no_root_squash) "snow02"(rw,sync,no_subtree_check,no_root_squash) " $1"(rw,sync,no_subtree_check,no_root_squash)"
+                    print "/sNow/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
                 }
-            }' $SNOW_ACTIVE_DOMAINS > $SNOW_CONF/system_files/etc/exports.d/snow.exports
-            ln -sf $SNOW_CONF/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
-            echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow.exports"
+            }' $SNOW_ACTIVE_DOMAINS > $SNOW_CONF/system_files/etc/exports.d/snow_domains.exports
+            ln -sf $SNOW_CONF/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
+            echo "Review the following exports file : $SNOW_CONF/system_files/etc/exports.d/snow_domains.exports"
             echo "Once you are done, execute exportfs -u"
         fi
     fi
