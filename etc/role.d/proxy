@@ -67,7 +67,6 @@ if  [[ ! -z "$SNOW_MAIL_SERVER" ]]; then
         chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
 exim4-config    exim4/hide_mailname boolean false
 exim4-config    exim4/dc_localdelivery select mbox format in /var/mail/
-exim4-config    exim4/dc_smarthost string $SITE_MAIL_SERVER
 exim4-config    exim4/dc_relay_nets string ${NET_SNOW[2]}0/${NET_SNOW[3]}
 exim4-config    exim4/dc_minimaldns boolean false
 exim4-config    exim4/dc_other_hostnames string $DOMAIN
@@ -76,12 +75,16 @@ exim4-config    exim4/mailname string $GUEST_FQDN
 exim4-config    exim4/dc_postmaster string snow
 exim4-config    exim4/no_config boolean true
 exim4-config    exim4/dc_local_interfaces string 127.0.0.1 ; $SNOW_MAIL_SERVER ; ::1
-exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail
+exim4-config    exim4/dc_eximconfig_configtype select internet site; mail is sent and received directly using SMTP
 CONF
-        chroot ${prefix} /usr/bin/debconf-show exim4-config
+        if  [[ ! -z "$SITE_MAIL_SERVER" ]]; then 
+            echo "exim4-config    exim4/dc_smarthost string $SITE_MAIL_SERVER" | chroot ${prefix} /usr/bin/debconf-set-selections
+            echo "exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail" | chroot ${prefix} /usr/bin/debconf-set-selections
+        fi
         if  [[ ! -z "$SITE_MAIL_SERVER" && ! -z "$SITE_MAIL_USER" && ! -z "$SITE_MAIL_PASSWD" ]]; then 
             echo "$SITE_MAIL_SERVER:$SITE_MAIL_USER:$SITE_MAIL_PASSWD" >> /etc/exim4/passwd.client
         fi
+        chroot ${prefix} /usr/bin/debconf-show exim4-config
         cp -pr ${prefix}/etc/exim4 /sNow/snow-configspace/system_files/etc/
     fi
 fi
