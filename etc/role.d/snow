@@ -86,7 +86,11 @@ fi
 
 # NTP Client Setup
 SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-NTP_SERVER="${SITE_NTP_SERVER:-$SNOW_NTP_SERVER}"
+if  [[ ! -z "$SNOW_NTP_SERVER" && ! -z "$SITE_NTP_SERVER" ]]; then 
+    NTP_SERVER=$SNOW_NTP_SERVER
+else
+    NTP_SERVER="${SITE_NTP_SERVER:-$SNOW_NTP_SERVER}"
+fi
 if  [[ ! -z "$NTP_SERVER" ]]; then 
     installDebianPackage ${prefix} ntp
     if [[ -e /sNow/snow-configspace/system_files/etc/ntp.conf ]]; then 
@@ -101,8 +105,13 @@ fi
 
 # Proxy Client Setup
 SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
-PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
+    PROXY_SERVER=$SNOW_PROXY_SERVER
+    PROXY_PORT=8080
+else
+    PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+    PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+fi
 if  [[ ! -z "$PROXY_SERVER" ]]; then 
     if [[ -e /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ]]; then 
         cp -pr /sNow/snow-configspace/system_files/etc/profile.d/proxy.sh ${prefix}/etc/profile.d/
@@ -133,7 +142,11 @@ fi
 
 # SMTP Client Setup
 SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-MAIL_SERVER="${SITE_MAIL_SERVER:-$SNOW_MAIL_SERVER}"
+if  [[ ! -z "$SNOW_MAIL_SERVER" && ! -z "$SITE_MAIL_SERVER" ]]; then 
+    MAIL_SERVER=$SNOW_MAIL_SERVER
+else
+    MAIL_SERVER="${SITE_MAIL_SERVER:-$SNOW_MAIL_SERVER}"
+fi
 if  [[ ! -z "$MAIL_SERVER" ]]; then 
     # The following line fixes a issue with exim installation
     chroot ${prefix} /usr/sbin/addgroup --system Debian-exim --force-badname
