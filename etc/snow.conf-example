@@ -60,10 +60,13 @@ DHCP_NIC=eth0
 # Network services provided by the site/institution (optional)
 #SITE_PROXY_SERVER=192.168.7.1
 #SITE_PROXY_PORT=8080
+#SITE_NTP_SERVER=192.168.7.1
 #SITE_LDAP_SERVER=192.168.7.1
 #SITE_LDAP_PROTO=ldap
 #SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
-#SITE_MAIL_SERVER=192.168.7.1
+#SITE_MAIL_SERVER=smtp.gmail.com::587
+#SITE_MAIL_USER=
+#SITE_MAIL_PASSWD=
 #SITE_SYSLOG_SERVER=192.168.7.1
 # Shared Filesystem Support
 # NFS Clients
