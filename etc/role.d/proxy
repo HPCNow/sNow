@@ -78,6 +78,7 @@ exim4-config    exim4/no_config boolean true
 exim4-config    exim4/dc_local_interfaces string 127.0.0.1 ; $SNOW_MAIL_SERVER ; ::1
 exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail
 CONF
+        chroot ${prefix} /usr/bin/debconf-show exim4-config
         if  [[ ! -z "$SITE_MAIL_SERVER" && ! -z "$SITE_MAIL_USER" && ! -z "$SITE_MAIL_PASSWD" ]]; then 
             echo "$SITE_MAIL_SERVER:$SITE_MAIL_USER:$SITE_MAIL_PASSWD" >> /etc/exim4/passwd.client
         fi
