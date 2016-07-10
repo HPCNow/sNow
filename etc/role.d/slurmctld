@@ -22,12 +22,12 @@ else
 fi
 
 # Slurm Database Server Setup
-SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
+SNOW_SLURMCTLD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_SLURMCTLD_SERVER" ]]; then 
     installDebianPackage ${prefix} curl pbzip2
     /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
     echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
+    installDebianPackage ${prefix} slurm-llnl slurm-client 
     sed -i 's/slurm-llnl/slurm/g' ${prefix}/etc/init.d/slurm* 
     chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
     # Check UIDs and GIDs
@@ -58,11 +58,29 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
         # Setup initial Slurm Database configuration based on the environment.
         # Note that if you alredy have the config files available, no changes will be performed.
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-        cp -pr /sNow/snow-tools/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
-        sed -i "s/__SLURMDBD_PWD__/$SLURMDBD_PWD/g" ${prefix}/etc/slurm/slurmdbd.conf
-        sed -i "s/__SLURMDBD_USER__/$SLURMDBD_USER/g" ${prefix}/etc/slurm/slurmdbd.conf
+        cp -pr /sNow/snow-tools/etc/config_template.d/slurmctld/* ${prefix}/etc/slurm/
+        sed -i "s/__CONTROL_MACHINE__/$CONTROL_MACHINE/g" ${prefix}/etc/slurm/slurm.conf
+        if [[ -n "$BACKUP_CONTROLLER" ]]; then
+            sed -i "s/#BackupController=__BACKUP_CONTROLLER__/BackupController=$BACKUP_CONTROLLER/g" ${prefix}/etc/slurm/slurm.conf
+        fi 
+        sed -i "s/__LICENSES__/$LICENSES/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s/__COMPUTE_NODES__/$COMPUTE_NODES/g" ${prefix}/etc/slurm/*.conf
+        sed -i "s/__COMPUTE_NODES_MEM__/$COMPUTE_NODES_MEM/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s/__COMPUTE_NODES_SOCKETS__/$COMPUTE_NODES_SOCKETS/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s/__COMPUTE_NODES_CORESxSOCKET__/$COMPUTE_NODES_CORESxSOCKET/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s/__COMPUTE_NODES_THREADS__/$COMPUTE_NODES_THREADS/g" ${prefix}/etc/slurm/slurm.conf
+        if [[ "$SLURM_ACCOUNTING_STORAGE_ENABLE" == "true" ]]; then
+            sed -i "s/#__INCLUDE_LOGGING_AND_ACCOUNTING__/include \/etc\/slurm\/accounting.conf/g" ${prefix}/etc/slurm/slurm.conf
+            sed -i "s/__ACCOUNTING_STORAGE_ENFORCE__/$ACCOUNTING_STORAGE_ENFORCE/g" ${prefix}/etc/slurm/accounting.conf
+            sed -i "s/__ACCOUNTING_STORAGE_HOST__/$ACCOUNTING_STORAGE_HOST/g" ${prefix}/etc/slurm/accounting.conf
+            sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" ${prefix}/etc/slurm/accounting.conf
+            #chroot ${prefix} /usr/bin/sacctmgr -i create cluster $CLUSTER_NAME
+        fi
+        chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        echo "Slurm master has been setup. Please, update the current slurm configuration files to your needs."
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     fi
 fi
 
 export SLURM_CONF=/etc/slurm/slurmdbd.conf
+
