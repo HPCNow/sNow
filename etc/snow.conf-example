@@ -80,17 +80,13 @@ MOUNT_NFS01="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
 # Slurm Database
 SLURMDBD_USER=slurm
 SLURMDBD_PWD=whatever
-MYSQL_ROOT_PASSWORD=whatever-root
-DATADIR=/var/lib/mysql
-MYSQL_DATABASE=slurm_acct_db
-MYSQL_USER=slurm
-MYSQL_PASSWORD=whatever
-#MUNGE
-#Slurmctl master
-SLURMVERSION=15.8.2
-SLURM_CONF=/etc/slurm/slurm.conf
+SLURM_DATABASE=slurm_acct_db
+# MUNGE
 MUNGE_UID=994
 MUNGE_GID=994
+# Slurmctl master
+SLURMVERSION=15.8.2
+SLURM_CONF=/etc/slurm/slurm.conf
 SLURM_GID=995
 SLURM_UID=995
 LICENSES=intel*2,matlab*200,fluent*5000
@@ -104,7 +100,5 @@ SLURM_PARTITION01="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99] 
 SLURM_PARTITION02="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=75  MaxTime=72:00:00  PreemptMode=off"
 SLURM_PARTITION03="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=NO      Priority=50  MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
 SLURM_PARTITION04="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES Shared=FORCE:1 Priority=25  MaxTime=168:00:00 PreemptMode=suspend"
-SLURM_ACCOUNTING_STORAGE_ENABLE=true
 ACCOUNTING_STORAGE_ENFORCE=associations,qos
-ACCOUNTING_STORAGE_HOST=slurmdbd-01
 SLURM_CLUSTER_NAME=mycluster

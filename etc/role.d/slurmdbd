@@ -13,20 +13,34 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e $SNOW_TOOL/etc/snow.conf ]]; then
-    . $SNOW_TOOL/etc/snow.conf
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
 else
-    echo "The $SNOW_TOOL/etc/snow.conf is not available."
-    echo "Please use the $SNOW_TOOL/etc/snow.conf-example to setup your environment."
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
     exit 1
 fi
+
+export DEBIAN_FRONTEND=noninteractive
 
 # Slurm Database Server Setup
 SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
-    installDebianPackage ${prefix} curl pbzip2
-    /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    #chroot ${prefix} /usr/bin/apt-get update -q 
+    echo "mysql-server-5.5 mysql-server/root_password password HPCNow" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password HPCNow" | chroot ${prefix} /usr/bin/debconf-set-selections
+    MASTERPWD=HPCNow
+    chroot ${prefix} DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl pbzip2 mysql-server
+    #installDebianPackage ${prefix} curl pbzip2 mysql-server
+    #chroot ${prefix} /usr/bin/mysqladmin -u root password '$MASTERPWD'
+    chroot ${prefix} /bin/systemctl start mysql.service
+    chroot ${prefix} /bin/systemctl enable mysql.service
+    echo "create database $MYSQL_DATABASE;" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
+    echo "grant all on $MYSQL_DATABASE.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
+    chroot ${prefix} /bin/systemctl stop mysql.service
+    /usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
     echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
     sed -i 's/slurm-llnl/slurm/g' ${prefix}/etc/init.d/slurm* 
     chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
