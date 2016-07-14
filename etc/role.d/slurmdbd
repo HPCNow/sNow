@@ -34,9 +34,10 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     #MASTERPWD=HPCNow
     DEBIAN_FRONTEND=noninteractive chroot ${prefix} /usr/bin/apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl pbzip2 mysql-server
     #installDebianPackage ${prefix} curl pbzip2 mysql-server
-    #chroot ${prefix} /usr/bin/mysqladmin -u root password '$MASTERPWD'
     chroot ${prefix} /bin/systemctl start mysql.service
     chroot ${prefix} /bin/systemctl enable mysql.service
+    sleep 30
+    chroot ${prefix} /usr/bin/mysqladmin -u root password '$MASTERPWD'
     echo "create database $MYSQL_DATABASE;" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
     echo "grant all on $MYSQL_DATABASE.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
     chroot ${prefix} /bin/systemctl stop mysql.service
@@ -65,6 +66,8 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
         chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
         chroot ${prefix} /bin/chmod 700 /etc/munge
         chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
+        mkdir -p $SNOW_CONF/system_files/etc/munge
+        cp -p ${prefix}/etc/munge/munge.key $SNOW_CONF/system_files/etc/munge/munge.key
     fi
     if [[ -e $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf ]]; then 
         # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
@@ -74,6 +77,7 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     else
         # Setup initial Slurm Database configuration based on the environment.
         # Note that if you alredy have the config files available, no changes will be performed.
+        mkdir -p $SNOW_CONF/system_files/etc/slurm
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         cp -pr $SNOW_TOOL/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
         sed -i "s/__SLURMDBD_PWD__/$SLURMDBD_PWD/g" ${prefix}/etc/slurm/slurmdbd.conf
