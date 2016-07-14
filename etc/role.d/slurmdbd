@@ -4,6 +4,8 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
+set -xv
+
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -21,12 +23,29 @@ else
     exit 1
 fi
 
+export DEBIAN_FRONTEND=noninteractive
+
 # Slurm Database Server Setup
-SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
-    installDebianPackage ${prefix} curl pbzip2
-    /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    #chroot ${prefix} /usr/bin/apt-get update -q 
+    echo "mysql-server-5.5 mysql-server/root_password password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    #MASTERPWD=HPCNow
+    DEBIAN_FRONTEND=noninteractive chroot ${prefix} /usr/bin/apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl pbzip2 mysql-server
+    #installDebianPackage ${prefix} curl pbzip2 mysql-server
+    chroot ${prefix} /bin/systemctl start mysql.service
+    chroot ${prefix} /bin/systemctl enable mysql.service
+    sleep 30
+    chroot ${prefix} /usr/bin/mysqladmin -u root password '$MASTERPWD'
+    echo "create database $MYSQL_DATABASE;" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
+    echo "grant all on $MYSQL_DATABASE.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -u root -p $MASTERPWD
+    chroot ${prefix} /bin/systemctl stop mysql.service
+    #/usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
     sed -i 's/slurm-llnl/slurm/g' ${prefix}/etc/init.d/slurm* 
     chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
@@ -41,28 +60,31 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     fi
     # Setup Munge key slurm
     # Note that if you alredy have the config files available, no changes will be performed.
-    if [[ ! -e /sNow/snow-configspace/system_files/etc/munge/munge.key ]]; then
+    if [[ ! -e $SNOW_CONF/system_files/etc/munge/munge.key ]]; then
         dd if=/dev/urandom bs=1 count=1024 > ${prefix}/etc/munge/munge.key 
         chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
         chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
         chroot ${prefix} /bin/chmod 700 /etc/munge
         chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
+        mkdir -p $SNOW_CONF/system_files/etc/munge
+        cp -p ${prefix}/etc/munge/munge.key $SNOW_CONF/system_files/etc/munge/munge.key
     fi
-    if [[ -e /sNow/snow-configspace/system_files/etc/slurm/slurmdbd.conf ]]; then 
-        # The current configuration located in /sNow/snow-configspace/system_files/etc/slurm 
+    if [[ -e $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf ]]; then 
+        # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
         # will be used for this sNow! domain.
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-        cp -pr /sNow/snow-configspace/system_files/etc/slurm ${prefix}/etc/
-        chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -pr $SNOW_CONF/system_files/etc/slurm ${prefix}/etc/
     else
         # Setup initial Slurm Database configuration based on the environment.
         # Note that if you alredy have the config files available, no changes will be performed.
+        mkdir -p $SNOW_CONF/system_files/etc/slurm
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-        cp -pr /sNow/snow-tools/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
+        cp -pr $SNOW_TOOL/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
         sed -i "s/__SLURMDBD_PWD__/$SLURMDBD_PWD/g" ${prefix}/etc/slurm/slurmdbd.conf
         sed -i "s/__SLURMDBD_USER__/$SLURMDBD_USER/g" ${prefix}/etc/slurm/slurmdbd.conf
-        chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -p ${prefix}/etc/slurm/slurmdbd.conf $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf
     fi
+    chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    echo "export SLURM_CONF=/etc/slurm/slurmdbd.conf" >> /etc/default/slurm
 fi
 
-export SLURM_CONF=/etc/slurm/slurmdbd.conf
