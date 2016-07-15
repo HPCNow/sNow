@@ -278,9 +278,11 @@ install_lmod()
     ln -sf $SNOW_UTIL/lmod/lmod/init/profile /etc/profile.d/lmod.sh
     ln -sf $SNOW_UTIL/lmod/lmod/init/cshrc /etc/profile.d/lmod.csh
     if is_golden_node; then
-        chown -R $sNow_USER:$sNow_GROUP $SNOW_UTIL
-        cd $SNOW_UTIL
-        su $sNow_USER -c "git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
+        if [[ ! -e $SNOW_UTIL/lmod/lmod/init/profile ]]; then
+            chown -R $sNow_USER:$sNow_GROUP $SNOW_UTIL
+            cd $SNOW_UTIL
+            su $sNow_USER -c "git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -290,10 +292,12 @@ install_easybuild()
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     ln -sf $SNOW_UTIL/etc/cpu-id-map.conf /etc/
     if is_golden_node; then
-        chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
-        cd $SNOW_SOFT
-        curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
-        su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
+        if [[ ! -e $SNOW_SOFT/modules/all ]]; then
+            chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
+            cd $SNOW_SOFT
+            curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
+            su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -370,7 +374,7 @@ install_workload_client()
 
 hooks()
 {
-    HOOKS=$(ls -1sn /sNow/OS/deploy/postconfig.d/$TEMPLATE/??-*.sh &> /dev/null)
+    HOOKS=$(ls -1 /sNow/OS/deploy/postconfig.d/$TEMPLATE/??-*.sh)
     for hook in $HOOKS
     do
         if [[ -x "$hook" ]]; then

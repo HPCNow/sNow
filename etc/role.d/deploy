@@ -59,6 +59,7 @@ wget http://ftp.debian.org/debian/dists/jessie/main/installer-amd64/current/imag
 cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
 
 # Setup DNSMASQ
+SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
@@ -67,7 +68,7 @@ interface=$DHCP_NIC
 # Gateway
 dhcp-option=3,$GATEWAY
 # DNS
-dhcp-option=6,$DNS_SERVERS
+dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
 dhcp-option=15,$DOMAIN
 # Broadcast Address
@@ -85,6 +86,14 @@ fi
 cp -p /etc/hosts ${prefix}/etc/hosts
 
 # Install and setup sNow! deploy system
+SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
+    PROXY_SERVER=$SNOW_PROXY_SERVER
+    PROXY_PORT=8080
+else
+    PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+    PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+fi
 if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     if [[ ! -d /sNow/snow-configspace ]]; then 
         mkdir /sNow/snow-configspace
@@ -96,7 +105,8 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s/__MASTER_PASSWD__/$MASTERPWD/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
     sed -i "s/__NFS_SERVER__/$NFS_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
     sed -i "s/__PROXY_SERVER__/$PROXY_SERVER/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s/__DEFAULT_TEMPLATE__/$DEFAULT_TEMPLATE/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default} 
+    sed -i "s/__PROXY_PORT__/$PROXY_PORT/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s/__DEFAULT_TEMPLATE__/$DEFAULT_TEMPLATE/g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,$DEFAULT_TEMPLATE/*,$DEFAULT_TEMPLATE/first_boot/*} 
     ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 fi
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=First boot of nodes managed by sNow!
+After=network.target
+[Service]
+Type=forking
+PIDFile=/run/first_boot.pid
+ExecStart=/usr/local/bin/first_boot start
+ExecStop=/usr/local/bin/first_boot stop
+[Install]
+WantedBy=multi-user.target
