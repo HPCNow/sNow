@@ -1,31 +1,64 @@
-#!/bin/sh
+#!/bin/bash
 # Configure the new image for sNow! HPC suite
-# Developed by NPCNow! www.hpcnow.com
-# Jordi Blasco
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
+# Load sNow! configuration
+if [[ -e $SNOW_TOOL/etc/snow.conf ]]; then
+    . $SNOW_TOOL/etc/snow.conf
+else
+    echo "The $SNOW_TOOL/etc/snow.conf is not available."
+    echo "Please use the $SNOW_TOOL/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Slurm Client Setup
+if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
+    echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
+    # Check UIDs and GIDs
+    if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $MUNGE_GID munge
+        chroot ${prefix} /usr/sbin/usermod -u $MUNGE_UID -g $MUNGE_GID munge
+    fi
+    if [[ "$(chroot ${prefix} id -u slurm)" != "$SLURM_UID"  &&  "$(chroot ${prefix} id -g slurm)" != "$SLURM_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $SLURM_GID slurm
+        chroot ${prefix} /usr/sbin/usermod -u $SLURM_UID -g $SLURM_GID slurm
+    fi
+    # Setup Munge key and Slurm
+    cp -p $SNOW_CONF/system_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
+    chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    chroot ${prefix} /bin/chmod 700 /etc/munge
+    chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
+    chroot ${prefix} /bin/chown -R munge:munge /etc/munge
+    chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key
+    chroot ${prefix} /bin/systemctl enable munge.service
+    chroot ${prefix} /bin/systemctl start munge.service
+    cp -pr $SNOW_CONF/system_files/etc/slurm/* ${prefix}/etc/slurm/
+    chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    chroot ${prefix} /bin/systemctl enable slurmd.service
+    chroot ${prefix} /bin/systemctl start slurmd.service
+fi
 
 
-#  Update APT lists.
-chroot ${prefix} /usr/bin/apt-get update
-# LDAP Install references : 
-# https://wiki.debian.org/LDAP/OpenLDAPSetup
-# http://www.server-world.info/en/note?os=Debian_8&p=openldap
-# http://www.server-world.info/en/note?os=Debian_8&p=ssl
-# https://wiki.debian.org/LDAP/PAM
-# SSSD client
-# https://wiki.ubuntu.com/Enterprise/Authentication/sssd
-#installDebianPackage ${prefix} libnss-ldap libpam-ldap nscd sssd-ldap
-installDebianPackage ${prefix} libpam-ldapd sssd-ldap sssd-tools sssd-common
-
-#
-#  Install the packages
-#
+# SSH Setup
+if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ${prefix}/etc/ssh/sshd_config.pub
+else
+    cp -p ${prefix}/etc/ssh/sshd_config.orig ${prefix}/etc/ssh/sshd_config.pub
+    echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|Port 22$|Port 22022|g' ${prefix}/etc/ssh/sshd_config.pub
+    cp -p ${prefix}/etc/ssh/sshd_config.pub /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub
+fi
