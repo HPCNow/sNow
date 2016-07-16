@@ -60,5 +60,7 @@ else
     cp -p ${prefix}/etc/ssh/sshd_config.orig ${prefix}/etc/ssh/sshd_config.pub
     echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config.pub
     sed -i 's|Port 22$|Port 22022|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|/var/run/sshd.pid|/var/run/sshd_pub.pid|g' 
+
     cp -p ${prefix}/etc/ssh/sshd_config.pub /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub
 fi
