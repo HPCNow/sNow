@@ -386,6 +386,14 @@ hooks()
     done
 } 
 
+first_boot_hooks()
+{
+    cp -p /sNow/OS/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot.service  /lib/systemd/system/
+    cp -p /sNow/OS/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot /usr/local/bin/first_boot
+    chmod 700 /usr/local/bin/first_boot
+    systemctl enable first_boot
+} 1>>$LOGFILE 2>&1
+
 end_msg(){
     echo "--------------------------------------------------------------------------"
     echo "
@@ -428,4 +436,5 @@ spinner $!             'Stage 8/9 : Setting Ganglia client '
 install_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
 spinner $!             'Stage 9/9 : Setting Workload Manager '
 hooks
+first_boot_hooks
 end_msg
