@@ -50,7 +50,7 @@ CF_SERVER=
 #CFENGINE_VER="3.7.2-1"
 # Cluster provisioning : deploy / cloning system
 DEFAULT_BOOT=localboot
-DEFAULT_TEMPLATE=centos7-default
+DEFAULT_TEMPLATE=centos-7-default
 CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
 GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
@@ -78,7 +78,8 @@ DHCP_NIC=eth0
 #SITE_SYSLOG_SERVER=192.168.7.1
 # Shared Filesystem Support
 # NFS Clients
-MOUNT_NFS01="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
+MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
+MOUNT_NFS[2]="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
 # BeeGFS Clients
 #BEEGFSMGMT=beegfs-01
 #MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
@@ -98,7 +99,6 @@ SLURM_CONF=/etc/slurm/slurm.conf
 SLURM_GID=995
 SLURM_UID=995
 LICENSES=intel*2,matlab*200,fluent*5000
-CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
 # Slurm Compute Nodes 
 SLURM_NODES01="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 
 SLURM_NODES02="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN" 
