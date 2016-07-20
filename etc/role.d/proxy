@@ -42,6 +42,8 @@ SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.c
 SNOW_PROXY_PORT=8080
 if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then 
     installDebianPackage ${prefix} squid3
+    mkdir -p /var/log/squid
+    chown proxy:proxy /var/log/squid
     if [[ -e /sNow/snow-configspace/system_files/etc/squid3 ]]; then 
         cp -pr /sNow/snow-configspace/system_files/etc/squid3/* ${prefix}/etc/squid3/
     else

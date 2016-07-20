@@ -23,9 +23,9 @@ fi
 
 export TEMPLATE=${1:-$DEFAULT_TEMPLATE}
 
-if [[ -f /sNow/OS/deploy/postconfig.d/$TEMPLATE/config ]]; then
+if [[ -f /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/config ]]; then
     echo "Loading $TEMPLATE configuration ..."
-    source /sNow/OS/deploy/postconfig.d/$TEMPLATE/config
+    source /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/config
 else
     echo "Config file not found"
 fi
@@ -142,9 +142,9 @@ add_repo()
 
 add_repos()
 {
-    for REPO in $(cat /sNow/OS/deploy/postconfig.d/$TEMPLATE/repos); do
+    for REPO in $(cat /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/repos); do
         if [[ ! -z ${!REPO} ]]; then
-            add_repo $OS $REPO
+            add_repo $1 $REPO
         fi
     done
 }
@@ -152,9 +152,9 @@ add_repos()
 
 install_software()
 {
-    PKG_LIST=/sNow/OS/deploy/postconfig.d/$TEMPLATE/packages
+    PKG_LIST=/sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/packages
     pkgs=$(cat $PKG_LIST | grep -v "^#" | tr '\n' ' ')
-    add_repos
+    add_repos $1
     case $1 in
         DEBIAN*)
             INSTALLER="apt-get -y install"
@@ -190,12 +190,16 @@ setup_software()
 
 setup_networkfs()
 {
-    for NFS_MOUNT in $NFS_MOUNTS{1..100}; do
-        if [[ ! -z ${!NFS_MOUNT} ]]; then
-            echo $NFS_MOUNT >> /etc/fstab
-            mkdir -p $(echo $NFS_MOUNT | gawk '{$2}')
-        fi
-    done
+    # Check for NFS mount points in the snow.conf
+    NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+    if [ $NFS_CLIENT ]; then
+        for i in {1..100}; do
+            if [[ ! -z ${MOUNT_NFS[$i]} ]]; then
+                mkdir -p $(echo "${MOUNT_NFS[$i]}" | gawk '{print $2}')
+                echo "${MOUNT_NFS[$i]}" >> /etc/fstab
+            fi
+        done
+    fi
 } 1>>$LOGFILE 2>&1
 
 setup_snow_user()
@@ -278,9 +282,11 @@ install_lmod()
     ln -sf $SNOW_UTIL/lmod/lmod/init/profile /etc/profile.d/lmod.sh
     ln -sf $SNOW_UTIL/lmod/lmod/init/cshrc /etc/profile.d/lmod.csh
     if is_golden_node; then
-        chown -R $sNow_USER:$sNow_GROUP $SNOW_UTIL
-        cd $SNOW_UTIL
-        su $sNow_USER -c "git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
+        if [[ ! -e $SNOW_UTIL/lmod/lmod/init/profile ]]; then
+            chown -R $sNow_USER:$sNow_GROUP $SNOW_UTIL
+            cd $SNOW_UTIL
+            su $sNow_USER -c "git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_UTIL; make; make install"
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -290,10 +296,12 @@ install_easybuild()
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     ln -sf $SNOW_UTIL/etc/cpu-id-map.conf /etc/
     if is_golden_node; then
-        chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
-        cd $SNOW_SOFT
-        curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
-        su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
+        if [[ ! -e $SNOW_SOFT/modules/all ]]; then
+            chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
+            cd $SNOW_SOFT
+            curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
+            su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -370,7 +378,7 @@ install_workload_client()
 
 hooks()
 {
-    HOOKS=$(ls -1sn /sNow/OS/deploy/postconfig.d/$TEMPLATE/??-*.sh &> /dev/null)
+    HOOKS=$(ls -1 /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/??-*.sh)
     for hook in $HOOKS
     do
         if [[ -x "$hook" ]]; then
@@ -381,6 +389,14 @@ hooks()
         fi
     done
 } 
+
+first_boot_hooks()
+{
+    cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot.service  /lib/systemd/system/
+    cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot /usr/local/bin/first_boot
+    chmod 700 /usr/local/bin/first_boot
+    systemctl enable first_boot
+} 1>>$LOGFILE 2>&1
 
 end_msg(){
     echo "--------------------------------------------------------------------------"
@@ -424,4 +440,5 @@ spinner $!             'Stage 8/9 : Setting Ganglia client '
 install_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
 spinner $!             'Stage 9/9 : Setting Workload Manager '
 hooks
+first_boot_hooks
 end_msg
