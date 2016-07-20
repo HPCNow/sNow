@@ -16,9 +16,9 @@ else
     echo "sNow! config file NOT found!!!"
 fi
 
-if [[ -f /sNow/OS/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config ]]; then
+if [[ -f /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config ]]; then
     echo "Loading __DEFAULT_TEMPLATE__ configuration ..."
-    source /sNow/OS/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config
+    source /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config
 else
     echo "Config file not found"
 fi
@@ -64,7 +64,7 @@ error_check()
 
 hooks()
 {
-    HOOKS=$(ls -1 /sNow/OS/deploy/postconfig.d/__DEFAULT_TEMPLATE__/first_boot/??-*.sh)
+    HOOKS=$(ls -1 /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/first_boot/??-*.sh)
     for hook in $HOOKS
     do
         if [[ -x "$hook" ]]; then
