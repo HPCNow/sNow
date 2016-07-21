@@ -22,7 +22,7 @@ else
 fi
 
 # Slurm Database Server Setup
-SLURMDB_NAME="${SLURMDB_NAME:-slurm_acct_db}"
+SLURMDBD_NAME="${SLURMDBD_NAME:-slurm_acct_db}"
 SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
     echo "mysql-server-5.5 mysql-server/root_password password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
@@ -31,10 +31,10 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     chroot ${prefix} /bin/systemctl start mysql.service
     chroot ${prefix} /usr/bin/mysqld_safe &
     #chroot ${prefix} /bin/systemctl enable mysql.service
-    echo "create database $SLURMDB_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
-    echo "grant all on $SLURMDB_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
-    chroot ${prefix} /bin/systemctl stop mysql.service
-    chroot ${prefix} /usr/bin/killall -9 mysqld_safe mysqld
+    echo "create database $SLURMDBD_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
+    echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
+    #chroot ${prefix} /bin/systemctl stop mysql.service
+    /usr/bin/killall -9 mysqld_safe mysqld
     #/usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
     /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
     #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 

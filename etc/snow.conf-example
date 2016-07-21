@@ -89,7 +89,7 @@ MOUNT_NFS[2]="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
 # Slurm Database
 SLURMDBD_USER=slurm
 SLURMDBD_PWD=whatever
-SLURM_DATABASE=slurm_acct_db
+#SLURMDBD_NAME=slurm_acct_db
 # MUNGE
 MUNGE_UID=994
 MUNGE_GID=994
