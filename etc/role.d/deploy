@@ -106,7 +106,7 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
     sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
     sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,$DEFAULT_TEMPLATE/*,$DEFAULT_TEMPLATE/first_boot/*} 
+    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
     ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 fi
 
