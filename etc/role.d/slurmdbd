@@ -31,6 +31,7 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     chroot ${prefix} /bin/systemctl start mysql.service
     chroot ${prefix} /usr/bin/mysqld_safe &
     #chroot ${prefix} /bin/systemctl enable mysql.service
+    sleep 30
     echo "create database $SLURMDBD_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
     echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
     #chroot ${prefix} /bin/systemctl stop mysql.service
