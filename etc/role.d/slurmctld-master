@@ -13,11 +13,11 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e $SNOW_TOOL/etc/snow.conf ]]; then
-    . $SNOW_TOOL/etc/snow.conf
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
 else
-    echo "The $SNOW_TOOL/etc/snow.conf is not available."
-    echo "Please use the $SNOW_TOOL/etc/snow.conf-example to setup your environment."
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
     exit 1
 fi
 
@@ -25,10 +25,13 @@ fi
 SNOW_SLURMCTLD_MASTER=$(gawk '{if($2 ~ /slurmctld-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then 
     installDebianPackage ${prefix} curl pbzip2
-    echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    #/usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl slurm-client 
-    sed -i 's/slurm-llnl/slurm/g' ${prefix}/etc/init.d/slurm* 
+    sed -i 's|slurm-llnl|slurm|g' ${prefix}/etc/init.d/slurm* 
     chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
     # Check UIDs and GIDs
     if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
@@ -48,6 +51,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         chroot ${prefix} /bin/chmod 700 /etc/munge
         chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     fi
+    echo "export SLURM_CONF=/etc/slurm/slurm.conf" >> ${prefix}/etc/default/slurm
     if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then 
         # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
         # will be used for this sNow! domain.
@@ -59,42 +63,43 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         # Note that if you alredy have the config files available, no changes will be performed.
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         cp -pr $SNOW_TOOL/etc/config_template.d/slurmctld/* ${prefix}/etc/slurm/
-        sed -i "s/__CONTROL_MACHINE__/$SNOW_SLURMCTLD_MASTER/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s|__CONTROL_MACHINE__|$SNOW_SLURMCTLD_MASTER|g" ${prefix}/etc/slurm/slurm.conf
         BACKUP_CONTROLLER=$(gawk '{if($2 ~ /slurmctld-slave/){print $1}}' $SNOW_TOOL/etc/domains.conf)
         if [[ -n "$BACKUP_CONTROLLER" ]]; then
-            sed -i "s/#BackupController=__BACKUP_CONTROLLER__/BackupController=$BACKUP_CONTROLLER/g" ${prefix}/etc/slurm/slurm.conf
+            sed -i "s|#BackupController=__BACKUP_CONTROLLER__|BackupController=$BACKUP_CONTROLLER|g" ${prefix}/etc/slurm/slurm.conf
         fi 
-        sed -i "s/#Licenses=__LICENSES__/Licenses=$LICENSES/g" ${prefix}/etc/slurm/slurm.conf
+        sed -i "s|#Licenses=__LICENSES__|Licenses=$LICENSES|g" ${prefix}/etc/slurm/slurm.conf
         SLURM_COMP=$(gawk 'BEGIN{comp="FALSE"}{if($1 ~ /^SLURM_NODES/){comp="TRUE"}}END{print part}' $SNOW_TOOL/etc/snow.conf)
-        if (! $SLURM_COMP); then
-            sed -i "s/#__INCLUDE_NODES__/include \/etc\/slurm\/nodes.conf/g" ${prefix}/etc/slurm/slurm.conf
-            for SLURM_NODES in SLURM_NODES{1..100}; do
-                if [[ ! -z $SLURM_NODES ]]; then
-                    echo "$SLURM_NODES" >> /etc/slurm/nodes.conf
+        if [ $SLURM_COMP ]; then
+            sed -i "s|#__INCLUDE_NODES__|include /etc/slurm/nodes.conf|g" ${prefix}/etc/slurm/slurm.conf
+            for i in {1..100}; do
+                if [[ ! -z ${SLURM_NODES[$i]} ]]; then
+                    echo "${SLURM_NODES[$i]}" >> /etc/slurm/nodes.conf
                 fi
             done
         fi
         SLURM_PART=$(gawk 'BEGIN{part="FALSE"}{if($1 ~ /^SLURM_PARTITION/){part="TRUE"}}END{print part}' $SNOW_TOOL/etc/snow.conf)
-        if (! $SLURM_PART); then
-            sed -i "s/#__INCLUDE_PARTITIONS__/include \/etc\/slurm\/partitions.conf/g" ${prefix}/etc/slurm/slurm.conf
-            for SLURM_PARTITION in SLURM_PARTITION{1..100}; do
-                if [[ ! -z $SLURM_PARTITION ]]; then
-                    echo "$SLURM_PARTITION" >> /etc/slurm/partitions.conf
+        if [ $SLURM_PART ]; then
+            sed -i "s|#__INCLUDE_PARTITIONS__|include /etc/slurm/partitions.conf|g" ${prefix}/etc/slurm/slurm.conf
+            for i in {1..100}; do
+                if [[ ! -z ${SLURM_PARTITION[$i]} ]]; then
+                    echo "${SLURM_PARTITION[$i]}" >> ${prefix}/etc/slurm/partitions.conf
                 fi
             done
         fi
         SLURMDBD_MASTER=$(gawk '{if($2 ~ /slurmdbd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
         if [[ -n "$SLURMDBD_MASTER" ]]; then
-            sed -i "s/#__INCLUDE_LOGGING_AND_ACCOUNTING__/include \/etc\/slurm\/accounting.conf/g" ${prefix}/etc/slurm/slurm.conf
-            sed -i "s/__ACCOUNTING_STORAGE_ENFORCE__/$ACCOUNTING_STORAGE_ENFORCE/g" ${prefix}/etc/slurm/accounting.conf
-            sed -i "s/__ACCOUNTING_STORAGE_HOST__/$SLURMDBD_MASTER/g" ${prefix}/etc/slurm/accounting.conf
-            sed -i "s/__CLUSTER_NAME__/$SLURM_CLUSTER_NAME/g" ${prefix}/etc/slurm/accounting.conf
+            sed -i "s|#__INCLUDE_LOGGING_AND_ACCOUNTING__|include /etc/slurm/accounting.conf|g" ${prefix}/etc/slurm/slurm.conf
+            sed -i "s|__ACCOUNTING_STORAGE_ENFORCE__|$ACCOUNTING_STORAGE_ENFORCE|g" ${prefix}/etc/slurm/accounting.conf
+            sed -i "s|__ACCOUNTING_STORAGE_HOST__|$SLURMDBD_MASTER|g" ${prefix}/etc/slurm/accounting.conf
+            sed -i "s|__CLUSTER_NAME__|$SLURM_CLUSTER_NAME|g" ${prefix}/etc/slurm/accounting.conf
+            export SLURM_CONF=/etc/slurm/slurm.conf
             chroot ${prefix} /usr/bin/sacctmgr -i create cluster $SLURM_CLUSTER_NAME
         fi
         chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         echo "Slurm master has been setup. Please, update the current slurm configuration files to your needs."
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -pr ${prefix}/etc/slurm/* $SNOW_CONF/system_files/etc/slurm/
     fi
-    echo "export SLURM_CONF=/etc/slurm/slurm.conf" >> /etc/default/slurm
 fi
 
