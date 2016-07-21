@@ -13,11 +13,11 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e $SNOW_TOOL/etc/snow.conf ]]; then
-    . $SNOW_TOOL/etc/snow.conf
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
 else
-    echo "The $SNOW_TOOL/etc/snow.conf is not available."
-    echo "Please use the $SNOW_TOOL/etc/snow.conf-example to setup your environment."
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
     exit 1
 fi
 
@@ -43,13 +43,9 @@ if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
     chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     chroot ${prefix} /bin/chown -R munge:munge /etc/munge
     chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key
-    chroot ${prefix} /bin/systemctl enable munge.service
-    chroot ${prefix} /bin/systemctl start munge.service
-    cp -pr $SNOW_CONF/system_files/etc/slurm/* ${prefix}/etc/slurm/
+    cp -pr $SNOW_CONF/system_files/etc/slurm ${prefix}/etc/
     chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-    chroot ${prefix} /bin/systemctl enable slurmd.service
-    chroot ${prefix} /bin/systemctl start slurmd.service
 fi
 
 
@@ -57,10 +53,13 @@ fi
 if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ${prefix}/etc/ssh/sshd_config.pub
 else
-    cp -p ${prefix}/etc/ssh/sshd_config.orig ${prefix}/etc/ssh/sshd_config.pub
+    cp -p ${prefix}/etc/ssh/sshd_config ${prefix}/etc/ssh/sshd_config.pub
     echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config.pub
     sed -i 's|Port 22$|Port 22022|g' ${prefix}/etc/ssh/sshd_config.pub
-    sed -i 's|/var/run/sshd.pid|/var/run/sshd_pub.pid|g' 
-
+    sed -i 's|PermitRootLogin without-password|PermitRootLogin no|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|^AllowUsers|#AllowUsers|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|^AllowGroups|#AllowGroups|g' ${prefix}/etc/ssh/sshd_config.pub
+    cp -p ${prefix}/etc/systemd/system/sshd.service ${prefix}/etc/systemd/system/sshd_pub.service
+    sed -i 's|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS -f /etc/ssh/sshd_config.pub|g' ${prefix}/etc/systemd/system/sshd_pub.service 
     cp -p ${prefix}/etc/ssh/sshd_config.pub /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub
 fi
