@@ -70,16 +70,16 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         fi 
         sed -i "s|#Licenses=__LICENSES__|Licenses=$LICENSES|g" ${prefix}/etc/slurm/slurm.conf
         SLURM_COMP=$(gawk 'BEGIN{comp="FALSE"}{if($1 ~ /^SLURM_NODES/){comp="TRUE"}}END{print part}' $SNOW_TOOL/etc/snow.conf)
-        if [ $SLURM_COMP ]; then
+        if [[ "$SLURM_COMP" == "TRUE" ]]; then
             sed -i "s|#__INCLUDE_NODES__|include /etc/slurm/nodes.conf|g" ${prefix}/etc/slurm/slurm.conf
             for i in {1..100}; do
                 if [[ ! -z ${SLURM_NODES[$i]} ]]; then
-                    echo "${SLURM_NODES[$i]}" >> /etc/slurm/nodes.conf
+                    echo "${SLURM_NODES[$i]}" >> ${prefix}/etc/slurm/nodes.conf
                 fi
             done
         fi
         SLURM_PART=$(gawk 'BEGIN{part="FALSE"}{if($1 ~ /^SLURM_PARTITION/){part="TRUE"}}END{print part}' $SNOW_TOOL/etc/snow.conf)
-        if [ $SLURM_PART ]; then
+        if [[ "$SLURM_PART" == "TRUE" ]]; then
             sed -i "s|#__INCLUDE_PARTITIONS__|include /etc/slurm/partitions.conf|g" ${prefix}/etc/slurm/slurm.conf
             for i in {1..100}; do
                 if [[ ! -z ${SLURM_PARTITION[$i]} ]]; then

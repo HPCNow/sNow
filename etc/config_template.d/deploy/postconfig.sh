@@ -192,7 +192,7 @@ setup_networkfs()
 {
     # Check for NFS mount points in the snow.conf
     NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
-    if [ $NFS_CLIENT ]; then
+    if [[ "$NFS_CLIENT" == "TRUE" ]]; then
         for i in {1..100}; do
             if [[ ! -z ${MOUNT_NFS[$i]} ]]; then
                 mkdir -p $(echo "${MOUNT_NFS[$i]}" | gawk '{print $2}')
