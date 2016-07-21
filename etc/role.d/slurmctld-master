@@ -51,6 +51,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         chroot ${prefix} /bin/chmod 700 /etc/munge
         chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     fi
+    echo "export SLURM_CONF=/etc/slurm/slurm.conf" >> ${prefix}/etc/default/slurm
     if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then 
         # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
         # will be used for this sNow! domain.
@@ -82,7 +83,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
             sed -i "s|#__INCLUDE_PARTITIONS__|include /etc/slurm/partitions.conf|g" ${prefix}/etc/slurm/slurm.conf
             for i in {1..100}; do
                 if [[ ! -z ${SLURM_PARTITION[$i]} ]]; then
-                    echo "${SLURM_PARTITION[$i]}" >> /etc/slurm/nodes.conf
+                    echo "${SLURM_PARTITION[$i]}" >> ${prefix}/etc/slurm/partitions.conf
                 fi
             done
         fi
@@ -92,12 +93,13 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
             sed -i "s|__ACCOUNTING_STORAGE_ENFORCE__|$ACCOUNTING_STORAGE_ENFORCE|g" ${prefix}/etc/slurm/accounting.conf
             sed -i "s|__ACCOUNTING_STORAGE_HOST__|$SLURMDBD_MASTER|g" ${prefix}/etc/slurm/accounting.conf
             sed -i "s|__CLUSTER_NAME__|$SLURM_CLUSTER_NAME|g" ${prefix}/etc/slurm/accounting.conf
+            export SLURM_CONF=/etc/slurm/slurm.conf
             chroot ${prefix} /usr/bin/sacctmgr -i create cluster $SLURM_CLUSTER_NAME
         fi
         chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         echo "Slurm master has been setup. Please, update the current slurm configuration files to your needs."
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -pr ${prefix}/etc/slurm/* $SNOW_CONF/system_files/etc/slurm/
     fi
-    echo "export SLURM_CONF=/etc/slurm/slurm.conf" >> /etc/default/slurm
 fi
 
