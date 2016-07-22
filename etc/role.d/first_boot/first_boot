@@ -42,7 +42,7 @@ error_check()
 
 hooks()
 {
-    HOOKS=$(ls -1 /usr/local/first_boot/??-*.sh)
+    HOOKS=$(ls -1 /usr/local/first_boot/*.sh)
     for hook in $HOOKS
     do
         if [[ -x "$hook" ]]; then
