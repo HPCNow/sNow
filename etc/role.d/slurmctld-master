@@ -54,7 +54,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         chroot ${prefix} /bin/chmod 700 /etc/munge
         chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     fi
-    echo "export SLURM_CONF=/etc/slurm/slurm.conf" >> ${prefix}/etc/default/slurm
+    echo "SLURM_CONF=/etc/slurm/slurm.conf" >> ${prefix}/etc/default/slurmctld
     if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then 
         # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
         # will be used for this sNow! domain.
