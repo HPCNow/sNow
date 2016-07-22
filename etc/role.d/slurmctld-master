@@ -37,10 +37,12 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
     if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
         chroot ${prefix} /usr/sbin/groupmod -g $MUNGE_GID munge
         chroot ${prefix} /usr/sbin/usermod -u $MUNGE_UID -g $MUNGE_GID munge
+        chroot ${prefix} /bin/chown -R munge:munge  /etc/munge/ /var/*/munge
     fi
     if [[ "$(chroot ${prefix} id -u slurm)" != "$SLURM_UID"  &&  "$(chroot ${prefix} id -g slurm)" != "$SLURM_GID" ]]; then
         chroot ${prefix} /usr/sbin/groupmod -g $SLURM_GID slurm
         chroot ${prefix} /usr/sbin/usermod -u $SLURM_UID -g $SLURM_GID slurm
+        chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     fi
     # Setup Munge key slurm
     # Note that if you alredy have the config files available, no changes will be performed.
@@ -69,7 +71,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
             sed -i "s|#BackupController=__BACKUP_CONTROLLER__|BackupController=$BACKUP_CONTROLLER|g" ${prefix}/etc/slurm/slurm.conf
         fi 
         sed -i "s|#Licenses=__LICENSES__|Licenses=$LICENSES|g" ${prefix}/etc/slurm/slurm.conf
-        SLURM_COMP=$(gawk 'BEGIN{comp="FALSE"}{if($1 ~ /^SLURM_NODES/){comp="TRUE"}}END{print part}' $SNOW_TOOL/etc/snow.conf)
+        SLURM_COMP=$(gawk 'BEGIN{comp="FALSE"}{if($1 ~ /^SLURM_NODES/){comp="TRUE"}}END{print comp}' $SNOW_TOOL/etc/snow.conf)
         if [[ "$SLURM_COMP" == "TRUE" ]]; then
             sed -i "s|#__INCLUDE_NODES__|include /etc/slurm/nodes.conf|g" ${prefix}/etc/slurm/slurm.conf
             for i in {1..100}; do
@@ -93,13 +95,17 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
             sed -i "s|__ACCOUNTING_STORAGE_ENFORCE__|$ACCOUNTING_STORAGE_ENFORCE|g" ${prefix}/etc/slurm/accounting.conf
             sed -i "s|__ACCOUNTING_STORAGE_HOST__|$SLURMDBD_MASTER|g" ${prefix}/etc/slurm/accounting.conf
             sed -i "s|__CLUSTER_NAME__|$SLURM_CLUSTER_NAME|g" ${prefix}/etc/slurm/accounting.conf
-            export SLURM_CONF=/etc/slurm/slurm.conf
-            chroot ${prefix} /usr/bin/sacctmgr -i create cluster $SLURM_CLUSTER_NAME
         fi
         chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         echo "Slurm master has been setup. Please, update the current slurm configuration files to your needs."
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         cp -pr ${prefix}/etc/slurm/* $SNOW_CONF/system_files/etc/slurm/
+    fi
+    if [[ -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_CONF/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    else
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
     fi
 fi
 

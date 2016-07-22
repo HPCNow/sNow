@@ -80,6 +80,12 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
         cp -p ${prefix}/etc/slurm/slurmdbd.conf $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf
     fi
     chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-    echo "export SLURM_CONF=/etc/slurm/slurmdbd.conf" >> /etc/default/slurm
+    echo "export SLURM_CONF=/etc/slurm/slurmdbd.conf" >> /etc/default/slurmdbd
+    if [[ -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_CONF/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    else
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
+    fi
 fi
 

@@ -23,8 +23,11 @@ fi
 
 # Slurm Client Setup
 if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
-    echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    /usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    #/usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+    chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
     # Check UIDs and GIDs
     if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
@@ -42,10 +45,15 @@ if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
     chroot ${prefix} /bin/chmod 700 /etc/munge
     chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     chroot ${prefix} /bin/chown -R munge:munge /etc/munge
-    chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key
     cp -pr $SNOW_CONF/system_files/etc/slurm ${prefix}/etc/
     chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    if [[ -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_CONF/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    else
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
+    fi
 fi
 
 
