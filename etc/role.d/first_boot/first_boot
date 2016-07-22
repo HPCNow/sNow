@@ -1,0 +1,70 @@
+#!/bin/bash
+#set -xv
+
+LOGFILE=/root/first-boot.log
+RETAIN_NUM_LINES=10
+function logsetup {
+    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    exec > >(tee -a $LOGFILE)
+    exec 2>&1
+}
+
+#logsetup
+        
+function log {
+    echo "[$(date)]: $*" 
+}
+
+spinner()
+{
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf "[\e[0;32m%c\e[m] %s" "$spinstr" "$2" 
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    done
+}
+
+error_check()
+{
+    local status=$1
+    printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    if [ $status -eq 0 ]; then
+        printf "[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+    else
+        printf "[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
+    fi
+}
+
+hooks()
+{
+    HOOKS=$(ls -1 /usr/local/first_boot/??-*.sh)
+    for hook in $HOOKS
+    do
+        if [[ -x "$hook" ]]; then
+            $hook && error_check 0 'Running hook : $hook ' || error_check 1 'Running hook error : $hook ' &
+            spinner $!             'Running hook : $hook '
+        else
+            echo "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
+        fi
+    done
+} 
+
+case "$1" in
+  start)
+    hooks
+    systemctl disable first_boot
+	;;
+  stop)
+    systemctl disable first_boot
+	;;
+  *)
+	log_action_msg "Usage: systemctl {start|stop} first_boot" || true
+	exit 1
+esac
+
+exit 0

@@ -167,3 +167,11 @@ CONF
 
 fi
 
+# Enable First Boot actions
+cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot.service  ${prefix}/lib/systemd/system/
+cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot ${prefix}/usr/local/bin/first_boot
+chmod 700 ${prefix}/usr/local/bin/first_boot
+mkdir -p /usr/local/first_boot
+chmod 700 ${prefix}/usr/local/first_boot
+chown root ${prefix}/usr/local/first_boot
+chroot ${prefix} /bin/systemctl enable first_boot
