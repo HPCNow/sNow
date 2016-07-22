@@ -29,6 +29,7 @@ if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
     #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
+    chroot ${prefix} /bin/systemctl enable munge.service
     # Check UIDs and GIDs
     if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
         chroot ${prefix} /usr/sbin/groupmod -g $MUNGE_GID munge

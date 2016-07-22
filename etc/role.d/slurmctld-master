@@ -31,6 +31,7 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
     echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl slurm-client 
+    chroot ${prefix} /bin/systemctl enable munge.service
     sed -i 's|slurm-llnl|slurm|g' ${prefix}/etc/init.d/slurm* 
     chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
     # Check UIDs and GIDs
