@@ -1,0 +1,9 @@
+[Unit]
+Description=First boot of domains managed by sNow!
+After=network.target proc-fs-nfsd.mount rpcbind.service nfs-mountd.service
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/first_boot start
+ExecStop=/usr/local/bin/first_boot stop
+[Install]
+WantedBy=multi-user.target

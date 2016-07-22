@@ -18,24 +18,18 @@ else
     echo "The snow.conf is not yet setup"
 fi
 
-#installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
-
 # Download the OpenVPN AS package
 wget http://swupdate.openvpn.org/as/openvpn-as-2.0.25-Debian8.amd_64.deb -O ${prefix}/root/openvpn-as-2.0.25-Debian8.amd_64.deb
 
 # Stage domain entrypoint script
-cp -p /sNow/snow-tools/etc/role.d/boot/openvpn_as_boot.service  ${prefix}/lib/systemd/system/openvpn_as_boot.service
-cp -p /sNow/snow-tools/etc/role.d/boot/openvpn_as_boot  ${prefix}/usr/local/bin/openvpn_as_boot
-sed -i "s/__MASTERPWD__/$MASTERPWD/g" ${prefix}/usr/local/bin/openvpn_as_boot
+cp -p $SNOW_TOOL/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_boot/openvpn_as.sh
+sed -i "s/__MASTERPWD__/$MASTERPWD/g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 
 # Domain Setup
 if [[ -d /sNow/snow-configspace/files/etc/openvpn_as ]]; then
     cp -pr /sNow/snow-configspace/files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
-    sed -i "s/__OPENVPNAS_RECONFIGURE__/false/g" ${prefix}/usr/local/bin/openvpn_as_boot
+    sed -i "s/__OPENVPNAS_RECONFIGURE__/false/g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 else
     mkdir -p /sNow/snow-configspace/files/etc/openvpn_as
-    sed -i "s/__OPENVPNAS_RECONFIGURE__/true/g" ${prefix}/usr/local/bin/openvpn_as_boot
+    sed -i "s/__OPENVPNAS_RECONFIGURE__/true/g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 fi
-
-chmod 700 ${prefix}/usr/local/bin/openvpn_as_boot
-chroot ${prefix} systemctl enable openvpn_as_boot
