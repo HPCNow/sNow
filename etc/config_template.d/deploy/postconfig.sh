@@ -166,7 +166,6 @@ install_software()
         ;;
         RHEL*|CentOS*)
             INSTALLER="yum -y install"
-            yum -y update
        ;;
        SLES*)
             INSTALLER="zypper -n install"
