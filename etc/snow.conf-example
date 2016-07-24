@@ -70,6 +70,8 @@ DHCP_NIC=eth0
 #SITE_PROXY_PORT=8080
 #SITE_NTP_SERVER=192.168.7.1
 #SITE_LDAP_SERVER=192.168.7.1
+#SITE_LDAP_URI="ldap://ldap01.hpcnow.com, ldap://ldap02.hpcnow.com"
+#SITE_LDAP_TLS=FALSE
 #SITE_LDAP_PROTO=ldap
 #SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
 #SITE_MAIL_SERVER=smtp.gmail.com::587
