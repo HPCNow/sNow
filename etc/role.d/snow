@@ -35,7 +35,7 @@ if  [[ ! -z "$CF_SERVER" ]]; then
                 -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
             chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
             cp -p /sNow/snow-tools/etc/role.d/first_boot/cfengine_bootstrap.sh  ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
-            sed -i "s/__CF_SERVER__/$CF_SERVER/g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
+            sed -i "s|__CF_SERVER__|$CF_SERVER|g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
             ;;
         *)
             echo "$SNOWCF is NOT supported"
@@ -74,6 +74,7 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
         installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
         if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
+            #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
         else
             mkdir -p /sNow/snow-configspace/system_files/etc/sssd
             cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
