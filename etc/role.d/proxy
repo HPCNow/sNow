@@ -31,7 +31,7 @@ if  [[ ! -z "$SNOW_NTP_SERVER" ]]; then
     else
         cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp_server.conf
         echo "restrict ${NET_SNOW[2]}0 mask ${NET_SNOW[3]} notrust" >> /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        sed -i "s/__NTP_SERVER__/$NTP_SERVER/g" /sNow/snow-configspace/system_files/etc/ntp_server.conf
+        sed -i "s|__NTP_SERVER__|$NTP_SERVER|g" /sNow/snow-configspace/system_files/etc/ntp_server.conf
         chmod 644 /sNow/snow-configspace/system_files/etc/ntp_server.conf
         cp -p /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
     fi
@@ -51,7 +51,7 @@ if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then
         cp -pr /sNow/snow-tools/etc/config_template.d/squid3/* /sNow/snow-configspace/system_files/etc/squid3/
         sed -i "s|__ALLOWED_HOSTS__|${NET_SNOW[2]}0/${NET_SNOW[3]}|g" /sNow/snow-configspace/system_files/etc/squid3/*
         sed -i "s|__PROXY_SERVER__|$SNOW_PROXY_SERVER|g" /sNow/snow-configspace/system_files/etc/squid3/*
-        sed -i "s/__PROXY_PORT__/$SNOW_PROXY_PORT/g" /sNow/snow-configspace/system_files/etc/squid3/*
+        sed -i "s|__PROXY_PORT__|$SNOW_PROXY_PORT|g" /sNow/snow-configspace/system_files/etc/squid3/*
         chmod 644 /sNow/snow-configspace/system_files/etc/squid3/*
         cp -p /sNow/snow-configspace/system_files/etc/squid3/* ${prefix}/etc/squid3/
     fi

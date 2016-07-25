@@ -22,7 +22,6 @@ else
 fi
 
 # Check for NFS mount points in the snow.conf
-# Check for NFS mount points in the snow.conf
 NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
 if [[ "$NFS_CLIENT" == "TRUE" ]]; then
     installDebianPackage ${prefix} nfs-common
@@ -37,7 +36,7 @@ fi
 # Check for BeeGFS mount points in the snow.conf
 BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
 if [[ "$BEEGFS_CLIENT" == "TRUE" ]]; then
-    wget -q http://www.beegfs.com/release/beegfs_2015.03/dists/beegfs-deb8.list -P ${prefix}/etc/apt/sources.list.d/
+    wget -q http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb8.list -P ${prefix}/etc/apt/sources.list.d/
     wget -q http://www.beegfs.com/release/latest-stable/gpg/DEB-GPG-KEY-beegfs -O- | chroot ${prefix} /usr/bin/apt-key add -
     chroot ${prefix} /usr/bin/apt-get update 
     installDebianPackage ${prefix} beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client linux-kernel-headers
@@ -52,7 +51,7 @@ fi
 # Check for Lustre mount points in the snow.conf - EXPERIMENTAL
 LUSTRE_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_LUSTRE/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
 if [[ "$LUSTRE_CLIENT" == "TRUE" ]]; then
-    wget -q http://repo.hpcnow.com/apt/lustre-deb8.list -P ${prefix}/etc/apt/sources.list.d/
+    wget -q http://repo.hpcnow.com/apt/lustre/${LUSTRE_VERSION}/dists/lustre-deb8.list -P ${prefix}/etc/apt/sources.list.d/
     wget -q http://repo.hpcnow.com/apt/latest-stable/gpg/hpcnow-GPG-KEY -O- | chroot ${prefix} /usr/bin/apt-key add -
     installDebianPackage ${prefix} lustre-tests
     for i in {1..100}; do
@@ -64,10 +63,12 @@ if [[ "$LUSTRE_CLIENT" == "TRUE" ]]; then
 fi
 
 # Check for GPFS mount points in the snow.conf - EXPERIMENTAL
-GPFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_GPFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+GPFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_GPFS|^GPFS_VERSION/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
 if [[ "$GPFS_CLIENT" == "TRUE" ]]; then
-    cp -pr /sNow/OS/Debian/8.2/GPFS/x86_64/4.1 ${prefix}/usr/lpp/mmfs/4.1/
-    chroot ${prefix} /usr/bin/dpkg -i /usr/lpp/mmfs/4.1/gpfs*.deb
+    installDebianPackage ${prefix} compat-libstdc++ libstdc++ rsh ksh
+    chroot ${prefix} /usr/bin/dpkg -i /sNow/OS/Debian/8.2/GPFS/${GPFS_VERSION}/x86_64/gpfs*.deb
+    cp -p /sNow/snow-tools/etc/role.d/first_boot/gpfs_restore_config.sh  ${prefix}/usr/local/first_boot/gpfs_restore_config.sh
+    echo "export PATH=$PATH:/usr/lpp/mmfs/bin/" >> /etc/profile.conf
     for i in {1..100}; do
         if [[ ! -z ${MOUNT_GPFS[$i]} ]]; then
             mkdir -p $(echo "${MOUNT_GPFS[$i]}" | gawk '{print $2}')
