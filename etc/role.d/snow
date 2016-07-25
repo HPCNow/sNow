@@ -185,11 +185,27 @@ CONF
 
 fi
 
+# Ganglia monitor daemon (gmond)
+SNOW_MONITOR_SERVER=$(gawk '{if($2 ~ /monitor/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_MONITOR_SERVER" && ! -z "$SITE_MONITOR_SERVER" ]]; then 
+    MONITOR_SERVER=$SNOW_MONITOR_SERVER
+else
+    MONITOR_SERVER="${SITE_MONITOR_SERVER:-$SNOW_MONITOR_SERVER}"
+fi
+
+if  [[ ! -z "$MONITOR_SERVER" ]]; then 
+    installDebianPackage ${prefix} ganglia-monitor
+    if [[ ! -e $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf ]]; then 
+        chroot ${prefix} /usr/sbin/gmond -t | sed 's|name = "unspecified"|name = "sNow! Domains"|g' > $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf
+    fi
+    cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf ${prefix}/etc/ganglia/gmond.conf
+fi
+
 # Enable First Boot actions
-cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot.service  ${prefix}/lib/systemd/system/
-cp -p /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/first_boot/first_boot ${prefix}/usr/local/bin/first_boot
+cp -p $SNOW_TOOL/etc/role.d/first_boot/first_boot.service  ${prefix}/lib/systemd/system/
+cp -p $SNOW_TOOL/etc/role.d/first_boot/first_boot ${prefix}/usr/local/bin/first_boot
 chmod 700 ${prefix}/usr/local/bin/first_boot
-mkdir -p /usr/local/first_boot
+mkdir -p ${prefix}/usr/local/first_boot
 chmod 700 ${prefix}/usr/local/first_boot
 chown root ${prefix}/usr/local/first_boot
 chroot ${prefix} /bin/systemctl enable first_boot
