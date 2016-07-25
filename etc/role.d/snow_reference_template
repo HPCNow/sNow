@@ -50,7 +50,7 @@ else
 fi
 
 ##############     EVALUATE IF THE SERVER IS AVAILABLE/EXPECTED OR NOT     ###############
-if  [[ ! -z "$NEWSERVICE_SERVER" ]]; then 
+if  [[ -z "$NEWSERVICE_SERVER" ]]; then 
     # Install the required packages
     installDebianPackage ${prefix} whatever
     # Check if the configuration file already exists
