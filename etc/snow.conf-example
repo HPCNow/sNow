@@ -84,9 +84,14 @@ MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
 MOUNT_NFS[2]="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
 # BeeGFS Clients
 #BEEGFSMGMT=beegfs-01
+#BEEGFS_VERSION=2015.03
 #MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
 # Lustre Clients
+#LUSTRE_VERSION=2.8.0
 #MOUNT_LUSTRE01="192.168.3.146@o2ib:192.168.3.145@o2ib:/scratch  /scratch  lustre  defaults    0 0"
+# GPFS Clients
+#GPFS_PRIMARY_SERVER=192.168.3.146
+#GPFS_VERSION=4.2.0
 # Slurm Configuration
 # Slurm Database
 SLURMDBD_USER=slurm
