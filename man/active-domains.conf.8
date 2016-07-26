@@ -1,0 +1,106 @@
+.\" Manpage for sNow!
+.\" Contact devel@hpcnow.com to correct errors or typos.
+.TH man 8 "09 Jun 2016" "1.0.0" "sNow! active-domains.conf man page"
+.SH NAME
+active-domains.conf \- sNow! active domains configuration file
+.SH SYNOPSIS
+Provides a list of sNow! domains and the associated roles which define the services provided by each domain.
+.SH DESCRIPTION
+The active-domains.conf configuration file contains a list of the sNow! domains and its associated role. Each role defines a service or a subset of related services.
+The roles are very simple scripts which will automatise the process of deploying a new domain and also reconfigure them based on the parameters available in the main
+sNow! configuration file (snow.conf). 
+The first column contains the hostname of the domain, the second column contains the role or list or roles associated with the domain.
+Each domain can have one or more roles. In case of multiple roles, the roles list MUST be separated with a colon and wihout any space in between. See examples below.
+If a domain have multiple roles, each role will be executed in the same order defined in the domains.conf, which will be automatically generated with the "snow init" command.
+The current available roles are located in /sNow/snow-tools/etc/roles.d. This document provides information of key roles but all the available roles. 
+For more information, visit the official website : http://www.hpckp.org/snow
+.SH Key Available Roles
+.TP
+\fBslurmdbd\fR
+.br
+Installs the Slurm Database
+.TP
+.TP
+\fBslurmctld-master\fR
+.br
+Installs Slurm Master controller
+.TP
+\fBslurmctld-slave\fR
+.br
+Installs Slurm Backup controller
+.TP
+\fBmonitor\fR
+.br
+Installs standart HPC monitoring tools : Ganglia and Icinga
+.TP
+\fBproxy\fR
+.br
+Installs HTTP,HTTPS,FTP proxy based on Squid and also relay servers for NTP and SMTP
+.TP
+\fBdeploy\fR
+.br
+Installs PXE server and DNSMasq to deploy systems with kickstart (RHEL/CentOS), autoyast (SuSE) and pressed (Debian/Ubuntu)
+Installs System Imager to clone previously deployed systems.
+.TP
+\fBcfs\fR
+.br
+Installs the required packages to setup the clients for popular shared/cluster file systems : NFS (default), Lustre, BeeGFS and GPFS
+.TP
+\fBlogin\fR 
+.br
+Installs a simple login system which will be able to access to the shared filesystem and also submit jobs or request interactive job sessions
+.TP
+\fBsyslog\fR
+.br
+Installs a central Rsyslog server which will consolidate all the cluster logs, including the sNow! domains and the compute nodes.
+.TP
+\fBopenvpn_as\fR
+.br
+Installs OpenVPN Access Server with only two concurrent users. 
+.TP
+.SH EXAMPLES
+The following lines represent a typical example of active-domains.conf configuration file:
+.br
+-----------------------------
+.br
+hostname    roles
+.br
+-----------------------------
+.br
+snow01      snow
+.br
+ldap01      ldap-master
+.br
+slurm01     slurmctld-master
+.br
+slurm02     slurmctld-master
+.br
+monitor01   monitor
+.br
+syslog01    syslog
+.br
+login01     login,cfs
+.br
+login02     login,cfs
+.br
+slurmdb01   slurmdbd
+.br
+proxy01     proxy
+.br
+deploy01    deploy
+.SH AUTHOR
+Written by Jordi Blasco (jordi.blasco@hpcnow.com)
+.SH "REPORTING BUGS"
+Report bugs to the official git repository of sNow! <https://bitbucket.org/hpcnow/snow-tools/issues>
+.br
+.SH COPYRIGHT
+Copyright \(co 2014 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+snow.conf(8), domains.conf(8), active-domains.conf(8), snow(8)
+.PP
+.br
+Full documentation at: <http://www.www.hpckp.org/snow>
