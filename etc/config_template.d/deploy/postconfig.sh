@@ -243,6 +243,9 @@ setup_ssh()
     fi
     mkdir -p /root/.ssh
     cp -p $SNOW_HOME/$sNow_USER/.ssh/authorized_keys /root/.ssh/authorized_keys
+    # Allow support for GPFS requirements
+    cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub
+    cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa /root/.ssh/id_rsa
     chown -R root:root /root/.ssh
     chmod 700 /root/.ssh
     chmod 640 /root/.ssh/authorized_keys
@@ -253,6 +256,7 @@ setup_ssh()
     cp -p /etc/ssh/shosts.equiv /root/.shosts
     sed -i "s/RhostsRSAAuthentication no/RhostsRSAAuthentication yes/g" /etc/ssh/sshd_config
     sed -i "s/HostbasedAuthentication no/HostbasedAuthentication yes/g" /etc/ssh/sshd_config
+    sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
     echo "GSSAPIAuthentication yes" >> /etc/ssh/sshd_config
     echo "GSSAPICleanupCredentials yes" >> /etc/ssh/sshd_config
     echo "HostbasedUsesNameFromPacketOnly yes" >> /etc/ssh/sshd_config
@@ -272,8 +276,8 @@ setup_env()
     ln -sf $SNOW_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
     ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
-    ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
-    ln -sf $SNOW_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
+    #ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
+    #ln -sf $SNOW_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
 } 1>>$LOGFILE 2>&1
 
 install_lmod()
@@ -375,6 +379,11 @@ install_workload_client()
     fi
 } 1>>$LOGFILE 2>&1
 
+install_workload_client()
+{
+    install_workload_client $OS
+} 1>>$LOGFILE 2>&1
+
 hooks()
 {
     HOOKS=$(ls -1 /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/??-*.sh)
@@ -436,7 +445,7 @@ setup_ldap_client      && error_check 0 'Stage 7/9 : LDAP client setup ' || erro
 spinner $!             'Stage 7/9 : Setting LDAP client '
 setup_ganglia_client   && error_check 0 'Stage 8/9 : Ganglia client setup ' || error_check 1 'Stage 8/9 : Ganglia client setup ' & 
 spinner $!             'Stage 8/9 : Setting Ganglia client '
-install_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
+setup_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
 spinner $!             'Stage 9/9 : Setting Workload Manager '
 hooks
 first_boot_hooks
