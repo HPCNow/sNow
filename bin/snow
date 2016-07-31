@@ -563,7 +563,7 @@ function nreboot() {
         exit 1
     fi
     pdsh -w $1 reboot
-}
+}  &>/dev/null
 
 function nshutdown() {
     if [ -z "$1" ]; then
@@ -571,7 +571,7 @@ function nshutdown() {
         exit 1
     fi
     pdsh -w $1 systemctl poweroff
-}
+}  &>/dev/null
 
 function shutdown_cluster() {
     if [ -z "$1" ]; then
@@ -580,7 +580,7 @@ function shutdown_cluster() {
     fi
     CLUSTERNAME=$1
     nshutdown ${CLUSTERS[$1]} 
-}
+}  &>/dev/null
 
 function ndestroy() {
     if [ -z "$1" ]; then
