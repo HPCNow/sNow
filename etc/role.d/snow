@@ -215,6 +215,35 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
     cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf ${prefix}/etc/ganglia/gmond.conf
 fi
 
+
+# MOTD messages
+if [[ -e /sNow/snow-configspace/system_files/etc/motd ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/motd ${prefix}/etc/
+else
+    echo "System managed by sNow!" > /sNow/snow-configspace/system_files/etc/motd
+    chmod 644 /sNow/snow-configspace/system_files/etc/motd
+    chown root:root /sNow/snow-configspace/system_files/etc/motd
+    cp -p /sNow/snow-configspace/system_files/etc/motd ${prefix}/etc/
+fi
+
+# issue and issue.net messages
+if [[ -e /sNow/snow-configspace/system_files/etc/issue ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
+else
+    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue
+    chmod 644 /sNow/snow-configspace/system_files/etc/issue
+    chown root:root /sNow/snow-configspace/system_files/etc/issue
+    cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
+fi
+if [[ -e /sNow/snow-configspace/system_files/etc/issue.net ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
+else
+    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue.net
+    chmod 644 /sNow/snow-configspace/system_files/etc/issue.net
+    chown root:root /sNow/snow-configspace/system_files/etc/issue.net
+    cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
+fi
+
 # Enable First Boot actions
 cp -p $SNOW_TOOL/etc/role.d/first_boot/first_boot.service  ${prefix}/lib/systemd/system/
 cp -p $SNOW_TOOL/etc/role.d/first_boot/first_boot ${prefix}/usr/local/bin/first_boot
