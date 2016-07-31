@@ -495,7 +495,12 @@ function boot() {
     get_server_distribution $1
     if (($IS_VM)) ; then
         if [[ -f $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
-            xl create $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
+            IS_UP=$(xl list $1)
+            if [[ "$IS_UP" == "" ]]; then 
+                xl create $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
+            else
+                echo "The domain $1 is already runnning"
+            fi
         else
             echo "The domain $1 needs to be deployed first: Execute : snow deploy $i"
             exit 1
