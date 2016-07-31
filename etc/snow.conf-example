@@ -10,10 +10,12 @@ SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_UTIL=$SNOW_PATH/snow-utils
 SNOW_TOOL=$SNOW_PATH/snow-tools
+# Destination of the sNow! domains OS images
 SNOWVG=snow_vg
 IMG_DST='lvm=snow_vg'
 #IMG_DST='dir=/sNow/domains'
 #IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
+# Nodes that compose the HA sNow! cluster
 SNOWNODES=( snow01 )
 SSHPORT=22
 # Admin users setup
@@ -41,8 +43,11 @@ NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
+# Number of nodes to be boot every cycle
 BLOCKN=4
+# Delay between cycles
 BLOCKD=5
+# Expected time required to boot a compute node and being fully operational
 BOOT_DELAY=300
 # Config Manager 
 SNOWCM=
