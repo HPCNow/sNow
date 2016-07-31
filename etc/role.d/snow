@@ -60,6 +60,20 @@ else
     cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 fi
 
+# DNS Client Setup
+SNOW_DNS_SERVER=$(gawk 'BEGIN{i=0}{if($2 ~ /deploy/){dns[i]=$4}}END{dnslist=dns[0]; for (j = 1; j < i; j++){dnslist=dnslist","dns[j]}; print dnslist}' $SNOW_TOOL/etc/domains.conf)
+INTERNAL_DNS_SERVERS="${SITE_DNS_SERVER:-$SNOW_DNS_SERVER}"
+if  [[ ! -z "$INTERNAL_DNS_SERVERS" ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
+        cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
+    else
+        RESOLV=$(echo $INTERNAL_DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
+        echo "$RESOLV" >> ${prefix}/etc/resolv.conf
+        cp -p ${prefix}/etc/resolv.conf /sNow/snow-configspace/system_files/etc/resolv.conf
+    fi
+fi
+
 # LDAP Client Setup
 SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)

@@ -82,6 +82,15 @@ else
 fi
 cp -p /etc/hosts ${prefix}/etc/hosts
 
+# DNS Client Setup
+if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
+    SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
+    echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
+fi
+
 # Install and setup sNow! deploy system
 SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
