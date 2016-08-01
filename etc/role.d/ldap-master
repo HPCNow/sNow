@@ -34,7 +34,7 @@ LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTERPWD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
 if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
-    installDebianPackage ${prefix} slapd ldap-utils ldapscripts
+    installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin
     if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
         mv ${prefix}/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d.orig
         cp -pr /sNow/snow-configspace/system_files/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d
