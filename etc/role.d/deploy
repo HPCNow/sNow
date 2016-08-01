@@ -82,6 +82,15 @@ else
 fi
 cp -p /etc/hosts ${prefix}/etc/hosts
 
+# DNS Client Setup
+if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
+    SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
+    echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
+fi
+
 # Install and setup sNow! deploy system
 SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
@@ -106,4 +115,8 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
     ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 fi
-
+# HPCNow repos
+if [[ ! -e /sNow/snow-configspace/system_files/etc/repos ]]; then
+    mkdir -p /sNow/snow-configspace/system_files/etc/repos
+    cp -pr $SNOW_TOOL/etc/config_template.d/repos/* /sNow/snow-configspace/system_files/etc/repos/
+fi
