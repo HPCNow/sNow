@@ -578,6 +578,13 @@ function nshutdown() {
     pdsh -w $1 systemctl poweroff
 }  &>/dev/null
 
+function shutdown_domains() {
+    for i in $SELF_ACTIVE_DOMAINS
+    do 
+        nshutdown $i
+    done
+}
+
 function shutdown_cluster() {
     if [ -z "$1" ]; then
         echo "ERROR: No cluster to shutdown."
@@ -635,6 +642,13 @@ function npoweroff() {
     fi
 }
 
+function poweroff_domains() {
+    for i in $SELF_ACTIVE_DOMAINS
+    do 
+        npoweroff $i
+    done
+}
+
 function nreset() {
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to reset."
@@ -657,6 +671,14 @@ function nreset() {
             ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
         fi
     fi
+}
+
+
+function reset_domains() {
+    for i in $SELF_ACTIVE_DOMAINS
+    do 
+        nreset $i
+    done
 }
 
 function nconsole() {
@@ -762,13 +784,30 @@ case $opt1 in
         nreboot $opt2
     ;;
     reset)
-        nreset $opt2
+        case $opt2 in
+            domains)  
+                nreset_domains 
+            ;;
+            *)
+                nreset $opt2
+            ;;
+        esac
     ;;
     poweroff)
-        npoweroff $opt2
+        case $opt2 in
+            domains)  
+                poweroff_domains 
+            ;;
+            *)
+                npoweroff $opt2
+            ;;
+        esac
     ;;
     shutdown)
         case $opt2 in
+            domains)  
+                shutdown_domains 
+            ;;
             cluster)
                 shutdown_cluster $opt3 
             ;;
