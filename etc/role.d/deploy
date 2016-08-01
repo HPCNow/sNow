@@ -115,4 +115,8 @@ if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
     sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
     ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
 fi
-
+# HPCNow repos
+if [[ ! -e /sNow/snow-configspace/system_files/etc/repos ]]; then
+    mkdir -p /sNow/snow-configspace/system_files/etc/repos
+    cp -pr $SNOW_TOOL/etc/config_template.d/repos/* /sNow/snow-configspace/system_files/etc/repos/
+fi
