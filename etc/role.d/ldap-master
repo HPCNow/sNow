@@ -21,12 +21,85 @@ else
     exit 1
 fi
 
-#  Update APT lists.
-chroot ${prefix} /usr/bin/apt-get update
+# LDAP Server Setup
+SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)
+LDAP_PROTO="${SITE_LDAP_PROTO:-ldap}"
+SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
+LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
+LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
+LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
+LDAP_PASSWORD="${LDAP_PASSWORD:-$MASTERPWD}"
+LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTERPWD}"
+LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
+
+if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
+    installDebianPackage ${prefix} slapd ldap-utils ldapscripts
+    if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
+        mv ${prefix}/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d.orig
+        cp -pr /sNow/snow-configspace/system_files/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d
+    else
+        cp -r /etc/ldap /etc/ldap.dist
+        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap/
+        #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
+        #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
+        cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
+        slapd slapd/no_configuration boolean false
+        slapd slapd/password1 password $LDAP_PASSWORD
+        slapd slapd/password2 password $LDAP_PASSWORD
+        slapd shared/organization string $LDAP_ORGANIZATION
+        slapd slapd/domain string $LDAP_BASE
+        slapd slapd/backend select HDB
+        slapd slapd/allow_ldap_v2 boolean false
+        slapd slapd/purge_database boolean false
+        slapd slapd/move_old_database boolean true
+EOF
+        chroot ${prefix} /usr/bin/dpkg-reconfigure -f noninteractive slapd >/dev/null 2>&1
+
+        # LDAP BASE
+        sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" /etc/ldap/ldap.conf
+        if [[ -n "$LDAP_CONFIG_PASSWORD" ]]; then
+            password_hash=$(chroot ${prefix} /usr/sbin/slappasswd -s "${LDAP_CONFIG_PASSWORD}")
+            sed_safe_password_hash=${password_hash//\//\\\/}
+            chroot ${prefix} /usr/sbin/slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
+            sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" ${prefix}/tmp/config.ldif
+            rm -rf ${prefix}/etc/ldap/slapd.d/*
+            chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
+            rm ${prefix}/tmp/config.ldif
+        fi
+        # ADDITIONAL LDAP SCHEMAS
+        if [[ -n "$LDAP_ADDITIONAL_SCHEMAS" ]]; then
+            IFS=","; declare -a schemas=($LDAP_ADDITIONAL_SCHEMAS); unset IFS
+            for schema in "${schemas[@]}"; do
+                chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "/etc/ldap/schema/${schema}.ldif"
+            done
+        fi
+
+        # ADDITIONAL LDAP MODULES
+        if [[ -n "$LDAP_ADDITIONAL_MODULES" ]]; then
+            IFS=","; declare -a modules=($LDAP_ADDITIONAL_MODULES); unset IFS
+            for module in "${modules[@]}"; do
+                module_file="/etc/ldap/modules/${module}.ldif"
+                if [ "$module" == 'ppolicy' ]; then
+                    LDAP_PPOLICY_DN_PREFIX="${LDAP_PPOLICY_DN_PREFIX:-cn=default,ou=policies}"
+                    sed -i "s/\(olcPPolicyDefault: \)PPOLICY_DN/\1${LDAP_PPOLICY_DN_PREFIX}$dc_string/g" ${prefix}$module_file
+                fi
+                chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "$module_file"
+            done
+        fi
+        # Prepopulate LDAP server
+        if [[ -d "${prefix}/etc/ldap/prepopulate" ]]; then 
+            init_files=$(chroot ${prefix}/bin/ls /etc/ldap/prepopulate/*.ldif)
+            for file in $init_files; do
+                chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l "$file"
+            done
+        fi
+    fi
+    chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
+    cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
+fi
+
 # LDAP Install references : 
 # https://wiki.debian.org/LDAP/OpenLDAPSetup
 # http://www.server-world.info/en/note?os=Debian_8&p=openldap
 # http://www.server-world.info/en/note?os=Debian_8&p=ssl
-installDebianPackage ${prefix} slapd ldap-utils ldapscripts
-
-#  Install the packages

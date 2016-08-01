@@ -21,6 +21,8 @@ else
     exit 1
 fi
 
+chroot ${prefix} /usr/bin/apt-get update
+
 # Config Manager
 if  [[ ! -z "$CF_SERVER" ]]; then 
     case $SNOWCF in
@@ -68,8 +70,10 @@ if  [[ ! -z "$INTERNAL_DNS_SERVERS" ]]; then
         cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
     else
         RESOLV=$(echo $INTERNAL_DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
-        echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
+        #echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
         echo "$RESOLV" >> ${prefix}/etc/resolv.conf
+        PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
         cp -p ${prefix}/etc/resolv.conf /sNow/snow-configspace/system_files/etc/resolv.conf
     fi
 fi
