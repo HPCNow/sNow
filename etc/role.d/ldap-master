@@ -36,11 +36,12 @@ LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
     installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin
     if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
-        mv ${prefix}/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d.orig
-        cp -pr /sNow/snow-configspace/system_files/etc/ldap/slapd.d ${prefix}/etc/ldap/slapd.d
+        mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
+        cp -pr /sNow/snow-configspace/system_files/etc/ldap ${prefix}/etc/ldap
     else
-        cp -r /etc/ldap /etc/ldap.dist
-        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap/
+        mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
+        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap.dist/
+        cp -pr ${prefix}/etc/ldap.dist ${prefix}/etc/ldap
         #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
         #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
@@ -58,6 +59,7 @@ EOF
 
         # LDAP BASE
         sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" /etc/ldap/ldap.conf
+        # LDAP config password setup
         if [[ -n "$LDAP_CONFIG_PASSWORD" ]]; then
             password_hash=$(chroot ${prefix} /usr/sbin/slappasswd -s "${LDAP_CONFIG_PASSWORD}")
             sed_safe_password_hash=${password_hash//\//\\\/}
@@ -67,6 +69,7 @@ EOF
             chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
             rm ${prefix}/tmp/config.ldif
         fi
+
         # ADDITIONAL LDAP SCHEMAS
         if [[ -n "$LDAP_ADDITIONAL_SCHEMAS" ]]; then
             IFS=","; declare -a schemas=($LDAP_ADDITIONAL_SCHEMAS); unset IFS
@@ -95,11 +98,12 @@ EOF
             done
         fi
     fi
+    # Enable TLS support
+    if [[ -e /sNow/snow-configspace/system_files/etc/openldap/certs ]]; then 
+        mkdir -p ${prefix}/etc/openldap/certs
+        cp -pr /sNow/snow-configspace/system_files/etc/openldap/certs/* ${prefix}/etc/openldap/certs
+        chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/ssl.ldif
+    fi
     chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
     cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
 fi
-
-# LDAP Install references : 
-# https://wiki.debian.org/LDAP/OpenLDAPSetup
-# http://www.server-world.info/en/note?os=Debian_8&p=openldap
-# http://www.server-world.info/en/note?os=Debian_8&p=ssl
