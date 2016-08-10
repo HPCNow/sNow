@@ -378,6 +378,12 @@ function xen_create() {
         END{
         system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password="pwd " "force" "img_dst)
         }' || error_exit "ERROR: unable to install the domain, please report the issue to HPCNow!"
+    second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' $SNOW_DOMAINS) 
+    if [[ "$second_nic" != "none" && -e $SNOW_TOOL/etc/domains/$opt2.cfg ]]; then 
+        guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' $SNOW_DOMAINS)
+        gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' $SNOW_TOOL/etc/domains/$opt2.cfg > $SNOW_TOOL/etc/domains/$opt2.cfg.extended
+        mv $SNOW_TOOL/etc/domains/$opt2.cfg.extended $SNOW_TOOL/etc/domains/$opt2.cfg
+    fi
 }
 
 function xen_delete() {
