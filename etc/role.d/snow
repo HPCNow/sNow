@@ -24,6 +24,7 @@ fi
 # Include HPCNow! repository
 /usr/bin/curl -sSL http://snow.hpcnow.com/apt/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
 echo "deb http://snow.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
+chroot ${prefix} /usr/bin/apt-get update
 
 # Config Manager
 if  [[ ! -z "$CF_SERVER" ]]; then 
@@ -72,8 +73,10 @@ if  [[ ! -z "$INTERNAL_DNS_SERVERS" ]]; then
         cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
     else
         RESOLV=$(echo $INTERNAL_DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
-        echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
+        #echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
         echo "$RESOLV" >> ${prefix}/etc/resolv.conf
+        PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
         cp -p ${prefix}/etc/resolv.conf /sNow/snow-configspace/system_files/etc/resolv.conf
     fi
 fi
@@ -104,7 +107,7 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
         fi
     elif [[ "$LDAP_TLS" == "FALSE" && "$LDAP_PROTO" != "ldaps" ]]; then 
         installDebianPackage ${prefix} ldap-utils libpam-ldap libnss-ldap nscd nslcd
-        chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
+        cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
 ldap-auth-config    ldap-auth-config/ldapns/ldap-server    string    ${LDAP_URI}
 ldap-auth-config    ldap-auth-config/ldapns/base-dn    string     ${LDAP_BASE}
 ldap-auth-config    ldap-auth-config/ldapns/ldap_version    select    3 
@@ -112,7 +115,7 @@ ldap-auth-config    ldap-auth-config/dbrootlogin    boolean    false
 ldap-auth-config    ldap-auth-config/dblogin    boolean    false 
 nslcd   nslcd/ldap-uris string  ${LDAP_URI} 
 nslcd   nslcd/ldap-base string  ${LDAP_BASE}
-CONF
+EOF
         chroot ${prefix} /usr/sbin/pam-auth-update  --package ldap
         chroot ${prefix} /bin/systemctl enable nslcd.service 
     fi
@@ -187,7 +190,7 @@ if  [[ ! -z "$MAIL_SERVER" ]]; then
     # The following line fixes a issue with exim installation
     chroot ${prefix} /usr/sbin/addgroup --system Debian-exim --force-badname
     installDebianPackage ${prefix} exim4-config
-    chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
+    cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections 
 exim4-config    exim4/hide_mailname boolean false
 exim4-config    exim4/dc_localdelivery select mbox format in /var/mail/
 exim4-config    exim4/dc_smarthost string $MAIL_SERVER
@@ -199,7 +202,7 @@ exim4-config    exim4/dc_postmaster string snow
 exim4-config    exim4/no_config boolean true
 exim4-config    exim4/dc_local_interfaces boolean 127.0.0.1 ; ::1
 exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail
-CONF
+EOF
 
 fi
 
@@ -217,6 +220,15 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
         chroot ${prefix} /usr/sbin/gmond -t | sed 's|name = "unspecified"|name = "sNow! Domains"|g' > $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf
     fi
     cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_snow.conf ${prefix}/etc/ganglia/gmond.conf
+fi
+
+# Secondary Network Interface
+SECONDARY_NIC=$(gawk -v guest=$GUEST_HOSTNAME '{if($2 ~ /guest/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SECONDARY_NIC" ]]; then 
+    gawk -v guest=$GUEST_HOSTNAME '{if($2 ~ /guest/){
+        printf "\n allow-hotplug %s\n auto %s\n iface %s inet static\n    address %s\n    netmask %s\n    gateway %s\n", $9, $9, $9, $10, $13, $14
+        }
+    }' $SNOW_TOOL/etc/domains.conf >> ${prefix}/etc/network/interfaces 
 fi
 
 
