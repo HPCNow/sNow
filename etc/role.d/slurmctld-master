@@ -25,10 +25,6 @@ fi
 SNOW_SLURMCTLD_MASTER=$(gawk '{if($2 ~ /slurmctld-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then 
     installDebianPackage ${prefix} curl pbzip2
-    #/usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl slurm-client 
     chroot ${prefix} /bin/systemctl enable munge.service

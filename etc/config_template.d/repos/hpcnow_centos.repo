@@ -1,5 +1,5 @@
 [hpcnow]
 name=HPCNow-$releasever
-baseurl=http://repo.hpcnow.com/rpm/centos/$releasever/
+baseurl=http://snow.hpcnow.com/rpm/centos/$releasever/
 enabled=1
 gpgcheck=1

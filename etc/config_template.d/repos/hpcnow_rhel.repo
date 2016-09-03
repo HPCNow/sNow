@@ -1,5 +1,5 @@
 [hpcnow]
 name=HPCNow-$releasever
-baseurl=http://repo.hpcnow.com/rpm/rhel/$releasever/
+baseurl=http://snow.hpcnow.com/rpm/rhel/$releasever/
 enabled=1
 gpgcheck=1

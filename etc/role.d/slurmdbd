@@ -36,10 +36,6 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
     echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
     #chroot ${prefix} /bin/systemctl stop mysql.service
     /usr/bin/killall -9 mysqld_safe mysqld
-    #/usr/bin/curl -sSL http://repo.hpcnow.com/apt/gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
     chroot ${prefix} /bin/systemctl enable munge.service

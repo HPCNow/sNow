@@ -21,6 +21,9 @@ else
     exit 1
 fi
 
+# Include HPCNow! repository
+/usr/bin/curl -sSL http://snow.hpcnow.com/apt/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+echo "deb http://snow.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
 chroot ${prefix} /usr/bin/apt-get update
 
 # Config Manager

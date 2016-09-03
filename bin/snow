@@ -331,21 +331,21 @@ fi
 function update_xen_image() {
 if [[ ! -d $SNOW_PATH/domains/template ]]; then
     mkdir -p $SNOW_PATH/domains/template
-    wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-    wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://snow.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://snow.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
     if [[ -f $SNOW_PATH/domains/template/snow-template.tar.bz2 ]]; then
         MD5LOCAL=$(md5sum $SNOW_PATH/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
-        wget http://repo.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://snow.hpcnow.com/snow-template.md5sum -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         MD5HPCNOW=$(cat $SNOW_PATH/domains/template/snow-template.md5sum | gawk '{ print $1 }')
         if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
             echo "Downloading most recent sNow! domain template"
-            wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+            wget http://snow.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
             echo "sNow domain template is up-to-date."
         fi
     else
-        wget http://repo.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://snow.hpcnow.com/snow-template.tar.bz2 -P $SNOW_PATH/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
 fi 
 }
