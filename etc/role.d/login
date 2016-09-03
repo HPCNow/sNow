@@ -23,10 +23,6 @@ fi
 
 # Slurm Client Setup
 if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
-    /usr/bin/curl -sSL http://packages.nesi.org.nz/nesi.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    #/usr/bin/curl -sSL http://repo.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
-    echo "deb http://packages.nesi.org.nz/slurm-debian/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
-    #echo "deb http://repo.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
     chroot ${prefix} /bin/systemctl enable munge.service
