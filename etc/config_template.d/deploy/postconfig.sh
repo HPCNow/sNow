@@ -143,7 +143,7 @@ add_repo()
 add_repos()
 {
     for REPO in $(cat /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/repos); do
-        if [[ ! -z ${!REPO} ]]; then
+        if [[ ! -z ${REPO} ]]; then
             add_repo $1 $REPO
         fi
     done
@@ -252,7 +252,12 @@ setup_ssh()
     cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* /etc/ssh/
     cp -p $SNOW_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/
     cp -p $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
-    chmod u+s /usr/lib64/ssh/ssh-keysign
+    if [[ -e /usr/lib64/ssh/ssh-keysign ]]; then
+        chmod u+s /usr/lib64/ssh/ssh-keysign
+    fi
+    if [[ -e /usr/libexec/openssh/ssh-keysign ]]; then
+        chmod u+s /usr/libexec/openssh/ssh-keysign
+    fi
     cp -p /etc/ssh/shosts.equiv /root/.shosts
     sed -i "s/RhostsRSAAuthentication no/RhostsRSAAuthentication yes/g" /etc/ssh/sshd_config
     sed -i "s/HostbasedAuthentication no/HostbasedAuthentication yes/g" /etc/ssh/sshd_config

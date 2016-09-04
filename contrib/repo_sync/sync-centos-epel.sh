@@ -5,7 +5,7 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
-LOCALREPODIR=/sNow/OS/CentOS/7.2/EPEL
+LOCALREPODIR=/sNow/OS/CentOS/7.0/EPEL
 mkdir -p $LOCALREPODIR 
 cd $LOCALREPODIR
 
