@@ -6,6 +6,9 @@
 #set -xv
 SNOWPATH=$(dirname "$0")
 PROGNAME=$(basename "$0")
+#Logging
+LOGFILE=/tmp/snow-install.log
+RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow
 SNOW_HOME=$SNOW_PATH/home
@@ -46,6 +49,44 @@ function error_exit(){
     exit 1
 }
 
+
+function logsetup {
+    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    exec > >(tee -a $LOGFILE)
+    exec 2>&1
+}
+
+#logsetup
+        
+function log {
+    echo "[$(date)]: $*" 
+}
+
+spinner()
+{
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf "[\e[0;32m%c\e[m] %s" "$spinstr" "$2" 
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    done
+}
+
+error_check()
+{
+    local status=$1
+    printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    if [ $status -eq 0 ]; then
+        printf "[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+    else
+        printf "[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
+    fi
+}
+
 function shelp(){
 echo " 
 This is the sNow! Command Line Interface
@@ -56,26 +97,27 @@ Usage: snow [function] <option|domain|server>
 
 Function List:
 
-    * init                           | setup the system according to the parameters defined in snow.conf and active-domains.conf
-    * config                         | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-    * update tools                   | updates the sNow! Tools 
-    * update configspace             | updates configuration files from private git 
-    * update template                | updates the sNow! image used to create new domains
-    * deploy <domain|server>         | deploy specific domain/server 
-    * remove <domain>                | removes an existing domain deployed with sNow!
-    * list <all>                     | list current domains (services) and their status
-    * boot <domain|server>           | boot specific domain or server
-    * boot domains                   | boot all the domains (all services not available under sNow! HA)
-    * boot cluster <clustername>     | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-    * reboot <domain|server>         | reboot specific domain or server
-    * shutdown <domain|server>       | shutdown specific domain or server
-    * shutdown cluster <clustername> | shutdown all the compute nodes of the selected cluster
-    * destroy <domain|server>        | force to stop specific domain or server
-    * reset <domain|server>          | force to reboot specific domain or server
-    * poweroff <domain|server>       | force to shutdown specific domain or server simulating a power button press
-    * console <domain|server>        | console access to specific domain or server
-    * uptime <domain|sever>          | shows uptime of specific domain or server
-    * cmd <domain|sever> <command>   | executes a command in the domain(s) or server(s)
+    * init                              | setup the system according to the parameters defined in snow.conf and active-domains.conf
+    * config                            | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
+    * update tools                      | updates the sNow! Tools 
+    * update configspace                | updates configuration files from private git 
+    * update template                   | updates the sNow! image used to create new domains
+    * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
+    * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
+    * remove <domain>                   | removes an existing domain deployed with sNow!
+    * list <all>                        | list current domains (services) and their status
+    * boot <domain|server> <image>      | boot specific domain or server with optional image
+    * boot domains                      | boot all the domains (all services not available under sNow! HA)
+    * boot cluster <cluster> <image>    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+    * reboot <domain|server>            | reboot specific domain or server
+    * shutdown <domain|server>          | shutdown specific domain or server
+    * shutdown cluster <cluster>        | shutdown all the compute nodes of the selected cluster
+    * destroy <domain|server>           | force to stop specific domain or server
+    * reset <domain|server>             | force to reboot specific domain or server
+    * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
+    * console <domain|server>           | console access to specific domain or server
+    * uptime <domain|sever>             | shows uptime of specific domain or server
+    * cmd <domain|sever> <command>      | executes a command in the domain(s) or server(s)
 
 Examples:
 
@@ -122,6 +164,44 @@ function bkp() {
         cp -pr $bkpfile $bkpfile.$next-snow
     fi
 }
+
+function get_os_distro() {
+    # OS release and Service pack discovery 
+    if [ -f /etc/SuSE-release ]; then
+        export OS="SLES"
+        export OSVERSION=$(cat /etc/SuSE-release | grep VERSION | cut -f2 -d '=' | sed 's/ //')
+        export OSSP=$(/etc/SuSE-release | grep PATCHLEVEL | cut -f2 -d '=' | sed 's/ //')
+    elif [ -f /etc/fedora-release ]; then
+        export OS="Fedora"
+        export OSVERSION=$(cat /etc/fedora-release | sed 's/^.* release \([^\.][^\.]\).*$/\1/')
+        export OSSP=""
+    elif [ -f /etc/redhat-release ]; then
+        export OS="RHEL"
+        export OSVERSION=$(cat /etc/redhat-release | sed 's/^.* release \([^\.]\).*$/\1/')
+        export OSSP=""
+    elif [ -f /etc/debian_version ]; then
+        if [ -f /etc/lsb-release ]; then  
+            if [ "z$(grep DISTRIB_ID /etc/lsb-release | cut -f2 -d '=' | sed 's/ //')" = "zUbuntu" ]; then
+                export OS="Ubuntu"
+                export OSVERSION=$(cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -f2 -d '=' | sed 's/ //')
+                export OSSP=""
+            fi
+        else
+            export OS="Debian"
+            export OSVERSION=$(cat /etc/debian_version | cut -f1 -d '.')
+            export OSSP=$(cat /etc/debian_version | cut -f2 -d '.')
+        fi
+    elif [ -f /etc/system-release ]; then
+        if [ "$(awk -F: '{print $3}' /etc/system-release-cpe)" = "amazon" ]; then
+            export OS="AMI"
+            export OSVERSION=$(awk -F: '{print $5}' /etc/system-release-cpe)
+            export OSSP=""
+        fi
+    else
+        export OS="unknown"
+    fi
+}
+
 
 function prefix_to_bit_netmask() {
     prefix=$1;
@@ -290,11 +370,11 @@ if (! $HA_NFSROOT) ; then
     if [[ $REPLY =~ ^[Nn]$ ]]; then
         echo "PXE boot will not work unless you use a proper kernel. Manual setup will be required."
     else
-        if [[ ! -d $SNOW_PATH/OS/deploy/kickstart/centos-7.0 ]]; then
-            mkdir -p $SNOW_PATH/OS/deploy/kickstart/centos-7.0
+        if [[ ! -d $SNOW_CONF/boot/deploy/kickstart/centos-7.0 ]]; then
+            mkdir -p $SNOW_CONF/boot/deploy/kickstart/centos-7.0
         fi
-        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img $SNOW_PATH/OS/deploy/kickstart/centos-7.0/ 
-        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz $SNOW_PATH/OS/deploy/kickstart/centos-7.0/
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img $SNOW_CONF/boot/deploy/kickstart/centos-7.0/ 
+        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz $SNOW_CONF/boot/deploy/kickstart/centos-7.0/
     fi
     # Download the ISO in order to create the local repo defined in snow.conf
 
@@ -416,10 +496,10 @@ function node_rank() {
     fi
 }
 
-function deploy_copy() {
+function boot_copy() {
     for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
     do 
-        cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$1 $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
+        cp -p $SNOW_CONF/boot/pxelinux.cfg/$1 $SNOW_CONF/boot/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
     done
 }
 
@@ -441,14 +521,14 @@ function deploy() {
             #BLOCKN=${2:-$BLOCKN}
             #BLOCKD=${3:-$BLOCKD}
             DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
-            if ! [[ -f $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
-                echo "No template $DEFAULT_TEMPLATE available in $SNOW_PATH/OS/deploy/pxelinux.cfg"
+            if ! [[ -f $SNOW_CONF/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
+                echo "No template $DEFAULT_TEMPLATE available in $SNOW_CONF/boot/pxelinux.cfg"
                 exit 1
             fi
             if (( $NLENG > 0 )); then
                 echo "Deploying node range $1 ... This will take a while, Please wait"
                 #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                deploy_copy $DEFAULT_TEMPLATE
+                boot_copy $DEFAULT_TEMPLATE
                 parallel -j $BLOCKN \
                 echo "Deploying node : $NPREFIX{} ... Please wait" \; \
                 ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
@@ -458,16 +538,16 @@ function deploy() {
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 sleep $BOOT_DELAY
                 echo "Setting up dis as boot device... Please wait"
-                deploy_copy $DEFAULT_BOOT
+                boot_copy $DEFAULT_BOOT
             else
                 check_host_status $1${NET_IPMI[4]}
-                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_TEMPLATE $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+                cp -p $SNOW_CONF/boot/pxelinux.cfg/$DEFAULT_TEMPLATE $SNOW_CONF/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
                 ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
                 ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
                 echo "Deploying node : $1 ... Please wait"
                 sleep $BOOT_DELAY
-                cp -p $SNOW_PATH/OS/deploy/pxelinux.cfg/$DEFAULT_BOOT $SNOW_PATH/OS/deploy/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+                cp -p $SNOW_CONF/boot/pxelinux.cfg/$DEFAULT_BOOT $SNOW_CONF/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
     else
@@ -476,6 +556,125 @@ function deploy() {
     fi
 }
 
+function patch_network_configuration() {
+    case $OS in
+        Debian|Ubuntu)
+            echo "Nothing required"
+        ;;
+        RHEL|CentOS)
+            gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > $mount_point/etc/sysconfig/network
+            for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
+            do
+                gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > $mount_point/$i
+            done
+       ;;
+       SLES|OpenSUSE)
+            echo "Nothing required since using kiwi"
+       ;;
+   esac
+}
+
+function generate_pxe_image() {
+    IMAGE=$1
+    case $OS in
+        Debian|Ubuntu)
+            cp -p /boot/initrd.img-$(uname -r) $SNOW_CONF/boot/image/$IMAGE/
+            cp -p /boot/vmlinuz-$(uname -r) $SNOW_CONF/boot/image/$IMAGE/
+            generate_rootfs $IMAGE
+        ;;
+        RHEL|CentOS)
+            dracut -a "nfs network base" --host-only -f $SNOW_CONF/boot/image/$IMAGE/initrd-$(uname -r).img $(uname -r) root=dhcp 
+            cp -p /boot/vmlinuz-$(uname -r) $SNOW_CONF/boot/image/$IMAGE/
+            generate_rootfs $IMAGE
+       ;;
+       SLES|OpenSUSE)
+           kiwi --root / --add-profile netboot --type pxe -d $SNOW_CONF/boot/image/$IMAGE
+           mv initrd-netboot-*.gz initrd-$(uname -r)
+           mv initrd-netboot-*.kernel linux-$(uname -r)
+           mv *x86_64* root.gz
+       ;;
+   esac
+}
+
+function generate_rootfs() {
+    # rootfs size in megabytes
+    rootfs_size="4096"
+    # set mount point for the rootfs
+    mount_point="rootfs-loop"
+    # create a rootfs file
+    dd if=/dev/zero of=rootfs bs=1k count=$(($rootfs_size * 1024))
+    # create an ext3 file system
+    mkfs.ext3 -m0 -F -L root rootfs
+    # create a mount point
+    mkdir -p $mount_point
+    # mount the newly created file system
+    mount -t ext3 -o loop rootfs $mount_point
+    # Create required directory structure
+    mkdir -p $mount_point/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,log,run,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
+    # Transfer required files
+    cd $mount_point 
+    cp -ap /etc .
+    cp -ap /dev .
+    cp -ap /bin .
+    cp -ap /sbin .
+    cp -ap /lib .
+    cp -ap /lib64 .
+    cp -ap /var/lib/nfs var/lib
+    cp -ap /usr .
+    cp -ap /root/.bashrc root/
+    cp -ap /root/.bash_profile root/
+    cp -ap /root/.bash_logout root/
+    cp -ap /root/.ssh root/
+    # set required permissions
+    chown root:lock var/lock
+    # cd out of the mount point
+    cd ..
+    # Update fstab
+    bkp $mount_point/etc/fstab
+    cp -p $mount_point/etc/fstab $mount_point/etc/fstab.orig
+    gawk '{
+        if($2 == "/"){
+            print "/dev/ram0               /              ext3    defaults        0 0"
+        }
+        else{
+            print $0
+        }
+    }' $mount_point/etc/fstab.orig > $mount_point/etc/fstab
+    rm $mount_point/etc/fstab.orig
+    # hooks: 
+    # * if local scratch disk /tmp
+    patch_network_configuration
+
+    umount $mount_point
+    gzip -c rootfs | dd of=$SNOW_CONF/boot/image/$IMAGE/rootfs.gz
+    # create PXE boot configuration
+    sed -e "s|__IMAGE__|$IMAGE|" $SNOW_TOOL/etc/config_template.d/boot/pxelinux.cfg/diskless > $SNOW_CONF/boot/pxelinux.cfg/$IMAGE
+}
+
+function clone() {
+    IMAGE=$2
+    if [[ -z "$1" ]]; then
+        echo "ERROR: node to clone"
+        exit 1
+    fi
+    if [[ -z "$IMAGE" ]]; then
+        echo "ERROR: no name is provided for the image"
+        exit 1
+    fi
+    get_server_distribution $1
+    echo "This will clone $1 and generate the image $IMAGE."
+    read -p "Are you sure? (y/n) : " -n 1 -r
+    echo 
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # check if snow CLI is ran in the same golden node or from the snow server
+        # in the golden node -> then
+        check_host_status $1${NET_IPMI[4]}
+        generate_pxe_image $IMAGE
+        # in the snow server ssh to golden node -> then
+    else
+        echo "\nWell done. It's better to be sure."
+    fi
+}
 
 function list() {
     xl list $opt2
@@ -498,6 +697,7 @@ function boot() {
         echo "ERROR: No domain or node to boot."
         exit 1
     fi
+    IMAGE=$2
     get_server_distribution $1
     if (($IS_VM)) ; then
         if [[ -f $SNOW_PATH/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
@@ -515,6 +715,11 @@ function boot() {
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
+        if [ -z "$IMAGE" ]; then
+            boot_copy $DEFAULT_BOOT
+        else
+            boot_copy $IMAGE
+        fi
         if (( $NLENG > 1 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_IPMI[4]}" \; \
@@ -746,6 +951,9 @@ case $opt1 in
     ;;
     deploy)
         deploy $opt2 $opt3 $opt4 $opt5
+    ;;
+    clone)
+        clone $opt2 $opt3 $opt4 $opt5
     ;;
     create)
         case $opt2 in
