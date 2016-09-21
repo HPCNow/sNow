@@ -1,0 +1,35 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    source /sNow/snow-tools/etc/snow.conf
+else
+    echo "The snow.conf is not yet setup"
+fi
+
+# Download the OpenVPN AS package
+wget http://swupdate.openvpn.org/as/openvpn-as-2.0.25-Debian8.amd_64.deb -O ${prefix}/root/openvpn-as-2.0.25-Debian8.amd_64.deb
+
+# Stage domain entrypoint script
+cp -p $SNOW_TOOL/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_boot/openvpn_as.sh
+sed -i "s|__MASTERPWD__|$MASTERPWD|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
+
+# Domain Setup
+if [[ -d /sNow/snow-configspace/files/etc/openvpn_as ]]; then
+    cp -pr /sNow/snow-configspace/files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
+    sed -i "s|__OPENVPNAS_RECONFIGURE__|false|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
+else
+    mkdir -p /sNow/snow-configspace/files/etc/openvpn_as
+    sed -i "s|__OPENVPNAS_RECONFIGURE__|true|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
+fi

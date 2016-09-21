@@ -1,29 +1,34 @@
-#!/bin/sh
+#!/bin/bash
 # Configure the new image for sNow! HPC suite
-# Developed by NPCNow! www.hpcnow.com
-# Jordi Blasco
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
 
-#
 #  Source our common functions - this will let us install a Debian package.
-#
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
 
-
-#
 #  Update APT lists.
-#
 chroot ${prefix} /usr/bin/apt-get update
-installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
+installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien nfs-common
 
-# System Imager (Cloning System)
-# http://www.systemimager.org/download/
+# KickStart (RedHat Based) - Ref : http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+# Preseed (Debian Based) - Ref :  https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
+
+# Install System Imager (Cloning System)
 REPOFILE=systemimager.org.list
 URL=http://download.systemimager.org/sources.list.d/$REPOFILE
 cd /etc/apt/sources.list.d/
@@ -33,12 +38,7 @@ chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} systemimager-server simple-state-manager
 
-# PXE
-
-# TFTPBOOT
-
-# KickStart (RedHat Based)
-# http://www.tecmint.com/multiple-centos-installations-using-kickstart/
+# Install KickStart (RedHat and CentOS Based) 
 CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
 wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
 wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
@@ -47,31 +47,76 @@ chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noar
 chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
 chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
 
-# Preseed (Debian Based)
-# https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
+# Setup TFTP
+echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+mkdir -p ${prefix}/srv/tftp
+
+# Install Debian Pressed (Debian and Ubuntu based)
+wget http://ftp.debian.org/debian/dists/jessie/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
+cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
+
+# Setup DNSMASQ
+SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 installDebianPackage ${prefix} dnsmasq
-cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
-echo "
-dhcp-range=192.168.7.100,192.168.7.250,255.255.255.0,12h
+if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
+    cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+    echo "
+interface=$DHCP_NIC
+# Gateway
+dhcp-option=3,$GATEWAY
+# DNS
+dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
+# Domain Name
+dhcp-option=15,$DOMAIN
+# Broadcast Address
+# dhcp-option=28,__BROADCAST__
+# 0.0.0.0 Means to reference self for this option
+dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},static,infinite
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
+    cp -p ${prefix}/etc/dnsmasq.conf /sNow/snow-configspace/system_files/etc/dnsmasq.conf
+else
+    cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
+fi
+cp -p /etc/hosts ${prefix}/etc/hosts
 
-mkdir -p ${prefix}/srv/tftp
-wget http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
-cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
+# DNS Client Setup
+if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
+    SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+    echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
+    echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
+fi
 
-
-# AutoYast (SuSE Based)
-
-   
-# Kali Linux (Forensics)
-
-# Clonezilla (Cloning System and Data Recovery)
-
-#
-#  Install the packages
-#
-#installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien
- 
+# Install and setup sNow! deploy system
+SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
+    PROXY_SERVER=$SNOW_PROXY_SERVER
+    PROXY_PORT=8080
+else
+    PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+    PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+fi
+if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
+    if [[ ! -d /sNow/snow-configspace ]]; then 
+        mkdir /sNow/snow-configspace
+    fi
+    cp -pr /sNow/snow-tools/etc/config_template.d/deploy /sNow/snow-configspace/
+    sed -i "s|__LANG__|$LANG|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__KEYMAP__|$KEYMAP|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__TIMEZONE__|$TIMEZONE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
+    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
+    ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
+fi
+# HPCNow repos
+if [[ ! -e /sNow/snow-configspace/system_files/etc/repos ]]; then
+    mkdir -p /sNow/snow-configspace/system_files/etc/repos
+    cp -pr $SNOW_TOOL/etc/config_template.d/repos/* /sNow/snow-configspace/system_files/etc/repos/
+fi

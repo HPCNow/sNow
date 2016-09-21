@@ -1,4 +1,25 @@
-#!/bin/sh
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
 #
 #  This role installs CFengine upon the new guest system.
 #
@@ -6,44 +27,20 @@
 # otherwise the temporary mounted directory will not be unmountable.
 #
 
-prefix=$1
-
-#
-#  Source our common functions - this will let us install a Debian package.
-#
-if [ -e /usr/share/xen-tools/common.sh ]; then
-    . /usr/share/xen-tools/common.sh
-else
-    echo "Installation problem"
-fi
-
-
-
-#
 # Log our start
-#
 logMessage Script $0 starting
 
 
-#
 #  Install CFengine
-#
 installDebianPackage ${prefix} cfengine2
 
-
-#
 #  Make sure the CFengine server isn't running, this will cause our
 # unmounting of the disk image to fail..
-#
 chroot ${prefix} /etc/init.d/cfengine2 stop
 
-#
 #  Copy cfengine update.conf & defaults from Dom0
-#
 cp /etc/cfengine/update.conf ${prefix}/etc/cfengine/
 cp /etc/default/cfengine2 ${prefix}/etc/default/
 
-#
 #  Log our finish
-#
 logMessage Script $0 finished

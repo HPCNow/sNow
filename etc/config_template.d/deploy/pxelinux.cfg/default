@@ -1,0 +1,4 @@
+default linux
+
+label linux
+  localboot 0

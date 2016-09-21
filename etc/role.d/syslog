@@ -1,0 +1,38 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Rsyslog Server Setup
+SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_SYSLOG_SERVER" ]]; then 
+    installDebianPackage ${prefix} rsyslog
+    if [[ -e /sNow/snow-configspace/system_files/etc/rsyslog.conf ]]; then 
+        cp -p /sNow/snow-configspace/system_files/etc/rsyslog.conf ${prefix}/etc/rsyslog.conf
+    else
+        mkdir -p /sNow/snow-configspace/system_files/etc/
+        sed -i 's|#$ModLoad imtcp|$ModLoad imtcp|g' ${prefix}/etc/rsyslog.conf 
+        sed -i 's|#$InputTCPServerRun 514|$InputTCPServerRun 514|g' ${prefix}/etc/rsyslog.conf 
+        cp -p ${prefix}/etc/rsyslog.conf /sNow/snow-configspace/system_files/etc/rsyslog.conf
+    fi
+    rm ${prefix}/etc/rsyslog.d/50-default.conf
+fi
+

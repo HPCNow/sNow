@@ -1,0 +1,420 @@
+.\" Manpage for sNow!
+.\" Contact devel@hpcnow.com to correct errors or typos.
+.TH man 8 "09 Jun 2016" "1.0.0" "sNow! snow.conf man page"
+.SH NAME
+snow.conf \- sNow! configuration file
+.SH SYNOPSIS
+The snow.conf is the main configuration file of sNow!. It provides a complete list of parameters wich will be used to setup the complete HPC cluster.
+.SH DESCRIPTION
+The snow.conf is the main configuration file of sNow! which contains the extensive list of parameters that will be used by sNow Tools to manage your cluster.
+A template of this file is available in /sNow/snow-tools/etc/snow.conf-example. In order to get started, copy the template file to /sNow/snow-tools/etc/snow.conf and work with the snow.conf
+Be aware that newer release may include more parameters to setup and in order to transit from a previous release to a newer one will require to extend your current snow.conf with some new parameters.
+
+This man page provides a short description of each parameter. For more information, visit the official website : http://www.hpckp.org/snow
+.TH man 8 "09 Jun 2016" "1.0.0" "sNow! snow.conf man page"
+.SH PARAMETERS
+.TP
+\fBNFS_SERVER\fR
+Defines the NFS server where all the sNow! files will be stored. If the NFS_SERVER matches with the sNow! server, the "snow init" command will apply the required changes in the system. The default value is snow01.
+
+.TP
+\fBsNow! Paths\fR
+The following paths define where the code and binaries are going to be stored. Most of them are not customizable yet but they will some time in the future. Keep the following paths static.
+
+.RS
+.TP
+\fBSNOW_PATH\fR
+The main sNow! root where all the sub-projects usually are stored. Default value is /sNow
+
+.TP
+\fBSNOW_HOME=$SNOW_PATH/home\fR
+This parameter defines the default path to the shared home directory.
+
+.TP
+\fBSNOW_SOFT=$SNOW_PATH/easybuild\fR
+This parameter defines the default path to the EasyBuild root folder.
+
+.TP
+\fBSNOW_CONF=$SNOW_PATH/snow-configspace\fR
+This parameter defines the default path to the snow-configspace folder.
+
+.TP
+\fBSNOW_UTIL=$SNOW_PATH/snow-utils\fR
+This parameter defines the default path to the snow-utils folder.
+
+.TP
+\fBSNOW_TOOL=$SNOW_PATH/snow-tools\fR
+This parameter defines the default path to the snow-tools folder.
+
+.RE
+.TP
+\fBIMG_DST\fR
+Defines where the domains OS files will be stored
+
+.RS
+.TP
+\fBIMG_DST='lvm=snow_vg\fR'
+The domains will be stored inside a Logical Volume created in the snow_vg Volume Group.
+.TP
+\fBIMG_DST='dir=/sNow/domains\fR'
+The domains will be stored inside a loopback file located inside /sNow/domains folder.
+.TP
+\fBIMG_DST='nfs=$NFS_SERVER:/sNow/domains\fR' (experimental)
+The domains file system will be stored in NFS server and booted via NFSROOT.
+.TP
+\fBSNOWVG\fR
+SNOWVG=snow_vg
+.RE
+
+.TP
+\fBSNOWNODES\fR
+Defines the node or list of nodes which will compose the sNow! High Availability cluster (not the compute cluster). Default value is snow01.
+
+.TP
+\fBSSHPORT\fR
+Defines the default TPC port for SSH. Default value is 22.
+
+.TP
+\fBADMIN_USERS\fR
+Defines a list of Admin users. The default value is ADMIN_USERS="root snow"
+
+.TP
+\fBADMIN_GROUPS\fR
+Defines a list of admin groups. The default value is ADMIN_GROUPS="root snow"
+
+.TP
+\fBSMAIL\fR
+.RS
+This parameter defines the email of email list (coma separated and without spaces) for support services. If you already have 3rd level support agreement with HPCNow! the SMAIL should contain at least the following email: support@hpcnow.com
+.RE
+
+.TP
+\fBMASTERPWD\fR
+Defines the master password which will be used for setting up the root password for the deployed domains and compute nodes and also for some other services. We strongly suggest to change the default value which is MASTERPWD='HPCN0w!!'.
+
+.TP
+\fBsNow! User Definition\fR
+Defines all the parameters to create the sNow! user:
+.br
+sNow_GID=2000
+.br
+sNow_GROUP=snow
+.br
+sNow_UID=2000
+.br
+sNow_USER=snow
+.TP
+\fBHPCNow! User Definition\fR
+Defines all the parameters to create the HPCNow! user:
+.br
+HPCNow_UID=2001
+.br
+HPCNow_GID=2000
+.br
+HPCNow_USER=hpcnow
+
+.TP
+\fBSource Control and Continous Integration Support\fR
+The following parameters allows to integrate the key configuration files, deployment scripts and other key codes located in /sNow/snow-configspace with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
+This is key to enable Continous Integration Support and test changes in a testing enviroment before to merge them into the production one.
+Since the data contained in this folder is extremely sensitive, the GIT repository MUST be private. Since BitBucket allows to use private repositories for free, we suggest to explore this option.
+More information about how to setup OAuth integrated applications with GitHub and BitBucket in the sNow! website.
+.br
+Example:
+.br
+PRIVATE_GIT_TOKEN=t54skl3333YourRepo3333333srgrafsiJ
+.br
+PRIVATE_GIT_REPO=bitbucket.org/YOUR_ACCOUNT/snow-configspace.git
+
+.TP
+\fBNetwork Setup\fR
+sNow! is able to manage five different networks. The network bridges MUST be setup before to iniciate the configuration with "snow init".
+The following parameters defines the required information to setup those networks in the domains and also compute nodes. The sintaxy is :
+.br
+NET_XXX = ( 'Bridge'  'Gateway' 'Network' 'Netmask' 'Hostname extension' )
+.TP
+\fBNET_PUB\fR
+Defines all the parameters for the public network
+.br
+Example:
+.br
+NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
+
+.TP
+\fBNET_DMZ\fR
+Defines all the parameters for the DMZ network
+.br
+Example:
+.br
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
+
+.TP
+\fBNET_SNOW\fR
+Defines all the parameters for the sNow! network
+.br
+Example:
+.br
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.240.0' '' )
+
+.TP
+\fBNET_IPMI\fR
+Defines all the parameters for the IMPI/BMC/Consoles network
+.br
+Example:
+.br
+NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.240.0' '-ipmi' )
+
+.TP
+\fBNET_LLF\fR
+Defines all the parameters for the Low Latency Fabric network
+.br
+Example:
+.br
+NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
+
+.TP
+\fBIPMI / BMC Setup\fR
+The following parameters provide the required information to interact with the compute nodes IPMI.
+.TP
+\fBIPMITYPE\fR
+IPMI type used by ipmitools. Default value is lanplus.
+
+.TP
+\fBIPMIUSER\fR
+IPMI user. Default value is admin.
+
+.TP
+\fBIPMIPWD\fR
+IPMI password associated with the user descrived above. Default value is admin.
+
+.TP
+\fBPower Aware Considerations\fR
+The following parameters will define how the nodes will boot in order to avoid unnecessary circuit overload and unbanlanced loading in the power distribution.
+.RS
+.TP
+\fBBLOCKN\fR
+.br
+Number of nodes to boot per cycle. Default value is 4 nodes.
+.TP
+\fBBLOCKD\fR
+.br
+Lenght of each cycle in seconds. Default value is 5 seconds.
+.TP
+\fBBOOT_DELAY\fR
+.br
+The expected time for the compute node to boot and being completely operational in seconds. Default value is 300 seconds.
+.RE
+
+.TP
+\fBConfig Manager\fR
+sNow! allows to integrate your prefered configuration manager. In the case you are using CFEngine, the main role already integrates that. If you are using another one, you can easily integrate it with a hook.
+Since the configuration managers are quite complex to setup and it also strongly depends on the site implementation, this component is outside the sNow! scope and support. sNow! only provides integration but not deployment of this service.
+.br
+The default values are unset.
+.RS
+.TP
+\fBSNOWCM\fR
+Defines the name of the configuration manager to be used. Default value is empty.
+.TP
+\fBCF_SERVER\fR
+Defines the configuration manager server. Default value is empty.
+.TP
+\fBCFENGINE_VER\fR
+Defines the version of the configuration manager to be used. Default value is empty.
+.RE
+
+.TP
+\fBCluster provisioning : deploy / cloning system\fR
+The following parameters define the information required to deploy new compute nodes and also the golden nodes which will play a key role in the deployment of application in the shared filesystem and also in the cloning system.
+.RS
+.TP
+\fBDEFAULT_BOOT\fR
+All the nodes will boot via PXE and the PXE server will define when the node should boot from network or any other device. The default value is localboot.
+
+.TP
+\fBDEFAULT_TEMPLATE\fR
+By default sNow! will deploy all the compute nodes with the template defined in this parameter. You can also deploy nodes using a diferent template by adding the template name as an option in the snow CLI: snow deploy n-[001-200] alternative_template
+.br
+More information in this regard in the snow(8) man page and also in the sNow! website.
+.br
+The default value is centos-7-default
+
+.TP
+\fBCLUSTERS\fR
+sNow! can manage multiple clusters and architectures. Ideally, each architecture should define a new cluster. This parameter contains an array list of the clusters that sNow! will manage. The syntax is :
+.br
+CLUSTERS=([clustername01]="computenode_prefix[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
+.br
+Example:
+.br
+CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
+
+.TP
+\fBGOLDEN_NODES\fR
+GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
+.RE
+
+.TP
+\fBPDSH Configuration\fR
+PDSH_RCMD_TYPE=ssh
+
+.TP
+\fBMain Downloader Tool\fR
+DOWNLD=axel
+
+.TP
+\fBExtension in the Domain Config File\fR
+DOM_EXT=''
+
+.TP
+\fBLocales\fR
+LANG=en_US
+
+KEYMAP=us
+
+TIMEZONE=Europe/Amsterdam
+
+.TP
+\fBMandatory Network parameters and services required by sNow!\fR
+GATEWAY=192.168.7.254
+
+DNS_SERVERS=8.8.8.8,8.8.4.4
+
+DOMAIN=in.hpcnow.com
+
+DHCP_NIC=eth0
+
+.TP
+\fBOptional Network services provided by the site/institution\fR
+SITE_PROXY_SERVER=192.168.7.1
+
+SITE_PROXY_PORT=8080
+
+SITE_NTP_SERVER=192.168.7.1
+
+SITE_LDAP_SERVER=192.168.7.1
+
+SITE_LDAP_URI="ldap://ldap01.hpcnow.com, ldap://ldap02.hpcnow.com"
+
+SITE_LDAP_TLS=FALSE
+
+SITE_LDAP_PROTO=ldap
+
+SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
+
+SITE_MAIL_SERVER=smtp.gmail.com::587
+
+SITE_MAIL_USER=
+
+SITE_MAIL_PASSWD=
+
+SITE_SYSLOG_SERVER=192.168.7.1
+
+.TP
+\fBShared Filesystem Support\fR
+NFS Clients
+
+MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
+
+BeeGFS Clients
+
+BEEGFSMGMT=beegfs-01
+
+BEEGFS_VERSION=2015.03
+
+MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
+
+Lustre Clients
+
+LUSTRE_VERSION=2.8.0
+
+MOUNT_LUSTRE01="192.168.3.146@o2ib:192.168.3.145@o2ib:/scratch  /scratch  lustre  defaults    0 0"
+
+GPFS Clients
+
+GPFS_PRIMARY_SERVER=192.168.3.146
+
+GPFS_VERSION=4.2.0
+
+.TP
+\fBSlurm Configuration\fR
+The following parameters will help you to setup a very advanced configuration and ready for production Slurm Workload Manager. For more information regarding user point of view, please visit the project website.
+
+.RS
+.TP
+\fBSlurm Database\fR
+Slurm Database
+
+SLURMDBD_USER=slurm
+
+SLURMDBD_PWD=whatever
+
+SLURMDBD_NAME=slurm_acct_db
+
+ACCOUNTING_STORAGE_ENFORCE=associations,qos
+
+.TP
+ \fBMUNGE\fR
+MUNGE
+
+MUNGE_UID=994
+
+MUNGE_GID=994
+
+.TP
+\fBSlurmctl master\fR
+# Slurmctl master
+
+SLURMVERSION=15.8.2
+
+SLURM_CONF=/etc/slurm/slurm.conf
+
+SLURM_GID=995
+
+SLURM_UID=995
+
+LICENSES=intel*2,matlab*200,fluent*5000
+
+SLURM_CLUSTER_NAME=mycluster
+
+.TP
+\fBSlurm Compute Nodes\fR
+# Slurm Compute Nodes 
+
+SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 
+
+SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN" 
+
+SLURM_NODES[3]="NodeName=skl[01-99] RealMemory=512000  Sockets=4  CoresPerSocket=24 ThreadsPerCore=1 State=UNKNOWN" 
+
+.TP
+\fBSlurm Partitions\fR
+# Slurm Partitions
+
+SLURM_PARTITION[1]="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=100 MaxTime=6:00:00   PreemptMode=off"
+
+SLURM_PARTITION[2]="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=75  MaxTime=72:00:00  PreemptMode=off"
+
+SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=NO      Priority=50  MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
+
+SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES Shared=FORCE:1 Priority=25  MaxTime=168:00:00 PreemptMode=suspend"
+
+.RE
+
+.SH AUTHOR
+Written by Jordi Blasco (jordi.blasco@hpcnow.com)
+.SH "REPORTING BUGS"
+Report bugs to the official git repository of sNow! <https://bitbucket.org/hpcnow/snow-tools/issues>
+.br
+.SH COPYRIGHT
+Copyright \(co 2014 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+snow.conf(8), domains.conf(8), active-domains.conf(8), snow(8)
+.PP
+.br
+Full documentation at: <http://www.www.hpckp.org/snow>
+

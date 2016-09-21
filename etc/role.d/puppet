@@ -1,41 +1,35 @@
-#!/bin/sh
-#
-#  This role installs Puppet upon the new guest system.
-#
-#  It must make sure that the server is not running before it exits
-# otherwise the temporary mounted directory will not be unmountable.
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
 
-#
 #  Source our common functions - this will let us install a Debian package.
-#
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
 
-#
 # Log our start
-#
 logMessage Script $0 starting
 
-
-#
 #  Install ssh
-#
 installDebianPackage ${prefix} puppet
 
-
-#
 #  Make sure sshd isn't running, this will cause our unmounting of the
 # disk image to fail..
-#
 chroot ${prefix} /etc/init.d/puppet stop
 
-#
 #  Log our finish
-#
 logMessage Script $0 finished

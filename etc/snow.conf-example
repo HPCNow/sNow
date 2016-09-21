@@ -3,34 +3,129 @@
 # sNow! Cluster Suite is an opensource project developed by HPCNow!
 # More information here : www.hpcnow.com/snow
 #########################################################################################
-NFSSERVER=snow01
-SNOWROOT=/sNow
+NFS_SERVER=snow01
+SNOW_PATH=/sNow
+SNOW_HOME=$SNOW_PATH/home
+SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_UTIL=$SNOW_PATH/snow-utils
+SNOW_TOOL=$SNOW_PATH/snow-tools
+# Destination of the sNow! domains OS images
 SNOWVG=snow_vg
-IMG_DST='dir=/sNow/domains'
-#IMG_DST='lvm=snow_vg'
-#IMG_DST='nfs=$NFSSERVER:/sNow/domains' # (experimental)
+IMG_DST='lvm=snow_vg'
+#IMG_DST='dir=/sNow/domains'
+#IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
+# Nodes that compose the HA sNow! cluster
 SNOWNODES=( snow01 )
 SSHPORT=22
+# Admin users setup
+ADMIN_USERS="root snow"
+ADMIN_GROUPS="root snow"
 SMAIL=support@hpcnow.com
 MASTERPWD='HPCN0w!!'
+sNow_GID=2000
+sNow_GROUP=snow
+sNow_UID=2000
+sNow_USER=snow
+HPCNow_UID=2001
+HPCNow_GID=2000
+HPCNow_USER=hpcnow
 # Private GIT Repo Setup
 #TOKEN=
 #PRIVATE_REPO=
-# Network Setup [ Bridge, Gateway, Network, Netmask ]
-NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' )
-NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' )
-NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' )
-# IPMI / BMC Setiup
+# Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
+NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.240.0' '' )
+NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.240.0' '-ipmi' )
+NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
+# IPMI / BMC Setup
 IPMITYPE=lanplus
 IPMIUSER=admin
 IPMIPWD=admin
+# Number of nodes to be boot every cycle
 BLOCKN=4
+# Delay between cycles
 BLOCKD=5
-# Config Manager (CFEngine)
-CFMASTER=192.168.7.1
-DEFAULTBOOT=localboot
-DEPLOYTMPL=centos7-default
-CLUSTERS=([mycluster01]="n[001-999]")
+# Expected time required to boot a compute node and being fully operational
+BOOT_DELAY=300
+# Config Manager 
+SNOWCM=
+CF_SERVER=
+#CFENGINE_VER="3.7.2-1"
+# Cluster provisioning : deploy / cloning system
+DEFAULT_BOOT=localboot
+DEFAULT_TEMPLATE=centos-7-default
+CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
+GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
 DOWNLD=axel
 DOM_EXT=''
+# Locales
+LANG=en_US
+KEYMAP=us
+TIMEZONE=Europe/Amsterdam
+# Network parameters and services required by sNow! (mandatory)
+GATEWAY=192.168.7.254
+DNS_SERVERS=8.8.8.8,8.8.4.4
+DOMAIN=in.hpcnow.com
+DHCP_NIC=eth0
+# Network services provided by the site/institution (optional)
+#SITE_PROXY_SERVER=192.168.7.1
+#SITE_PROXY_PORT=8080
+#SITE_NTP_SERVER=192.168.7.1
+#SITE_LDAP_SERVER=192.168.7.1
+#SITE_LDAP_URI="ldap://ldap01.hpcnow.com, ldap://ldap02.hpcnow.com"
+#SITE_LDAP_TLS=FALSE
+#SITE_LDAP_PROTO=ldap
+#SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
+#SITE_MAIL_SERVER=smtp.gmail.com::587
+#SITE_MAIL_USER=
+#SITE_MAIL_PASSWD=
+#SITE_SYSLOG_SERVER=192.168.7.1
+# Shared Filesystem Support
+# NFS Clients
+MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
+MOUNT_NFS[2]="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
+# BeeGFS Clients
+#BEEGFSMGMT=beegfs-01
+#BEEGFS_VERSION=2015.03
+#MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
+# Lustre Clients
+#LUSTRE_VERSION=2.8.0
+#MOUNT_LUSTRE01="192.168.3.146@o2ib:192.168.3.145@o2ib:/scratch  /scratch  lustre  defaults    0 0"
+# GPFS Clients
+#GPFS_PRIMARY_SERVER=192.168.3.146
+#GPFS_VERSION=4.2.0
+# Slurm Configuration
+# Slurm Database
+SLURMDBD_USER=slurm
+SLURMDBD_PWD=whatever
+#SLURMDBD_NAME=slurm_acct_db
+# MUNGE
+MUNGE_UID=994
+MUNGE_GID=994
+# Slurmctl master
+SLURMVERSION=15.8.2
+SLURM_CONF=/etc/slurm/slurm.conf
+SLURM_GID=995
+SLURM_UID=995
+LICENSES=intel*2,matlab*200,fluent*5000
+# Slurm Compute Nodes 
+SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 
+SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN" 
+SLURM_NODES[3]="NodeName=skl[01-99] RealMemory=512000  Sockets=4  CoresPerSocket=24 ThreadsPerCore=1 State=UNKNOWN" 
+# Slurm Partitions
+SLURM_PARTITION[1]="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=100 MaxTime=6:00:00   PreemptMode=off"
+SLURM_PARTITION[2]="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=75  MaxTime=72:00:00  PreemptMode=off"
+SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=NO      Priority=50  MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
+SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES Shared=FORCE:1 Priority=25  MaxTime=168:00:00 PreemptMode=suspend"
+ACCOUNTING_STORAGE_ENFORCE=associations,qos
+SLURM_CLUSTER_NAME=mycluster
+# LDAP Configuration
+LDAP_PASSWORD="whatever"
+#LDAP_ORGANIZATION="name of your site"
+LDAP_CONFIG_PASSWORD="whatever"
+#LDAP_PPOLICY_DN_PREFIX=cn=default,ou=policies
+LDAP_ADDITIONAL_SCHEMAS=collective,corba,duaconf,dyngroup,java,misc,openldap,pmi,ppolicy
+LDAP_ADDITIONAL_MODULES=memberof,ppolicy

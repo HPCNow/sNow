@@ -1,31 +1,70 @@
-#!/bin/sh
+#!/bin/bash
 # Configure the new image for sNow! HPC suite
-# Developed by NPCNow! www.hpcnow.com
-# Jordi Blasco
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
 
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Slurm Client Setup
+if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
+    chroot ${prefix} /usr/bin/apt-get update -q 
+    installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
+    chroot ${prefix} /bin/systemctl enable munge.service
+    # Check UIDs and GIDs
+    if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $MUNGE_GID munge
+        chroot ${prefix} /usr/sbin/usermod -u $MUNGE_UID -g $MUNGE_GID munge
+    fi
+    if [[ "$(chroot ${prefix} id -u slurm)" != "$SLURM_UID"  &&  "$(chroot ${prefix} id -g slurm)" != "$SLURM_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $SLURM_GID slurm
+        chroot ${prefix} /usr/sbin/usermod -u $SLURM_UID -g $SLURM_GID slurm
+    fi
+    # Setup Munge key and Slurm
+    cp -p $SNOW_CONF/system_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
+    chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    chroot ${prefix} /bin/chmod 700 /etc/munge
+    chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
+    chroot ${prefix} /bin/chown -R munge:munge /etc/munge
+    cp -pr $SNOW_CONF/system_files/etc/slurm ${prefix}/etc/
+    chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    if [[ -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_CONF/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    else
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
+    fi
+fi
 
 
-#  Update APT lists.
-chroot ${prefix} /usr/bin/apt-get update
-# LDAP Install references : 
-# https://wiki.debian.org/LDAP/OpenLDAPSetup
-# http://www.server-world.info/en/note?os=Debian_8&p=openldap
-# http://www.server-world.info/en/note?os=Debian_8&p=ssl
-# https://wiki.debian.org/LDAP/PAM
-# SSSD client
-# https://wiki.ubuntu.com/Enterprise/Authentication/sssd
-#installDebianPackage ${prefix} libnss-ldap libpam-ldap nscd sssd-ldap
-installDebianPackage ${prefix} libpam-ldapd sssd-ldap sssd-tools sssd-common
-
-#
-#  Install the packages
-#
+# SSH Setup
+if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ]]; then 
+    cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ${prefix}/etc/ssh/sshd_config.pub
+else
+    cp -p ${prefix}/etc/ssh/sshd_config ${prefix}/etc/ssh/sshd_config.pub
+    echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|Port 22$|Port 22022|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|PermitRootLogin without-password|PermitRootLogin no|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|^AllowUsers|#AllowUsers|g' ${prefix}/etc/ssh/sshd_config.pub
+    sed -i 's|^AllowGroups|#AllowGroups|g' ${prefix}/etc/ssh/sshd_config.pub
+    cp -p ${prefix}/etc/systemd/system/sshd.service ${prefix}/etc/systemd/system/sshd_pub.service
+    sed -i 's|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS -f /etc/ssh/sshd_config.pub|g' ${prefix}/etc/systemd/system/sshd_pub.service 
+    cp -p ${prefix}/etc/ssh/sshd_config.pub /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub
+fi
