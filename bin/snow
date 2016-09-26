@@ -543,10 +543,10 @@ function patch_network_configuration() {
             echo "Nothing required"
         ;;
         rhel|redhat|centos)
-            gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > $mount_point/etc/sysconfig/network
+            gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > ${mount_point}/etc/sysconfig/network
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
-                gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > $mount_point/$i
+                gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > ${mount_point}/$i
             done
        ;;
        suse|sle[sd]|opensuse)
@@ -611,13 +611,13 @@ function generate_rootfs() {
     # create an ext3 file system
     mkfs.ext3 -m0 -F -L root rootfs
     # create a mount point
-    mkdir -p $mount_point
+    mkdir -p ${mount_point}
     # mount the newly created file system
-    mount -t ext3 -o loop rootfs $mount_point
+    mount -t ext3 -o loop rootfs ${mount_point}
     # Create required directory structure
-    mkdir -p $mount_point/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,log,run,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
+    mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,log,run,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
     # Transfer required files
-    cd $mount_point 
+    cd ${mount_point} 
     cp -ap /etc .
     cp -ap /dev .
     cp -ap /bin .
@@ -635,8 +635,8 @@ function generate_rootfs() {
     # cd out of the mount point
     cd ..
     # Update fstab
-    bkp $mount_point/etc/fstab
-    cp -p $mount_point/etc/fstab $mount_point/etc/fstab.orig
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     gawk '{
         if($2 == "/"){
             print "/dev/ram0               /              ext3    defaults        0 0"
@@ -644,15 +644,15 @@ function generate_rootfs() {
         else{
             print $0
         }
-    }' $mount_point/etc/fstab.orig > $mount_point/etc/fstab
-    rm $mount_point/etc/fstab.orig
+    }' ${mount_point}/etc/fstab.orig > ${mount_point}/etc/fstab
+    rm ${mount_point}/etc/fstab.orig
     # hooks: 
-    image_hooks ${SNOW_CONF}/boot/images/$IMAGE
-    image_first_boot_hooks ${SNOW_CONF}/boot/images/$IMAGE
+    hooks ${SNOW_CONF}/boot/images/$IMAGE
+    first_boot_hooks ${SNOW_CONF}/boot/images/$IMAGE
     # * if local scratch disk /tmp
     patch_network_configuration
 
-    umount $mount_point
+    umount ${mount_point}
     gzip -c rootfs | dd of=${SNOW_CONF}/boot/image/$IMAGE/rootfs.gz
     # create PXE boot configuration
     sed -e "s|__IMAGE__|$IMAGE|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${SNOW_CONF}/boot/pxelinux.cfg/$IMAGE
