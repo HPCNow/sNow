@@ -277,8 +277,6 @@ setup_env()
     echo "* hard memlock unlimited" >> /etc/security/limits.conf
     echo "* soft memlock unlimited" >> /etc/security/limits.conf
     # User enviroment setup
-    ln -sf $SNOW_UTIL/bin/slurm-source.sh /etc/profile.d/slurm.sh
-    ln -sf $SNOW_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
     ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     #ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
@@ -339,6 +337,8 @@ install_workload_client()
 {
     #Slurm Workload Manager
     if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
+        ln -sf $SNOW_UTIL/bin/slurm-source.sh /etc/profile.d/slurm.sh
+        ln -sf $SNOW_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
         groupadd -g $SLURM_GID slurm
         adduser -u $SLURM_UID -g $SLURM_GID -s /bin/false slurm
         case $1 in
@@ -355,15 +355,15 @@ install_workload_client()
             RHEL*|CentOS*)
                 sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/sysconfig/selinux 
                 chkconfig iptables off
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client"
+                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
                 INSTALLER="yum -y install"
             ;;
             SLES*)
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client"
+                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
                 INSTALLER="zypper -n install"
             ;;
             OpenSUSE*)
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client"
+                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
                 INSTALLER="zypper -n install"
             ;;
             *)

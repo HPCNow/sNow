@@ -1,0 +1,8 @@
+# default is label '__IMAGE__'
+# boots a Linux kernel and mounts rootfs.gz as a root file system on a 512MiB ramdisk
+default __IMAGE__
+
+label   __IMAGE__
+    kernel clone/__IMAGE__/vmlinuz
+        append initrd=clone/__IMAGE__/rootfs.gz root=/dev/ram ramdisk_size=524288 rw ip=dhcp
+

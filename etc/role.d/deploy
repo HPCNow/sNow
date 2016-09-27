@@ -48,7 +48,7 @@ chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
 chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
 
 # Setup TFTP
-echo "$NFS_SERVER:/sNow/snow-configspace/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+echo "$NFS_SERVER:$SNOW_CONF/boot/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
 
 # Install Debian Pressed (Debian and Ubuntu based)
@@ -58,7 +58,7 @@ cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
 # Setup DNSMASQ
 SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 installDebianPackage ${prefix} dnsmasq
-if [[ ! -f /sNow/snow-configspace/system_files/etc/dnsmasq.conf ]]; then
+if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
     echo "
 interface=$DHCP_NIC
@@ -76,15 +76,15 @@ dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
-    cp -p ${prefix}/etc/dnsmasq.conf /sNow/snow-configspace/system_files/etc/dnsmasq.conf
+    cp -p ${prefix}/etc/dnsmasq.conf $SNOW_CONF/system_files/etc/dnsmasq.conf
 else
-    cp -p /sNow/snow-configspace/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
+    cp -p $SNOW_CONF/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
 cp -p /etc/hosts ${prefix}/etc/hosts
 
 # DNS Client Setup
-if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
-    cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
+if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then 
+    cp -p $SNOW_CONF/system_files/etc/resolv.conf ${prefix}/etc/
     SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
     PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
     echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
@@ -100,25 +100,25 @@ else
     PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
     PROXY_PORT="${SITE_PROXY_PORT:-8080}"
 fi
-if [[ ! -f /sNow/snow-configspace/deploy/postconfig.sh ]]; then
-    if [[ ! -d /sNow/snow-configspace ]]; then 
-        mkdir /sNow/snow-configspace
+if [[ ! -f $SNOW_CONF/boot/deploy/postconfig.sh ]]; then
+    if [[ ! -d $SNOW_CONF ]]; then 
+        mkdir $SNOW_CONF
     fi
-    cp -pr /sNow/snow-tools/etc/config_template.d/deploy /sNow/snow-configspace/
-    sed -i "s|__LANG__|$LANG|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__KEYMAP__|$KEYMAP|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__TIMEZONE__|$TIMEZONE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
-    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" /sNow/snow-configspace/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
-    ln -sf /sNow/snow-configspace/deploy /sNow/OS/deploy
+    cp -pr $SNOW_TOOL/etc/config_template.d/deploy $SNOW_CONF/
+    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
+    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
+    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
+    ln -sf $SNOW_CONF/boot/deploy /sNow/OS/deploy
 fi
 # HPCNow repos
-if [[ ! -e /sNow/snow-configspace/system_files/etc/repos ]]; then
-    mkdir -p /sNow/snow-configspace/system_files/etc/repos
-    cp -pr $SNOW_TOOL/etc/config_template.d/repos/* /sNow/snow-configspace/system_files/etc/repos/
+if [[ ! -e $SNOW_CONF/system_files/etc/repos ]]; then
+    mkdir -p $SNOW_CONF/system_files/etc/repos
+    cp -pr $SNOW_TOOL/etc/config_template.d/repos/* $SNOW_CONF/system_files/etc/repos/
 fi
 
 # Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
