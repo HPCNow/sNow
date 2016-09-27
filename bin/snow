@@ -48,6 +48,13 @@ function error_exit(){
     exit 1
 }
 
+function warning_msg(){
+    echo "${PROGNAME}: ${1}" 1>&2
+}
+
+function info_msg(){
+    echo "${PROGNAME}: ${1}" 1>&2
+}
 
 function logsetup {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
@@ -265,7 +272,26 @@ function generate_hostlist() {
 
 
 function init() {
-if (! $HA_NFSROOT) ; then
+# Check for snow.conf
+if [[ ! -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
+    ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
+elif [[ -f ${SNOW_TOOL}/etc/snow.conf ]]; then
+    mv ${SNOW_TOOL}/etc/snow.conf ${SNOW_CONF}/system_files/etc/snow.conf
+    ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
+else
+    error_exit "The snow.conf is not yet available."
+fi
+# Check for active-domains.conf 
+if [[ ! -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
+    ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
+elif [[ -f ${SNOW_TOOL}/etc/active-domains.conf ]]; then
+    mv ${SNOW_TOOL}/etc/active-domains.conf ${SNOW_CONF}/system_files/etc/active-domains.conf
+    ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
+else
+    error_exit "The active-domains.conf is not yet available."
+fi
+
+if (! ${HA_NFSROOT}) ; then
         # NFS_ROOT Exports
         if [[ ! -d /etc/exports.d ]]; then
            mkdir -p /etc/exports.d
@@ -281,12 +307,12 @@ if (! $HA_NFSROOT) ; then
                 }
             }' ${SNOW_ACTIVE_DOMAINS} > ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports
             ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
-            echo "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
-            echo "Once you are done, execute exportfs -u"
+            warning_msg "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
+            warning_msg "Once you are done, execute exportfs -u"
         fi
     fi
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
-    if [[ "$(uname -n)" == "$NFS_SERVER" ]]; then
+    if [[ "$(uname -n)" == "${NFS_SERVER}" ]]; then
         if [[ ! -f ${SNOW_CONF}/system_files/etc/exports.d/snow.exports ]]; then 
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
@@ -301,7 +327,9 @@ if (! $HA_NFSROOT) ; then
         ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
     # sNow! Domains configuration table
-    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
+    if [[ ! -f ${SNOW_CONF}/system_files/etc/domains.conf ]]; then
+        ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
+    elif [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
              -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
@@ -310,7 +338,8 @@ if (! $HA_NFSROOT) ; then
                     i=i+1
                     printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz  
                 }
-            }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_TOOL}/etc/domains.conf
+            }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
+        ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
         echo "Review the domains config file : ${SNOW_TOOL}/etc/domains.conf"
     fi
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
@@ -358,7 +387,6 @@ if (! $HA_NFSROOT) ; then
         download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz ${SNOW_CONF}/boot/deploy/kickstart/centos-7.0/
     fi
     # Download the ISO in order to create the local repo defined in snow.conf
-
 }
 
 function update_tools() {
