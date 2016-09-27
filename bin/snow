@@ -372,21 +372,6 @@ if (! ${HA_NFSROOT}) ; then
         echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
         echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
     fi
-
-    # Download linux kernel to boot OS from PXE defined in snow.conf
-    # CentOS 7
-    read -p "Do you want to download PXE bootable kernels (Y/n)? " -n 1 -r
-    echo    ## move to a new line
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
-        echo "PXE boot will not work unless you use a proper kernel. Manual setup will be required."
-    else
-        if [[ ! -d ${SNOW_CONF}/boot/deploy/kickstart/centos-7.0 ]]; then
-            mkdir -p ${SNOW_CONF}/boot/deploy/kickstart/centos-7.0
-        fi
-        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/initrd.img ${SNOW_CONF}/boot/deploy/kickstart/centos-7.0/ 
-        download http://buildlogs.centos.org/centos/7/os/x86_64-latest/images/pxeboot/vmlinuz ${SNOW_CONF}/boot/deploy/kickstart/centos-7.0/
-    fi
-    # Download the ISO in order to create the local repo defined in snow.conf
 }
 
 function update_tools() {

@@ -71,7 +71,7 @@ dhcp-option=15,$DOMAIN
 # Broadcast Address
 # dhcp-option=28,__BROADCAST__
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},static,infinite
+dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},infinite
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
@@ -120,3 +120,12 @@ if [[ ! -e $SNOW_CONF/system_files/etc/repos ]]; then
     mkdir -p $SNOW_CONF/system_files/etc/repos
     cp -pr $SNOW_TOOL/etc/config_template.d/repos/* $SNOW_CONF/system_files/etc/repos/
 fi
+
+# Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
+while read line; do 
+    donwload_path=$(echo $line | gawk '{print $NF}')
+    if [[ ! -d ${download_path} ]]; then
+        mkdir -p ${download_path}
+    fi
+    download $line
+done < $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
