@@ -120,3 +120,12 @@ if [[ ! -e /sNow/snow-configspace/system_files/etc/repos ]]; then
     mkdir -p /sNow/snow-configspace/system_files/etc/repos
     cp -pr $SNOW_TOOL/etc/config_template.d/repos/* /sNow/snow-configspace/system_files/etc/repos/
 fi
+
+# Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
+while read line; do 
+    donwload_path=$(echo $line | gawk '{print $NF}')
+    if [[ ! -d ${download_path} ]]; then
+        mkdir -p ${download_path}
+    fi
+    download $line
+done < $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
