@@ -4,11 +4,11 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 #set -xv
-SNOWPATH=$(dirname "$0")
-PROGNAME=$(basename "$0")
+readonly SNOWPATH=$(dirname "$0")
+readonly PROGNAME=$(basename "$0")
 #Logging
-LOGFILE=/tmp/snow-install.log
-RETAIN_NUM_LINES=10
+readonly LOGFILE=/tmp/snow-install.log
+readonly RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow
 SNOW_HOME=${SNOW_PATH}/home
@@ -16,18 +16,18 @@ SNOW_SOFT=${SNOW_PATH}/easybuild
 SNOW_CONF=${SNOW_PATH}/snow-configspace
 SNOW_UTIL=${SNOW_PATH}/snow-utils
 SNOW_TOOL=${SNOW_PATH}/snow-tools
-CONFIG_FILE=$SNOWPATH/../etc/snow.conf
-ENTERPRISE_EXTENSIONS=$SNOWPATH/enterprise_extensions.sh
-SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
-SNOW_ACTIVE_DOMAINS=$SNOWPATH/../etc/active-domains.conf
-SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
-HAS_EE=false
+readonly CONFIG_FILE=${SNOW_PATH}/etc/snow.conf
+readonly ENTERPRISE_EXTENSIONS=${SNOW_PATH}/share/enterprise_extensions.sh
+readonly SNOW_DOMAINS=${SNOW_PATH}/etc/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_PATH}/etc/active-domains.conf
+readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
+readonly opt1=$1
+readonly opt2=$2
+readonly opt3=$3
+readonly opt4=$4
+readonly opt5=$5
 declare -A CLUSTERS
-opt1=$1
-opt2=$2
-opt3=$3
-opt4=$4
-opt5=$5
+HAS_EE=false
 
 if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
