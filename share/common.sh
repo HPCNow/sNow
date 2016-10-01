@@ -1043,6 +1043,25 @@ function nuptime()
     pdsh -w $1 uptime 
 }
 
-#
-# End Functions
-#
+# End common functions
+
+# Load additional functions in ${SNOW_TOOL}/etc/common.d
+if [ -d ${SNOW_TOOL}/etc/common.d ]; then
+  for i in ${SNOW_TOOL}/etc/common.d/*.sh; do
+    if [ -r $i ]; then
+      source $i
+    fi
+  done
+  unset i
+fi
+
+# Load additional functions in ${SNOW_TOOL}/etc/hooks.d
+if [ -d ${SNOW_TOOL}/etc/hooks.d ]; then
+  for i in ${SNOW_TOOL}/etc/hooks.d/*.sh; do
+    if [ -r $i ]; then
+      source $i
+    fi
+  done
+  unset i
+fi
+
