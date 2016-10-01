@@ -1,0 +1,162 @@
+#!/bin/bash
+
+# Copyright (C) 2013 Alan Orth
+# Modified by Jordi Blasco <jordi.blasco@hpcnow.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# interactive: Obtain interactive shell with slurm allocation
+#
+# Basically simulates:
+#
+#    salloc -n1 srun --x11 --pty bash
+
+source /sNow/snow-utils/etc/snow.env
+
+# The srun options have been defined in the slurm.conf with :
+# SallocDefaultCommand="srun -n1 -N1 --mem-per-cpu=0 --pty --preserve-env --mpi=none $SHELL"
+#DEF_RUNEXEC=
+
+######
+ 
+function help() {
+    echo -e "Usage: `basename $0` [-A] [-a] [-c] [-m] [-J] [-e]\n"
+    echo "Optional arguments:"
+    echo -e "\t -A: account (non-default account)"
+    echo -e "\t -a: architecture (default: $DEF_ARCH, values hsw=Haswell skl=SkyLake wsw=Warsaw)"
+    echo -e "\t -c: number of CPU cores (default: $DEF_NUM_CPUS)"
+    echo -e "\t -m: amount of memory (GB) per core (default: $DEF_MEM_PER_CPU [GB])"
+    echo -e "\t -n: email address to which the begin session notification is to be sent"
+    echo -e "\t -J: job name"
+    echo -e "\t -e: binary that you want to run interactively"
+    echo -e "example : `basename $0` -A snow -a hsw -c 4 -J MyFirstInteractiveJob"
+    echo -e "example : `basename $0` -A snow -a hsw -c 4 -J MyFirstInteractiveJob -e \"MyBinary MyOptions\""
+
+    echo -e "\nWritten by: Alan Orth <a.orth@cgiar.org>"
+    echo -e "Modified by: Jordi Blasco <jordi.blasco@hpcnow.com>"
+
+    exit 0
+}
+
+function parse_options() {
+    while getopts ":a:c:m:n:p:J:A:e:" opt; do
+        case $opt in
+            a)
+                # make sure -a is passed a valid architecture
+                case $OPTARG in 
+                hsw|skl|wsw|wm|sb|ib|kepler|fermi)
+                   DEF_ARCH=$OPTARG
+                  ;;
+               *)
+                  help   
+                  ;;
+               esac
+               ;; 
+            c)
+                # make sure -c is passed a valid integer
+                if ! [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
+                    help
+                fi
+                NUM_CPUS=$OPTARG
+                ;;
+            m)
+                # make sure -m is passed a valid integer
+                if ! [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
+                    help
+                fi
+
+                MEM_PER_CPU=$OPTARG
+                ;;
+            p)
+                PARTITION=$OPTARG
+                ;;
+            n) 
+                EMAIL_NOTIFY=$OPTARG
+                ;;
+            J)
+                JOB_NAME=$OPTARG
+                ;;
+            A)
+                ACCOUNT=$OPTARG
+                ;;
+            e)
+                RUNEXEC=$OPTARG
+                ;;
+            \?|:)
+                help
+                ;;
+        esac
+    done
+}
+
+function envsetup() {
+    SALLOC_BIN=/usr/bin/salloc
+
+    # default is to request 1 CPU, unless more are requested
+    if [[ $NUM_CPUS -gt $DEF_NUM_CPUS ]]; then
+        SALLOC_OPTS="-n $NUM_CPUS"
+    else
+        SALLOC_OPTS="-n $DEF_NUM_CPUS"
+    fi
+
+    # default is to request 1GB of Memory / CPU, unless more are requested
+    if [[ $MEM_PER_CPU -gt $DEF_MEM_PER_CPU ]]; then
+        SALLOC_OPTS="$SALLOC_OPTS --mem-per-cpu=$(($MEM_PER_CPU*1024))"
+    else
+        SALLOC_OPTS="$SALLOC_OPTS --mem-per-cpu=$(($DEF_MEM_PER_CPU*1024))"
+    fi
+
+    # check for a job name
+    if [[ -n "$JOB_NAME" ]]; then
+        SALLOC_OPTS="$SALLOC_OPTS -J $JOB_NAME"
+    else
+        SALLOC_OPTS="$SALLOC_OPTS -J $DEF_JOB_NAME"
+    fi
+
+    # see if the user specified a partition
+    if [[ -n "$PARTITION" ]]; then
+        SALLOC_OPTS="$SALLOC_OPTS -p $PARTITION"
+    else
+        SALLOC_OPTS="$SALLOC_OPTS -p $DEF_PARTITION"
+    fi
+
+    if [[ -n "$EMAIL_NOTIFY" ]]; then
+         SALLOC_OPTS="$SALLOC_OPTS --mail-type=BEGIN --mail-user=$EMAIL_NOTIFY"
+    fi
+
+    if [[ -n "$ACCOUNT" ]]; then
+        SALLOC_OPTS="$SALLOC_OPTS -A $ACCOUNT"
+    else
+        SALLOC_OPTS="$SALLOC_OPTS -A $DEF_ACCOUNT"
+    fi 
+
+    # add the architecture as a feature
+    SALLOC_OPTS="$SALLOC_OPTS -C $DEF_ARCH"
+    # add the default time limit
+    SALLOC_OPTS="$SALLOC_OPTS -t $DEF_TIME"
+}
+
+# pass the shell's argument array to the parsing function
+parse_options "$@"
+
+# Don't propogate microarchitecture of login node.
+if [[ -z "$MODULE_LOAD_ALLOWED" ]]; then
+    unset MODULEPATH MODULEPATH_ROOT module ml LMOD_CMD LMOD_SPIDER_CACHE_DIRS BASH_ENV
+fi
+
+# setup the defaults
+envsetup
+
+$SALLOC_BIN $SALLOC_OPTS 
