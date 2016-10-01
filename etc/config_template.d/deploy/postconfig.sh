@@ -25,6 +25,7 @@ fi
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
     get_os_distro
+    architecture_identification
 fi
 
 readonly TEMPLATE=${1:-$DEFAULT_TEMPLATE}

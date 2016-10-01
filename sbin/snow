@@ -37,6 +37,8 @@ fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
@@ -48,7 +50,6 @@ if ! [[ -d ${SNOW_PATH}/log ]]; then
     mkdir ${SNOW_PATH}/log
 fi
 
-get_os_distro
 
 #
 # Start Cases

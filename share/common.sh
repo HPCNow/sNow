@@ -6,18 +6,21 @@
 
 function error_exit()
 {
-    echo "${PROGNAME}: ${1:-"Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues"}" 1>&2
+    local e_msg="${PROGNAME}: ${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
+    printf "[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&2
     exit 1
 }
 
 function warning_msg()
 {
-    echo "${PROGNAME}: ${1}" 1>&2
+    local w_msg="${1}"
+    printf "[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "W" "${w_msg}" 1>&2
 }
 
 function info_msg()
 {
-    echo "${PROGNAME}: ${1}" 1>&2
+    local e_msg="${1}"
+    printf "[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "I" "${i_msg}" 1>&2
 }
 
 function logsetup()
