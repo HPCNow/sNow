@@ -246,13 +246,13 @@ function install_software()
         ;;
         rhel|redhat|centos)
             INSTALLER="yum -y install"
-       ;;
+        ;;
         suse|sle[sd]|opensuse)
             INSTALLER="zypper -n install"
-       ;;
-       *)
+        ;;
+        *)
            echo "This distribution is not supported."
-       ;;
+        ;;
    esac
    $INSTALLER $pkgs 
 } 1>>$LOGFILE 2>&1

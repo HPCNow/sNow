@@ -12,28 +12,20 @@ function install_slurm_client()
     case $OS in
         debian|ubuntu)
             pkgs="exim4-daemon-light sssd python hdf5-tools hwloc libcgroup1 libcgroup-dev libgtk2.0-0 libhdf5-8 liblua5.2-0 libtool munge numactl slurm-llnl slurm-client"
-            INSTALLER="apt-get -y install"
-            apt-get -y update
         ;;
-        redhat|centos)
-                sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/sysconfig/selinux 
-                chkconfig iptables off
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
-                INSTALLER="yum -y install"
+        rhel|redhat|centos)
+            sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/sysconfig/selinux 
+            chkconfig iptables off
+            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
         ;;
-        SLES*)
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
-                INSTALLER="zypper -n install"
-        ;;
-        OpenSUSE*)
-                pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
-                INSTALLER="zypper -n install"
+        suse|sle[sd]|opensuse)
+            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
         ;;
         *)
-                echo "This distribution is not supported."
+            warning_msg "This distribution is not supported."
         ;;
     esac
-    $INSTALLER $pkgs 
+    install_software $pkgs
     cp -p $SNOW_CONF/system_files/etc/munge/munge.key /etc/munge/munge.key
     chown -R munge:munge /etc/munge
     chmod 600 /etc/munge/munge.key
