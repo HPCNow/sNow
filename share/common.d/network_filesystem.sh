@@ -4,7 +4,7 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
-setup_networkfs()
+function setup_networkfs()
 {
     # Check for NFS mount points in the snow.conf
     NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)

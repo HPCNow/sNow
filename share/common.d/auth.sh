@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-setup_ldap_client()
+function setup_ldap_client()
 {
     if [[ -f $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn ]]; then
         cp -p $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn /etc/sssd/sssd.conf

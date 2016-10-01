@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-setup_snow_user()
+function setup_snow_user()
 {
     # Check UIDs and GIDs
     if [[ -z $(getent passwd $sNow_USER) ]]; then
@@ -24,7 +24,7 @@ setup_snow_user()
     fi
 } 1>>$LOGFILE 2>&1
 
-setup_hpcnow_user()
+function setup_hpcnow_user()
 {
     # Check UIDs and GIDs
     if [[ -z $(getent passwd $HPCNow_USER) ]]; then
@@ -37,7 +37,7 @@ setup_hpcnow_user()
 } 1>>$LOGFILE 2>&1
 
 
-setup_ssh()
+function setup_ssh()
 {
     setup_snow_user
     if [[ "$HPCNow_Support" != "none" ]]; then
@@ -73,7 +73,7 @@ setup_ssh()
     systemctl restart sshd
 } 1>>$LOGFILE 2>&1
 
-setup_env()
+function setup_env()
 {
     # Set unlimited mem lock
     echo "* hard memlock unlimited" >> /etc/security/limits.conf

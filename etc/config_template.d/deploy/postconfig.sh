@@ -13,10 +13,11 @@ SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_UTIL=$SNOW_PATH/snow-utils
 SNOW_TOOL=$SNOW_PATH/snow-tools
+readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 
-if [[ -f /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -f ${CONFIG_FILE} ]]; then
     echo "Loading sNow! configuration ..."
-    source /sNow/snow-tools/etc/snow.conf
+    source ${CONFIG_FILE}
 else
     echo "sNow! config file NOT found!!!"
 fi
@@ -26,11 +27,11 @@ if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     get_os_distro
 fi
 
-export TEMPLATE=${1:-$DEFAULT_TEMPLATE}
+readonly TEMPLATE=${1:-$DEFAULT_TEMPLATE}
 
-if [[ -f /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/config ]]; then
+if [[ -f ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/config ]]; then
     echo "Loading $TEMPLATE configuration ..."
-    source /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/config
+    source ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/config
 else
     echo "Config file not found"
 fi
@@ -42,8 +43,8 @@ LAST_WORKER_INDEX=$(($WORKER_COUNT - 1))
 #logsetup
 function setup_software()
 {
-    PKG_LIST=/sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/packages
-    add_repos /sNow/snow-configspace/deploy/postconfig.d/$TEMPLATE/repos
+    PKG_LIST=${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/packages
+    add_repos ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/repos
     pkgs=$(cat $PKG_LIST | grep -v "^#" | tr '\n' ' ')
     install_software "$pkgs"
 } 1>>$LOGFILE 2>&1

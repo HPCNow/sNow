@@ -4,28 +4,31 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
-function error_exit(){
+function error_exit()
+{
     echo "${PROGNAME}: ${1:-"Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues"}" 1>&2
     exit 1
 }
 
-function warning_msg(){
+function warning_msg()
+{
     echo "${PROGNAME}: ${1}" 1>&2
 }
 
-function info_msg(){
+function info_msg()
+{
     echo "${PROGNAME}: ${1}" 1>&2
 }
 
-function logsetup {
+function logsetup()
+{
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
     exec > >(tee -a $LOGFILE)
     exec 2>&1
 }
 
-#logsetup
-        
-function log {
+function log()
+{
     echo "[$(date)]: $*" 
 }
 
@@ -54,49 +57,51 @@ function error_check()
     fi
 }
 
-function shelp(){
-echo " 
-This is the sNow! Command Line Interface
-Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-For more information, visit the official website : www.hpcnow.com
+function shelp()
+{
+    cat <<- EOF 
+    This is the sNow! Command Line Interface
+    Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+    For more information, visit the official website : www.hpcnow.com
 
-Usage: snow [function] <option|domain|server>
+    Usage: snow [function] <option|domain|server>
 
-Function List:
+    Function List:
 
-    * init                              | setup the system according to the parameters defined in snow.conf and active-domains.conf
-    * config                            | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-    * update tools                      | updates the sNow! Tools 
-    * update configspace                | updates configuration files from private git 
-    * update template                   | updates the sNow! image used to create new domains
-    * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
-    * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
-    * remove <domain>                   | removes an existing domain deployed with sNow!
-    * list <all>                        | list current domains (services) and their status
-    * boot <domain|server> <image>      | boot specific domain or server with optional image
-    * boot domains                      | boot all the domains (all services not available under sNow! HA)
-    * boot cluster <cluster> <image>    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-    * reboot <domain|server>            | reboot specific domain or server
-    * shutdown <domain|server>          | shutdown specific domain or server
-    * shutdown cluster <cluster>        | shutdown all the compute nodes of the selected cluster
-    * destroy <domain|server>           | force to stop specific domain or server
-    * reset <domain|server>             | force to reboot specific domain or server
-    * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
-    * console <domain|server>           | console access to specific domain or server
-    * uptime <domain|sever>             | shows uptime of specific domain or server
-    * cmd <domain|sever> <command>      | executes a command in the domain(s) or server(s)
+        * init                              | setup the system according to the parameters defined in snow.conf and active-domains.conf
+        * config                            | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
+        * update tools                      | updates the sNow! Tools 
+        * update configspace                | updates configuration files from private git 
+        * update template                   | updates the sNow! image used to create new domains
+        * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
+        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
+        * remove <domain>                   | removes an existing domain deployed with sNow!
+        * list <all>                        | list current domains (services) and their status
+        * boot <domain|server> <image>      | boot specific domain or server with optional image
+        * boot domains                      | boot all the domains (all services not available under sNow! HA)
+        * boot cluster <cluster> <image>    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+        * reboot <domain|server>            | reboot specific domain or server
+        * shutdown <domain|server>          | shutdown specific domain or server
+        * shutdown cluster <cluster>        | shutdown all the compute nodes of the selected cluster
+        * destroy <domain|server>           | force to stop specific domain or server
+        * reset <domain|server>             | force to reboot specific domain or server
+        * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
+        * console <domain|server>           | console access to specific domain or server
+        * uptime <domain|sever>             | shows uptime of specific domain or server
+        * cmd <domain|sever> <command>      | executes a command in the domain(s) or server(s)
 
-Examples:
+    Examples:
 
-    snow update tools
-    snow deploy ldap01
-    snow cmd n[001-999] uname
-"
+        snow update tools
+        snow deploy ldap01
+        snow cmd n[001-999] uname
+    EOF
 }
 
-end_msg(){
-    echo "--------------------------------------------------------------------------"
-    echo "
+function end_msg()
+{
+    cat <<- EOF 
+    --------------------------------------------------------------------------
 
     ███████╗███╗   ██╗ ██████╗ ██╗    ██╗██╗
     ██╔════╝████╗  ██║██╔═══██╗██║    ██║██║
@@ -106,18 +111,19 @@ end_msg(){
     ╚══════╝╚═╝  ╚═══╝ ╚═════╝  ╚══╝╚══╝ ╚═╝
     Developed by HPCNow! www.hpcnow.com/snow
 
-    "
-    echo "Get enterprise features and end user enterprise support from HPCNow!"
-    echo "Please help us to improve this project, report bugs and issues to : "
-    echo " sNow! Development <dev@hpcnow.com>"
-    echo "If you found some error during the installation, please review the "
-    echo "log file : $LOGFILE"
-    echo "Some changes may require to reboot the system. Please, consider to do it "
-    echo " before to move it into production."
-    echo "--------------------------------------------------------------------------"
+    Get enterprise features and end user enterprise support from HPCNow!
+    Please help us to improve this project, report bugs and issues to : 
+    sNow! Development <dev@hpcnow.com>
+    If you found some error during the installation, please review the 
+    log file : $LOGFILE
+    Some changes may require to reboot the system. Please, consider to do it 
+    before to move it into production.
+    --------------------------------------------------------------------------
+    EOF
 }
 
-function config() {
+function config()
+{
 if [[ ! -f ${SNOW_DOMAINS} ]]; then
     echo "No ${SNOW_DOMAINS} found"
 else
@@ -127,13 +133,8 @@ else
 fi
 }
 
-if [[ ! ${HAS_EE} ]]; then
-    function takeover() {
-        echo "The takeover feature is only available in sNow! Enterprise Edition"
-    }
-fi
-
-function download() {
+function download() 
+{
     case $DOWNLD in
         axel) 
             axel -q -n 10 $1 -o $2 
@@ -147,11 +148,31 @@ function download() {
     esac
 }
 
-function bkp() {
+function bkp()
+{
     bkpfile=$1
     next=$(date +%Y%m%d%H%M)
     if [[ -e $bkpfile ]]; then 
         cp -pr $bkpfile $bkpfile.$next-snow
+    fi
+}
+
+function hex()
+{
+    #transforms the provided value to hexa
+    printf "0x%X\n" $1;
+}
+
+function architecture_identification() 
+{
+    cpudec=$(lscpu | grep "Model:" | gawk '{print $2}')
+    cpuhex=$(hex $cpudec)
+    architecture=$(grep $cpuhex ${SNOW_TOOL}/etc/cpu-id-map.conf | gawk '{print $2}')
+    if [ -z $architecture ]; then
+        warning_msg "Your CPU model is not recognised. Please consider to add it in the  
+        ${SNOW_TOOL}/etc/cpu-id-map.conf and report it to sNow! development Team"
+    else
+        export ARCHITECTURE=$architecture
     fi
 }
 
@@ -168,7 +189,8 @@ function is_golden_node()
     return $gn
 } 1>>$LOGFILE 2>&1
 
-function get_os_distro() {
+function get_os_distro()
+{
     # OS release and Service pack discovery 
     lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
     dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
@@ -236,7 +258,8 @@ function install_software()
 } 1>>$LOGFILE 2>&1
 
 
-function prefix_to_bit_netmask() {
+function prefix_to_bit_netmask() 
+{
     prefix=$1;
     shift=$(( 32 - prefix ));
     bitmask=""
@@ -254,7 +277,8 @@ function prefix_to_bit_netmask() {
     echo $bitmask
 }
 
-function bit_netmask_to_wildcard_netmask() {
+function bit_netmask_to_wildcard_netmask()
+{
     bitmask=$1;
     wildcard_mask=
     for octet in $bitmask; do
@@ -263,7 +287,8 @@ function bit_netmask_to_wildcard_netmask() {
     echo $wildcard_mask;
 }
 
-function mask2cidr() {
+function mask2cidr()
+{
     nbits=0
     IFS=.
     for dec in $1 ; do
@@ -283,7 +308,8 @@ function mask2cidr() {
     echo "$nbits"
 }
 
-function generate_hostlist() {
+function generate_hostlist()
+{
     ip=$1
     host_extension=$2
     net=$(echo $ip | cut -d '/' -f 1);
@@ -316,7 +342,8 @@ function generate_hostlist() {
 }
 
 
-function init() {
+function init()
+{
     # Check for snow.conf
     if [[ ! -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
@@ -419,7 +446,8 @@ function init() {
     fi
 }
 
-function update_tools() {
+function update_tools()
+{
 if [[ ! -d ${SNOW_TOOL} ]]; then
     mkdir -p ${SNOW_TOOL}
     cd ${SNOW_TOOL}
@@ -431,7 +459,8 @@ else
 fi 
 }
 
-function update_configspace() {
+function update_configspace()
+{
 if [[ ! -d ${SNOW_CONF}  ]]; then
     mkdir -p ${SNOW_CONF}
     cd ${SNOW_CONF}
@@ -447,7 +476,8 @@ else
 fi
 }
 
-function update_xen_image() {
+function update_xen_image()
+{
 if [[ ! -d ${SNOW_PATH}/domains/template ]]; then
     mkdir -p ${SNOW_PATH}/domains/template
     wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
@@ -469,7 +499,8 @@ else
 fi 
 }
 
-function xen_create() {
+function xen_create()
+{
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
@@ -505,7 +536,8 @@ function xen_create() {
     fi
 }
 
-function xen_delete() {
+function xen_delete()
+{
     get_server_distribution $1 
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         echo "There is no domain with this name. Please, review the name of the domain to be removed."
@@ -518,14 +550,16 @@ function xen_delete() {
     fi
 }
 
-function create_base() {
+function create_base()
+{
     if [[ "$opt3" == "force" ]]; then
         FORCE="--force"
     fi 
     xen_create deploy
 }
 
-function node_rank() {
+function node_rank()
+{
     if [[ $1 =~ \] ]]; then
         NPREFIX=$(echo $1 | cut -d[ -f1)
         NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
@@ -535,14 +569,16 @@ function node_rank() {
     fi
 }
 
-function boot_copy() {
+function boot_copy()
+{
     for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
     do 
         cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$1 ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
     done
 }
 
-function deploy() {
+function deploy()
+{
     if [[ -z "$1" ]]; then
         echo "ERROR: No domain or node to deploy"
         exit 1
@@ -595,7 +631,8 @@ function deploy() {
     fi
 }
 
-function patch_network_configuration() {
+function patch_network_configuration()
+{
     case $OS in
         debian|ubuntu)
             echo "Nothing required"
@@ -613,7 +650,8 @@ function patch_network_configuration() {
    esac
 }
 
-function generate_pxe_image() {
+function generate_pxe_image()
+{
     IMAGE=$1
     case $OS in
         debian|ubuntu)
@@ -635,7 +673,7 @@ function generate_pxe_image() {
    esac
 }
 
-hooks()
+function hooks()
 {
     hooks_path=$1
     HOOKS=$(ls -1 ${hooks_path}/??-*.sh)
@@ -650,7 +688,7 @@ hooks()
     done
 } 
 
-first_boot_hooks()
+function first_boot_hooks()
 {
     hooks_path=$1
     cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
@@ -659,7 +697,8 @@ first_boot_hooks()
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
-function generate_rootfs() {
+function generate_rootfs()
+{
     # rootfs size in megabytes
     rootfs_size="4096"
     # set mount point for the rootfs
@@ -716,7 +755,8 @@ function generate_rootfs() {
     sed -e "s|__IMAGE__|$IMAGE|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${SNOW_CONF}/boot/pxelinux.cfg/$IMAGE
 }
 
-function clone() {
+function clone()
+{
     NODE=$1
     IMAGE=$2
     if [[ -z "$NODE" ]]; then
@@ -744,15 +784,18 @@ function clone() {
     fi
 }
 
-function list() {
+function list()
+{
     xl list $opt2
 }
 
-function avail_domains() {
+function avail_domains()
+{
     LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains
 }
 
-function check_host_status(){
+function check_host_status()
+{
     PING=$(ping -c 1 $1 &> /dev/null)
     if [[ "$?" != "0" ]]; then
         echo "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
@@ -760,7 +803,8 @@ function check_host_status(){
     fi 
 }
 
-function boot() {
+function boot()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain or node to boot."
         exit 1
@@ -801,7 +845,8 @@ function boot() {
     fi
 }
 
-function get_server_distribution(){
+function get_server_distribution()
+{
     node_rank $1
     if (( $NLENG > 0 )); then
         # VM ranks are not yet supported
@@ -811,14 +856,16 @@ function get_server_distribution(){
     fi
 }
 
-function boot_domains() {
+function boot_domains()
+{
     for i in ${SELF_ACTIVE_DOMAINS}
     do 
         boot $i
     done
 }
 
-function boot_cluster() {
+function boot_cluster()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No cluster to boot."
         exit 1
@@ -833,7 +880,8 @@ function boot_cluster() {
     boot ${CLUSTERS[$1]} 
 }
 
-function ncmd() {
+function ncmd()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to execute command."
         exit 1
@@ -841,7 +889,8 @@ function ncmd() {
     pdsh -w $1 $2 $3 $4
 }
 
-function nreboot() {
+function nreboot()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to reboot."
         exit 1
@@ -849,7 +898,8 @@ function nreboot() {
     pdsh -w $1 reboot
 }  &>/dev/null
 
-function nshutdown() {
+function nshutdown()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to shutdown."
         exit 1
@@ -857,14 +907,16 @@ function nshutdown() {
     pdsh -w $1 systemctl poweroff
 }  &>/dev/null
 
-function shutdown_domains() {
+function shutdown_domains()
+{
     for i in ${SELF_ACTIVE_DOMAINS}
     do 
         nshutdown $i
     done
 }
 
-function shutdown_cluster() {
+function shutdown_cluster()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No cluster to shutdown."
         exit 1
@@ -873,7 +925,8 @@ function shutdown_cluster() {
     nshutdown ${CLUSTERS[$1]} 
 }  &>/dev/null
 
-function ndestroy() {
+function ndestroy()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to power down."
         exit 1
@@ -897,7 +950,8 @@ function ndestroy() {
     fi
 }
 
-function npoweroff() {
+function npoweroff()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to shutdown."
         exit 1
@@ -921,14 +975,16 @@ function npoweroff() {
     fi
 }
 
-function poweroff_domains() {
+function poweroff_domains()
+{
     for i in ${SELF_ACTIVE_DOMAINS}
     do 
         npoweroff $i
     done
 }
 
-function nreset() {
+function nreset()
+{
     if [ -z "$1" ]; then
         echo "ERROR: No domain(s) or node(s) to reset."
         exit 1
@@ -953,14 +1009,16 @@ function nreset() {
 }
 
 
-function reset_domains() {
+function reset_domains()
+{
     for i in ${SELF_ACTIVE_DOMAINS}
     do 
         nreset $i
     done
 }
 
-function nconsole() {
+function nconsole()
+{
     if [ -z "$1" ]; then
         echo "ERROR: please specify the domain(s) or node(s) to connect."
         exit 1
@@ -976,7 +1034,8 @@ function nconsole() {
     fi
 }
 
-function nuptime() {
+function nuptime()
+{
     if [ -z "$1" ]; then
         echo "ERROR: please, specify the domain(s) or node(s) to check the uptime."
         exit 1

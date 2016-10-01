@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-install_lmod()
+function install_lmod()
 {
     ln -sf $SNOW_UTIL/lmod/lmod/init/profile /etc/profile.d/lmod.sh
     ln -sf $SNOW_UTIL/lmod/lmod/init/cshrc /etc/profile.d/lmod.csh

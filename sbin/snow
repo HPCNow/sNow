@@ -28,6 +28,7 @@ readonly opt4=$4
 readonly opt5=$5
 declare -A CLUSTERS
 HAS_EE=false
+#logsetup
 
 if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}

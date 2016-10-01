@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-install_workload_client()
+function install_workload_client()
 {
     #Slurm Workload Manager
     if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
@@ -54,7 +54,7 @@ install_workload_client()
     fi
 } 1>>$LOGFILE 2>&1
 
-setup_workload_client()
+function setup_workload_client()
 {
     install_workload_client $OS
 } 1>>$LOGFILE 2>&1
