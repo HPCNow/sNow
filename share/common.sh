@@ -6,21 +6,31 @@
 
 function error_exit()
 {
-    local e_msg="${PROGNAME}: ${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
-    printf "[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&2
+    local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
+    tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&2
     exit 1
+}
+
+function error_msg()
+{
+    local e_msg="${1}"
+    tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&2
 }
 
 function warning_msg()
 {
     local w_msg="${1}"
-    printf "[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "W" "${w_msg}" 1>&2
+    tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n\n" "W" "${w_msg}" 1>&2
 }
 
 function info_msg()
 {
-    local e_msg="${1}"
-    printf "[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "I" "${i_msg}" 1>&2
+    local i_msg="${1}"
+    tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n\n" "I" "${i_msg}" 1>&2
 }
 
 function logsetup()
@@ -42,21 +52,21 @@ function spinner()
     local spinstr='|/-\'
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
-        printf "[\e[0;32m%c\e[m] %s" "$spinstr" "$2" 
+        tput cuu 1 && tput el
+        printf "\r\e[0K[\e[0;32m%c\e[m] %s\n" "$spinstr" "$2" 
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
-        printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
     done
 }
 
 function error_check()
 {
     local status=$1
-    printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    tput cuu 1 && tput el
     if [ $status -eq 0 ]; then
-        printf "[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+        printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
     else
-        printf "[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
+        printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
     fi
 }
 
@@ -98,7 +108,7 @@ function shelp()
         snow update tools
         snow deploy ldap01
         snow cmd n[001-999] uname
-    EOF
+EOF
 }
 
 function end_msg()
@@ -122,7 +132,7 @@ function end_msg()
     Some changes may require to reboot the system. Please, consider to do it 
     before to move it into production.
     --------------------------------------------------------------------------
-    EOF
+EOF
 }
 
 function config()
@@ -447,7 +457,7 @@ function init()
         echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
         echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 function update_tools()
 {
@@ -460,7 +470,7 @@ else
     cd ${SNOW_TOOL}
     git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi 
-}
+} 1>>$LOGFILE 2>&1
 
 function update_configspace()
 {
@@ -477,7 +487,7 @@ else
     cd ${SNOW_CONF}
     git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
-}
+} 1>>$LOGFILE 2>&1
 
 function update_xen_image()
 {
@@ -500,7 +510,7 @@ else
         wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
 fi 
-}
+} 1>>$LOGFILE 2>&1
 
 function xen_create()
 {
@@ -537,7 +547,7 @@ function xen_create()
         gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
         mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 function xen_delete()
 {
@@ -551,7 +561,7 @@ function xen_delete()
         xen-delete-image $IMG_DST_OPT --hostname=$1
         rm -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 function create_base()
 {
@@ -587,7 +597,7 @@ function deploy()
         exit 1
     fi
     get_server_distribution $1
-    echo "This will install $1. All the data contained in these nodes will be removed"
+    warning_msg "This will install $1. All the data contained in these nodes will be removed"
     read -p "Are you sure? (y/n) : " -n 1 -r
     echo 
     if [[ $REPLY =~ ^[Yy]$ ]]
@@ -632,7 +642,7 @@ function deploy()
         echo
         echo "Well done. It's better to be sure."
     fi
-}
+} # 1>>$LOGFILE 2>&1
 
 function patch_network_configuration()
 {
