@@ -264,7 +264,7 @@ function install_software()
             INSTALLER="zypper -n install"
         ;;
         *)
-           echo "This distribution is not supported."
+           error_exit "This distribution is not supported."
         ;;
    esac
    $INSTALLER $pkgs 
@@ -403,8 +403,8 @@ function init()
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
             echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
-            echo "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
-            echo "Once you are done, execute exportfs -rv"
+            warning_msg "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
+            warning_msg "Once you are done, execute exportfs -rv"
         fi
         if [[ ! -d /etc/exports.d ]]; then
             mkdir -p /etc/exports.d
@@ -425,7 +425,7 @@ function init()
                 }
             }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
-        echo "Review the domains config file : ${SNOW_TOOL}/etc/domains.conf"
+        warning_msg "Review the domains config file : ${SNOW_TOOL}/etc/domains.conf"
     fi
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
@@ -501,10 +501,10 @@ else
         wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         MD5HPCNOW=$(cat ${SNOW_PATH}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
         if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
-            echo "Downloading most recent sNow! domain template"
+            info_msg "Downloading most recent sNow! domain template"
             wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
-            echo "sNow domain template is up-to-date."
+            info_msg "sNow domain template is up-to-date."
         fi
     else
         wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
@@ -517,18 +517,16 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            echo "The domain $1 already exist, please use force option to overwrite the domain"
-            exit 1
+            error_exit "The domain $1 already exist, please use force option to overwrite the domain"
         else
             FORCE="--force"
         fi
     else
         IMG_STATUS=$(cat ${SNOW_DOMAINS} | grep "$opt2")
         if [[ ! $IMG_STATUS ]]; then
-            echo "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
-            exit 1
+            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
         else
-            echo "Deploying the domain $1. It can take few minutes. Please wait!"
+            info_msg "Deploying the domain $1. It can take few minutes. Please wait!"
         fi
     fi
 
@@ -553,7 +551,7 @@ function xen_delete()
 {
     get_server_distribution $1 
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
-        echo "There is no domain with this name. Please, review the name of the domain to be removed."
+        error_msg "There is no domain with this name. Please, review the name of the domain to be removed."
     else
         if [[ -n "$IMG_DST" ]]; then
             IMG_DST_OPT="--${IMG_DST}"
@@ -593,8 +591,7 @@ function boot_copy()
 function deploy()
 {
     if [[ -z "$1" ]]; then
-        echo "ERROR: No domain or node to deploy"
-        exit 1
+        error_exit "ERROR: No domain or node to deploy"
     fi
     get_server_distribution $1
     warning_msg "This will install $1. All the data contained in these nodes will be removed"
@@ -610,11 +607,10 @@ function deploy()
             #BLOCKD=${3:-$BLOCKD}
             DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
             if ! [[ -f ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
-                echo "No template $DEFAULT_TEMPLATE available in ${SNOW_CONF}/boot/pxelinux.cfg"
-                exit 1
+                error_exit "No template $DEFAULT_TEMPLATE available in ${SNOW_CONF}/boot/pxelinux.cfg"
             fi
             if (( $NLENG > 0 )); then
-                echo "Deploying node range $1 ... This will take a while, Please wait"
+                info_msg "Deploying node range $1 ... This will take a while, Please wait"
                 #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 boot_copy $DEFAULT_TEMPLATE
                 parallel -j $BLOCKN \
@@ -625,7 +621,7 @@ function deploy()
                 sleep $BLOCKD \
                 ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
                 sleep $BOOT_DELAY
-                echo "Setting up dis as boot device... Please wait"
+                info_msg "Setting up disk as boot device... Please wait"
                 boot_copy $DEFAULT_BOOT
             else
                 check_host_status $1${NET_IPMI[4]}
@@ -633,7 +629,7 @@ function deploy()
                 ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
                 sleep 5
                 ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
-                echo "Deploying node : $1 ... Please wait"
+                info_msg "Deploying node : $1 ... Please wait"
                 sleep $BOOT_DELAY
                 cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
@@ -696,7 +692,7 @@ function hooks()
             $hook && error_check 0 "Running hook : $hook " || error_check 1 "Running hook error : $hook " &
             spinner $!             "Running hook : $hook "
         else
-            echo "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
+            warning_msg "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
         fi
     done
 } 
@@ -807,16 +803,14 @@ function check_host_status()
 {
     PING=$(ping -c 1 $1 &> /dev/null)
     if [[ "$?" != "0" ]]; then
-        echo "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
-        exit 1
+        error_exit "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
     fi 
 }
 
 function boot()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain or node to boot."
-        exit 1
+        error_exit "ERROR: No domain or node to boot."
     fi
     IMAGE=$2
     get_server_distribution $1
@@ -826,11 +820,10 @@ function boot()
             if [[ "$IS_UP" == "" ]]; then 
                 xl create ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
             else
-                echo "The domain $1 is already runnning"
+                warning_msg "The domain $1 is already runnning"
             fi
         else
-            echo "The domain $1 needs to be deployed first: Execute : snow deploy $i"
-            exit 1
+            error_msg "The domain $1 needs to be deployed first: Execute : snow deploy $1"
         fi
     else
         node_rank $1
@@ -876,8 +869,7 @@ function boot_domains()
 function boot_cluster()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No cluster to boot."
-        exit 1
+        error_exit "ERROR: No cluster to boot."
     fi
     CLUSTERNAME=$1
     BLOCKN=${2:-$BLOCKN}
@@ -892,8 +884,7 @@ function boot_cluster()
 function ncmd()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to execute command."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to execute command."
     fi
     pdsh -w $1 $2 $3 $4
 }
@@ -901,8 +892,7 @@ function ncmd()
 function nreboot()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to reboot."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to reboot."
     fi
     pdsh -w $1 reboot
 }  &>/dev/null
@@ -910,8 +900,7 @@ function nreboot()
 function nshutdown()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to shutdown."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
     pdsh -w $1 systemctl poweroff
 }  &>/dev/null
@@ -927,8 +916,7 @@ function shutdown_domains()
 function shutdown_cluster()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No cluster to shutdown."
-        exit 1
+        error_exit "ERROR: No cluster to shutdown."
     fi
     CLUSTERNAME=$1
     nshutdown ${CLUSTERS[$1]} 
@@ -937,8 +925,7 @@ function shutdown_cluster()
 function ndestroy()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to power down."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to power down."
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
@@ -962,8 +949,7 @@ function ndestroy()
 function npoweroff()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to shutdown."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
@@ -995,8 +981,7 @@ function poweroff_domains()
 function nreset()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: No domain(s) or node(s) to reset."
-        exit 1
+        error_exit "ERROR: No domain(s) or node(s) to reset."
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
@@ -1029,8 +1014,7 @@ function reset_domains()
 function nconsole()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: please specify the domain(s) or node(s) to connect."
-        exit 1
+        error_exit "ERROR: please specify the domain(s) or node(s) to connect."
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
@@ -1046,8 +1030,7 @@ function nconsole()
 function nuptime()
 {
     if [ -z "$1" ]; then
-        echo "ERROR: please, specify the domain(s) or node(s) to check the uptime."
-        exit 1
+        error_exit "ERROR: please, specify the domain(s) or node(s) to check the uptime."
     fi
     pdsh -w $1 uptime 
 }
