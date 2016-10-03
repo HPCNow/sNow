@@ -598,10 +598,10 @@ function deploy()
     fi
     get_server_distribution $1
     warning_msg "This will install $1. All the data contained in these nodes will be removed"
-    read -p "Are you sure? (y/n) : " -n 1 -r
-    echo 
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
+    #read -p "Are you sure? (y/n) : " -n 1 -r
+    #echo 
+    #if [[ $REPLY =~ ^[Yy]$ ]]
+    #then
         if (($IS_VM)) ; then
             xen_create $1 $2
         else
@@ -638,10 +638,10 @@ function deploy()
                 cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
             fi
         fi
-    else
-        echo
-        echo "Well done. It's better to be sure."
-    fi
+    #else
+    #    echo
+    #    echo "Well done. It's better to be sure."
+    #fi
 } # 1>>$LOGFILE 2>&1
 
 function patch_network_configuration()
@@ -773,27 +773,23 @@ function clone()
     NODE=$1
     IMAGE=$2
     if [[ -z "$NODE" ]]; then
-        echo "ERROR: no node name to clone is provided"
-        exit 1
+        error_exit "ERROR: no node name to clone is provided"
     fi
     if [[ -z "$IMAGE" ]]; then
-        echo "ERROR: no name is provided for the image"
-        exit 1
+        error_exit "ERROR: no name is provided for the image"
     fi
-    echo "This will clone $NODE and generate the image $IMAGE."
-    read -p "Are you sure? (y/n) : " -n 1 -r
-    echo 
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Check if snow CLI is executed in the same golden node or from the snow server
-        if [[ "$(uname -n)" == "$NODE" ]]; then
-            get_server_distribution $NODE
-            check_host_status $1${NET_IPMI[4]}
-            generate_pxe_image $IMAGE
+    # Check if snow CLI is executed in the same golden node or from the snow server
+    if [[ "$(uname -n)" == "$NODE" ]]; then
+        if [[ -f ${SNOW_CONF}/boot/image/$IMAGE/rootfs.gz ]]; then
+            warning_msg "This will overwrite the image $IMAGE"
         else
-            ssh $NODE $0 clone $@
+            warning_msg "This will clone $NODE and generate the image $IMAGE."
         fi
+        get_server_distribution $NODE
+        check_host_status $1${NET_IPMI[4]}
+        generate_pxe_image $IMAGE
     else
-        echo "\nWell done. It's better to be sure."
+        ssh $NODE $0 clone $@
     fi
 }
 
