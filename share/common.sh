@@ -595,49 +595,41 @@ function deploy()
     fi
     get_server_distribution $1
     warning_msg "This will install $1. All the data contained in these nodes will be removed"
-    #read -p "Are you sure? (y/n) : " -n 1 -r
-    #echo 
-    #if [[ $REPLY =~ ^[Yy]$ ]]
-    #then
-        if (($IS_VM)) ; then
-            xen_create $1 $2
-        else
-            node_rank $1
-            #BLOCKN=${2:-$BLOCKN}
-            #BLOCKD=${3:-$BLOCKD}
-            DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
-            if ! [[ -f ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
-                error_exit "No template $DEFAULT_TEMPLATE available in ${SNOW_CONF}/boot/pxelinux.cfg"
-            fi
-            if (( $NLENG > 0 )); then
-                info_msg "Deploying node range $1 ... This will take a while, Please wait"
-                #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                boot_copy $DEFAULT_TEMPLATE
-                parallel -j $BLOCKN \
-                echo "Deploying node : $NPREFIX{} ... Please wait" \; \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
-                sleep 5 \; \
-                ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
-                sleep $BLOCKD \
-                ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-                sleep $BOOT_DELAY
-                info_msg "Setting up disk as boot device... Please wait"
-                boot_copy $DEFAULT_BOOT
-            else
-                check_host_status $1${NET_IPMI[4]}
-                cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-                ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
-                sleep 5
-                ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
-                info_msg "Deploying node : $1 ... Please wait"
-                sleep $BOOT_DELAY
-                cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
-            fi
+    if (($IS_VM)) ; then
+        xen_create $1 $2
+    else
+        node_rank $1
+        #BLOCKN=${2:-$BLOCKN}
+        #BLOCKD=${3:-$BLOCKD}
+        DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
+        if ! [[ -f ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
+            error_exit "No template $DEFAULT_TEMPLATE available in ${SNOW_CONF}/boot/pxelinux.cfg"
         fi
-    #else
-    #    echo
-    #    echo "Well done. It's better to be sure."
-    #fi
+        if (( $NLENG > 0 )); then
+            info_msg "Deploying node range $1 ... This will take a while, Please wait"
+            #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+            boot_copy $DEFAULT_TEMPLATE
+            parallel -j $BLOCKN \
+            echo "Deploying node : $NPREFIX{} ... Please wait" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
+            sleep 5 \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
+            sleep $BLOCKD \
+            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+            sleep $BOOT_DELAY
+            info_msg "Setting up disk as boot device... Please wait"
+            boot_copy $DEFAULT_BOOT
+        else
+            check_host_status $1${NET_IPMI[4]}
+            cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            sleep 5
+            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
+            info_msg "Deploying node : $1 ... Please wait"
+            sleep $BOOT_DELAY
+            cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+        fi
+    fi
 } # 1>>$LOGFILE 2>&1
 
 function patch_network_configuration()
