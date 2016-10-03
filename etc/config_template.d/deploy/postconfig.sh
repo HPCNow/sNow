@@ -14,6 +14,7 @@ SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_UTIL=$SNOW_PATH/snow-utils
 SNOW_TOOL=$SNOW_PATH/snow-tools
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
+echo "\n\n"
 
 if [[ -f ${CONFIG_FILE} ]]; then
     echo "Loading sNow! configuration ..."
@@ -25,6 +26,7 @@ fi
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
     get_os_distro
+    architecture_identification
 fi
 
 readonly TEMPLATE=${1:-$DEFAULT_TEMPLATE}

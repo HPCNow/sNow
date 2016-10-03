@@ -7,7 +7,6 @@ function install_easybuild()
 {
     ln -sf $SNOW_UTIL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
     #ln -sf $SNOW_UTIL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
-    ln -sf $SNOW_UTIL/etc/cpu-id-map.conf /etc/
     if is_golden_node; then
         if [[ ! -e $SNOW_SOFT/modules/all ]]; then
             chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT

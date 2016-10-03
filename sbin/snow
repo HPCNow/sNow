@@ -16,10 +16,10 @@ SNOW_SOFT=${SNOW_PATH}/easybuild
 SNOW_CONF=${SNOW_PATH}/snow-configspace
 SNOW_UTIL=${SNOW_PATH}/snow-utils
 SNOW_TOOL=${SNOW_PATH}/snow-tools
-readonly CONFIG_FILE=${SNOW_PATH}/etc/snow.conf
-readonly ENTERPRISE_EXTENSIONS=${SNOW_PATH}/share/enterprise_extensions.sh
-readonly SNOW_DOMAINS=${SNOW_PATH}/etc/domains.conf
-readonly SNOW_ACTIVE_DOMAINS=${SNOW_PATH}/etc/active-domains.conf
+readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
+readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
+readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
 readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 readonly opt1=$1
 readonly opt2=$2
@@ -29,6 +29,7 @@ readonly opt5=$5
 declare -A CLUSTERS
 HAS_EE=false
 #logsetup
+echo "\n\n"
 
 if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
@@ -37,6 +38,8 @@ fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
@@ -47,8 +50,6 @@ fi
 if ! [[ -d ${SNOW_PATH}/log ]]; then
     mkdir ${SNOW_PATH}/log
 fi
-
-get_os_distro
 
 #
 # Start Cases
@@ -69,7 +70,8 @@ case $opt1 in
                 update_configspace
             ;;
             template)
-                update_xen_image
+                update_xen_image && error_check 0 'sNow! image updated ' || error_check 1 'sNow! image updated ' &
+                spinner $!             'Updating sNow! image'
             ;;
             *)
                 echo "Update available options : update_tools, configspace, snow_template"
@@ -80,7 +82,8 @@ case $opt1 in
         xen_delete $opt2
     ;;
     deploy)
-        deploy $opt2 $opt3 $opt4 $opt5
+        deploy $opt2 $opt3 $opt4 $opt5 && error_check 0 'System deployed' || error_check 1 'System deployed ' &
+        spinner $!             'Deploying $opt2'
     ;;
     clone)
         clone $opt2 $opt3 $opt4 $opt5
@@ -101,7 +104,7 @@ case $opt1 in
                 avail_domains
             ;;
             *)
-                list $opt2
+                list $opt2 
             ;;
         esac
     ;;
