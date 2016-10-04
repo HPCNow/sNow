@@ -188,4 +188,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-echo "$(date)    $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 
+echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 
