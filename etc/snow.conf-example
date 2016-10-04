@@ -8,7 +8,6 @@ SNOW_PATH=/sNow
 SNOW_HOME=$SNOW_PATH/home
 SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
-SNOW_UTIL=$SNOW_PATH/snow-utils
 SNOW_TOOL=$SNOW_PATH/snow-tools
 # Destination of the sNow! domains OS images
 SNOWVG=snow_vg

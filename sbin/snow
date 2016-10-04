@@ -14,7 +14,6 @@ SNOW_PATH=/sNow
 SNOW_HOME=${SNOW_PATH}/home
 SNOW_SOFT=${SNOW_PATH}/easybuild
 SNOW_CONF=${SNOW_PATH}/snow-configspace
-SNOW_UTIL=${SNOW_PATH}/snow-utils
 SNOW_TOOL=${SNOW_PATH}/snow-tools
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
@@ -189,4 +188,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-echo "$(date)    $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 
+echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 

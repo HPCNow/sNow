@@ -2,7 +2,8 @@
 # This script is part of sNow!
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
-source /sNow/snow-tools/etc/snow.env
+local share_tree_input=$1
+source ${share_tree_input}
 
 # Create Admin User (snow)
 sacctmgr -i create user snow account=root adminlevel=Admin

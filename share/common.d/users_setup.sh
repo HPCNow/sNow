@@ -79,7 +79,7 @@ function setup_env()
     echo "* hard memlock unlimited" >> /etc/security/limits.conf
     echo "* soft memlock unlimited" >> /etc/security/limits.conf
     # User enviroment setup
-    #ln -sf $SNOW_UTIL/bin/snow-source.sh /etc/profile.d/snow.sh
-    #ln -sf $SNOW_UTIL/bin/snow-source.csh /etc/profile.d/snow.csh
+    ln -sf $SNOW_TOOL/bin/snow-source.sh /etc/profile.d/snow.sh
+    ln -sf $SNOW_TOOL/bin/snow-source.csh /etc/profile.d/snow.csh
 } 1>>$LOGFILE 2>&1
 

@@ -5,8 +5,8 @@
 #
 function install_slurm_client()
 {
-    ln -sf $SNOW_UTIL/bin/slurm-source.sh /etc/profile.d/slurm.sh
-    ln -sf $SNOW_UTIL/bin/slurm-source.csh /etc/profile.d/slurm.csh
+    ln -sf $SNOW_TOOL/bin/slurm-source.sh /etc/profile.d/slurm.sh
+    ln -sf $SNOW_TOOL/bin/slurm-source.csh /etc/profile.d/slurm.csh
     groupadd -g $SLURM_GID slurm
     adduser -u $SLURM_UID -g $SLURM_GID -s /bin/false slurm
     case $OS in
