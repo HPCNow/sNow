@@ -545,7 +545,7 @@ function xen_create()
         gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
         mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
     fi
-} 1>>$LOGFILE 2>&1
+} #1>>$LOGFILE 2>&1
 
 function xen_delete()
 {
@@ -630,7 +630,7 @@ function deploy()
             cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
         fi
     fi
-} # 1>>$LOGFILE 2>&1
+}  1>>$LOGFILE 2>&1
 
 function patch_network_configuration()
 {
