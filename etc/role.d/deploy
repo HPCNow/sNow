@@ -14,11 +14,16 @@ else
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
-    . /sNow/snow-tools/etc/snow.conf
+    source /sNow/snow-tools/etc/snow.conf
 else
-    echo "The /sNow/snow-tools/etc/snow.conf is not available."
-    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
-    exit 1
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 #  Update APT lists.
@@ -100,32 +105,34 @@ else
     PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
     PROXY_PORT="${SITE_PROXY_PORT:-8080}"
 fi
-if [[ ! -f $SNOW_CONF/boot/deploy/postconfig.sh ]]; then
+if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
     if [[ ! -d $SNOW_CONF ]]; then 
         mkdir $SNOW_CONF
     fi
-    cp -pr $SNOW_TOOL/etc/config_template.d/deploy $SNOW_CONF/
-    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default}
-    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg}
-    sed -i "s|__DEFAULT_TEMPLATE__|$DEFAULT_TEMPLATE|g" $SNOW_CONF/boot/deploy/{autoyast/*.xml,kickstart/*.cfg,pxelinux.cfg/centos-7.0,pxelinux.cfg/default,postconfig.d/$DEFAULT_TEMPLATE/*,postconfig.d/$DEFAULT_TEMPLATE/first_boot/*} 
-    ln -sf $SNOW_CONF/boot/deploy /sNow/OS/deploy
+    cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
+    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg} 
+    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    for i in $(ls -1 $SNOW_CONF/boot/templates/ | grep "-default"); do
+        sed -i "s|__DEFAULT_TEMPLATE__|$i|g" $SNOW_CONF/boot/templates/$i/* $SNOW_CONF/boot/templates/$i/first_boot/*
+    done
 fi
+
 # HPCNow repos
 if [[ ! -e $SNOW_CONF/system_files/etc/repos ]]; then
     mkdir -p $SNOW_CONF/system_files/etc/repos
     cp -pr $SNOW_TOOL/etc/config_template.d/repos/* $SNOW_CONF/system_files/etc/repos/
 fi
 
-# Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
+# Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf
 while read line; do 
-    donwload_path=$(echo $line | gawk '{print $NF}')
-    if [[ ! -d ${download_path} ]]; then
+    download_path=$(echo $line | gawk '{print $2}')
+    if [[ ! -e ${download_path} ]]; then
         mkdir -p ${download_path}
     fi
     download $line
-done < $SNOW_TOOL/etc/config_template.d/deploy/kernels.conf
+done < $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf

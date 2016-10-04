@@ -30,10 +30,11 @@ if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
 fi
 
 readonly TEMPLATE=${1:-$DEFAULT_TEMPLATE}
+readonly TEMPLATE_PATH=${SNOW_CONF}/boot/templates/$TEMPLATE
 
-if [[ -f ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/config ]]; then
+if [[ -f ${TEMPLATE_PATH}/config ]]; then
     echo "Loading $TEMPLATE configuration ..."
-    source ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/config
+    source ${TEMPLATE_PATH}/config
 else
     echo "Config file not found"
 fi
@@ -45,9 +46,9 @@ LAST_WORKER_INDEX=$(($WORKER_COUNT - 1))
 #logsetup
 function setup_software()
 {
-    PKG_LIST=${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/packages
-    add_repos ${SNOW_CONF}/deploy/postconfig.d/$TEMPLATE/repos
-    pkgs=$(cat $PKG_LIST | grep -v "^#" | tr '\n' ' ')
+    PKG_LIST=${TEMPLATE_PATH}/packages
+    add_repos ${TEMPLATE_PATH}/repos
+    pkgs=$(cat ${PKG_LIST} | grep -v "^#" | tr '\n' ' ')
     install_software "$pkgs"
 } 1>>$LOGFILE 2>&1
 
@@ -69,6 +70,6 @@ setup_ganglia_client   && error_check 0 'Stage 8/9 : Ganglia client setup ' || e
 spinner $!             'Stage 8/9 : Setting Ganglia client '
 setup_workload_client  && error_check 0 'Stage 9/9 : Workload Manager setup ' || error_check 1 'Stage 9/9 : Workload Manager setup ' & 
 spinner $!             'Stage 9/9 : Setting Workload Manager '
-hooks ${SNOW_CONF}/boot/deploy/postconfig.d/$TEMPLATE 
-first_boot_hooks ${SNOW_CONF}/boot/deploy/postconfig.d/$TEMPLATE
+hooks ${TEMPLATE_PATH} 
+first_boot_hooks ${TEMPLATE_PATH}
 end_msg
