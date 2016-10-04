@@ -582,9 +582,10 @@ function node_rank()
 
 function boot_copy()
 {
+    local pxelinux_cfg=$1
     for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
     do 
-        cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$1 ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
+        cp -p ${pxelinux_cfg} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
     done
 }
 
@@ -601,14 +602,16 @@ function deploy()
         node_rank $1
         #BLOCKN=${2:-$BLOCKN}
         #BLOCKD=${3:-$BLOCKD}
-        DEFAULT_TEMPLATE=${2:-$DEFAULT_TEMPLATE}
-        if ! [[ -f ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ]] ; then
-            error_exit "No template $DEFAULT_TEMPLATE available in ${SNOW_CONF}/boot/pxelinux.cfg"
+        local template=${2:-$DEFAULT_TEMPLATE}
+        local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
+        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
+        if ! [[ -f ${template_pxe} ]] ; then
+            error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
         fi
         if (( $NLENG > 0 )); then
             info_msg "Deploying node range $1 ... This will take a while, Please wait"
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-            boot_copy $DEFAULT_TEMPLATE
+            boot_copy ${template_pxe}
             parallel -j $BLOCKN \
             echo "Deploying node : $NPREFIX{} ... Please wait" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
@@ -618,16 +621,16 @@ function deploy()
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             sleep $BOOT_DELAY
             info_msg "Setting up disk as boot device... Please wait"
-            boot_copy $DEFAULT_BOOT
+            boot_copy ${default_boot_pxe}
         else
             check_host_status $1${NET_IPMI[4]}
-            cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_TEMPLATE ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
+            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
             ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
             sleep 5
             ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
             info_msg "Deploying node : $1 ... Please wait"
             sleep $BOOT_DELAY
-            cp -p ${SNOW_CONF}/boot/pxelinux.cfg/$DEFAULT_BOOT ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
         fi
     fi
 }  1>>$LOGFILE 2>&1
@@ -656,17 +659,17 @@ function generate_pxe_image()
     IMAGE=$1
     case $OS in
         debian|ubuntu)
-            cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/image/$IMAGE/
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/image/$IMAGE/
+            cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
             generate_rootfs $IMAGE
         ;;
         rhel|redhat|centos)
-            dracut -a "nfs network base" --host-only -f ${SNOW_CONF}/boot/image/$IMAGE/initrd-$(uname -r).img $(uname -r) root=dhcp 
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/image/$IMAGE/
+            dracut -a "nfs network base" --host-only -f ${SNOW_CONF}/boot/images/$IMAGE/initrd-$(uname -r).img $(uname -r) root=dhcp 
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
             generate_rootfs $IMAGE
        ;;
        suse|sle[sd]|opensuse)
-           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/image/$IMAGE
+           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$IMAGE
            mv initrd-netboot-*.gz initrd-$(uname -r)
            mv initrd-netboot-*.kernel linux-$(uname -r)
            mv *x86_64* root.gz
@@ -676,9 +679,9 @@ function generate_pxe_image()
 
 function hooks()
 {
-    hooks_path=$1
-    HOOKS=$(ls -1 ${hooks_path}/??-*.sh)
-    for hook in $HOOKS
+    local hooks_path=$1
+    local hooks=$(ls -1 ${hooks_path}/??-*.sh)
+    for hook in $hooks
     do
         if [[ -x "$hook" ]]; then
             $hook && error_check 0 "Running hook : $hook " || error_check 1 "Running hook error : $hook " &
@@ -700,10 +703,12 @@ function first_boot_hooks()
 
 function generate_rootfs()
 {
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
     # rootfs size in megabytes
-    rootfs_size="4096"
+    local rootfs_size="4096"
     # set mount point for the rootfs
-    mount_point="rootfs-loop"
+    local mount_point="rootfs-loop"
     # create a rootfs file
     dd if=/dev/zero of=rootfs bs=1k count=$(($rootfs_size * 1024))
     # create an ext3 file system
@@ -745,39 +750,39 @@ function generate_rootfs()
     }' ${mount_point}/etc/fstab.orig > ${mount_point}/etc/fstab
     rm ${mount_point}/etc/fstab.orig
     # hooks: 
-    hooks ${SNOW_CONF}/boot/images/$IMAGE
-    first_boot_hooks ${SNOW_CONF}/boot/images/$IMAGE
+    hooks ${SNOW_CONF}/boot/images/$image
+    first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # * if local scratch disk /tmp
     patch_network_configuration
 
     umount ${mount_point}
-    gzip -c rootfs | dd of=${SNOW_CONF}/boot/image/$IMAGE/rootfs.gz
+    gzip -c rootfs | dd of=${SNOW_CONF}/boot/images/$image/rootfs.gz
     # create PXE boot configuration
-    sed -e "s|__IMAGE__|$IMAGE|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${SNOW_CONF}/boot/pxelinux.cfg/$IMAGE
+    sed -e "s|__IMAGE__|$image|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${image_pxe}
 }
 
 function clone()
 {
-    NODE=$1
-    IMAGE=$2
-    if [[ -z "$NODE" ]]; then
+    local node=$1
+    local image=$2
+    if [[ -z "$node" ]]; then
         error_exit "ERROR: no node name to clone is provided"
     fi
-    if [[ -z "$IMAGE" ]]; then
+    if [[ -z "$image" ]]; then
         error_exit "ERROR: no name is provided for the image"
     fi
     # Check if snow CLI is executed in the same golden node or from the snow server
-    if [[ "$(uname -n)" == "$NODE" ]]; then
-        if [[ -f ${SNOW_CONF}/boot/image/$IMAGE/rootfs.gz ]]; then
-            warning_msg "This will overwrite the image $IMAGE"
+    if [[ "$(uname -n)" == "$node" ]]; then
+        if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.gz ]]; then
+            warning_msg "This will overwrite the image $image"
         else
-            warning_msg "This will clone $NODE and generate the image $IMAGE."
+            warning_msg "This will clone $node and generate the image $image."
         fi
-        get_server_distribution $NODE
-        check_host_status $1${NET_IPMI[4]}
-        generate_pxe_image $IMAGE
+        get_server_distribution $node
+        check_host_status ${node}${NET_IPMI[4]}
+        generate_pxe_image $image
     else
-        ssh $NODE $0 clone $@
+        ssh $node $0 clone $@
     fi
 }
 
