@@ -589,6 +589,17 @@ function boot_copy()
     done
 }
 
+function list_templates()
+{
+    local templates_path=${SNOW_CONF}/boot/templates
+    local templates_avail=$(ls -1 ${templates_path}//*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
+    for template in ${templates_avail}; do
+        local template_desc=${templates_path}/${template}/${template}.desc
+        echo "$template"
+        cat ${template_desc}
+    done
+}
+
 function deploy()
 {
     if [[ -z "$1" ]]; then
