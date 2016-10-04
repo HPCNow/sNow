@@ -12,13 +12,18 @@ if [[ -e /usr/share/xen-tools/common.sh ]]; then
 else
     echo "Installation problem"
 fi
+# Load sNow! functions
+if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    source ${SNOW_TOOL}/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
     . /sNow/snow-tools/etc/snow.conf
 else
-    echo "The /sNow/snow-tools/etc/snow.conf is not available."
-    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
-    exit 1
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
 fi
 
 #  Update APT lists.
