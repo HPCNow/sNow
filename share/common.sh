@@ -4,6 +4,10 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 
+trap "error_exit 'Received signal SIGHUP'" SIGHUP
+trap "error_exit 'Received signal SIGINT'" SIGINT
+trap "error_exit 'Received signal SIGTERM'" SIGTERM
+
 function error_exit()
 {
     local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
@@ -517,7 +521,7 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use force option to overwrite the domain"
+            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain"
         else
             FORCE="--force"
         fi
@@ -624,7 +628,7 @@ function deploy()
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
-            echo "Deploying node : $NPREFIX{} ... Please wait" \; \
+            info_msg "Deploying node : $NPREFIX{} ... Please wait" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
             sleep 5 \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
@@ -644,7 +648,7 @@ function deploy()
             cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
         fi
     fi
-}  1>>$LOGFILE 2>&1
+}  #1>>$LOGFILE 2>&1
 
 function patch_network_configuration()
 {

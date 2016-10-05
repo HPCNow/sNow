@@ -4,7 +4,8 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 #set -xv
-readonly SNOWPATH=$(dirname "$0")
+set -o pipefail  # trace ERR through pipes
+set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
 #Logging
 readonly LOGFILE=/tmp/snow-install.log
