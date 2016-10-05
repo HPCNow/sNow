@@ -8,7 +8,7 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
 #Logging
-readonly LOGFILE=/tmp/snow-install.log
+readonly LOGFILE=/sNow/log/snow.log
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow
@@ -28,8 +28,6 @@ readonly opt4=$4
 readonly opt5=$5
 declare -A CLUSTERS
 HAS_EE=false
-#logsetup
-echo "\n\n"
 
 if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
@@ -38,6 +36,7 @@ fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
+    logsetup
     get_os_distro
     architecture_identification
 fi
