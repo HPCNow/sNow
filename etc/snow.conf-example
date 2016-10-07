@@ -9,6 +9,7 @@ SNOW_HOME=$SNOW_PATH/home
 SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_TOOL=$SNOW_PATH/snow-tools
+LOGFILE=/sNow/log/snow.log
 # Destination of the sNow! domains OS images
 SNOWVG=snow_vg
 IMG_DST='lvm=snow_vg'

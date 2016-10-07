@@ -37,6 +37,12 @@ function info_msg()
     printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "I" "${i_msg}" 1>&3
 }
 
+function print_msg()
+{
+    local msg="${1}"
+    echo $msg | tee /dev/fd/3
+}
+
 function logsetup()
 {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
@@ -602,8 +608,8 @@ function list_templates()
     local templates_avail=$(ls -1 ${templates_path}//*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
     for template in ${templates_avail}; do
         local template_desc=${templates_path}/${template}/${template}.desc
-        echo "$template"
-        cat ${template_desc}
+        print_msg "$template"
+        cat ${template_desc} | tee /dev/fd/3
     done
 }
 
@@ -806,12 +812,12 @@ function clone()
 
 function list()
 {
-    xl list $opt2
+    xl list $opt2 | tee /dev/fd/3
 }
 
 function avail_domains()
 {
-    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains
+    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
 }
 
 function check_host_status()
