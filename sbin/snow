@@ -20,7 +20,6 @@ readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
 readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
 readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
-readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 readonly opt1=$1
 readonly opt2=$2
 readonly opt3=$3
@@ -39,6 +38,10 @@ if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     logsetup
     get_os_distro
     architecture_identification
+fi
+
+if [[ -f ${SNOW_DOMAINS} ]]; then
+    readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
 fi
 
 if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
