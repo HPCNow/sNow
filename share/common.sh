@@ -420,7 +420,8 @@ function init()
     # sNow! Domains configuration table
     if [[ ! -f ${SNOW_CONF}/system_files/etc/domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
-    elif [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
+    fi
+    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
              -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
