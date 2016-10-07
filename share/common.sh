@@ -3,12 +3,16 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+trap "error_exit 'Received signal SIGHUP'" SIGHUP
+trap "error_exit 'Received signal SIGINT'" SIGINT
+trap "error_exit 'Received signal SIGTERM'" SIGTERM
 
 function error_exit()
 {
     local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
     tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&2
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&3
+    sig=1
     exit 1
 }
 
@@ -16,28 +20,29 @@ function error_msg()
 {
     local e_msg="${1}"
     tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&2
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&3
 }
 
 function warning_msg()
 {
     local w_msg="${1}"
     tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n\n" "W" "${w_msg}" 1>&2
+    printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n\n" "W" "${w_msg}" 1>&3
 }
 
 function info_msg()
 {
     local i_msg="${1}"
     tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n\n" "I" "${i_msg}" 1>&2
+    printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n\n" "I" "${i_msg}" 1>&3
 }
 
 function logsetup()
 {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
-    exec > >(tee -a $LOGFILE)
-    exec 2>&1
+    #exec > >(tee -a $LOGFILE)
+    #exec 3>&1
+    exec 3>&1 1>>${LOGFILE} 2>&1
 }
 
 function log()
@@ -53,7 +58,7 @@ function spinner()
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
         tput cuu 1 && tput el
-        printf "\r\e[0K[\e[0;32m%c\e[m] %s\n" "$spinstr" "$2" 
+        printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3 
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
     done
@@ -63,10 +68,10 @@ function error_check()
 {
     local status=$1
     tput cuu 1 && tput el
-    if [ $status -eq 0 ]; then
-        printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+    if [ $status -eq 0 ] || [ $sig -ne 1 ]; then
+        printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK" 1>&3
     else
-        printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
+        printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL" 1>&3
     fi
 }
 
@@ -148,23 +153,25 @@ fi
 
 function download() 
 {
+    download_url=$1
+    download_path=$2
     case $DOWNLD in
         axel) 
-            axel -q -n 10 $1 -o $2 
+            axel -q -n 10 ${download_url} -o ${download_path} 
         ;;
         wget)
-            wget -q -P $2 $1
+            wget -q -P ${download_path} ${download_url}
         ;;
         *) 
             error_exit "Error: $DOWNLD is not supported"
         ;;
     esac
-}
+} 1>>$LOGFILE 2>&1
 
 function bkp()
 {
-    bkpfile=$1
-    next=$(date +%Y%m%d%H%M)
+    local bkpfile=$1
+    local next=$(date +%Y%m%d%H%M)
     if [[ -e $bkpfile ]]; then 
         cp -pr $bkpfile $bkpfile.$next-snow
     fi
@@ -178,25 +185,24 @@ function hex()
 
 function architecture_identification() 
 {
-    cpudec=$(lscpu | grep "Model:" | gawk '{print $2}')
-    cpuhex=$(hex $cpudec)
-    architecture=$(grep $cpuhex ${SNOW_TOOL}/etc/cpu-id-map.conf | gawk '{print $2}')
+    local cpudec=$(lscpu | grep "Model:" | gawk '{print $2}')
+    local cpuhex=$(hex $cpudec)
+    local architecture=$(grep $cpuhex ${SNOW_TOOL}/etc/cpu-id-map.conf | gawk '{print $2}')
     if [ -z $architecture ]; then
-        warning_msg "Your CPU model is not recognised. Please consider to add it in the  
-        ${SNOW_TOOL}/etc/cpu-id-map.conf and report it to sNow! development Team"
+        warning_msg "Your CPU model is not recognised."
+        warning_msg "Consider to extend the following file: ${SNOW_TOOL}/etc/cpu-id-map.conf"
     else
         export ARCHITECTURE=$architecture
     fi
-}
+} 1>>$LOGFILE 2>&1
 
 function is_golden_node()
 {
     # Returns 0 if this node is a golden node
-    gn=1
-    for i in "${GOLDEN_NODES[@]}"
-    do
+    local gn=1
+    for i in "${GOLDEN_NODES[@]}"; do 
         if [[ "$(hostname -s)" == "$i" ]]; then 
-            gn=0
+            local gn=0
         fi
     done
     return $gn
@@ -205,8 +211,8 @@ function is_golden_node()
 function get_os_distro()
 {
     # OS release and Service pack discovery 
-    lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+    local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+    local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
     # Special case redhatenterpriseserver
     if [ "${lsb_dist}" = "redhatenterpriseserver" ]; then
         lsb_dist='redhat'
@@ -224,7 +230,7 @@ function get_os_distro()
 
 function add_repo()
 {
-    repo=$1
+    local repo=$1
     case $OS in
         debian|ubuntu)
             wget -P /etc/apt/sources.list.d/ $repo
@@ -236,11 +242,11 @@ function add_repo()
             zypper --gpg-auto-import-keys ar $repo
         ;;
    esac
-}
+} 1>>$LOGFILE 2>&1
 
 function add_repos()
 {
-    repos=$1
+    local repos=$1
     for repo in $(cat $repos); do
         if [[ ! -z $repo ]]; then
             add_repo $repo
@@ -251,7 +257,7 @@ function add_repos()
 
 function install_software()
 {
-    pkgs=$1
+    local pkgs=$1
     case $OS in
         debian|ubuntu)
             INSTALLER="apt-get -y install"
@@ -273,9 +279,9 @@ function install_software()
 
 function prefix_to_bit_netmask() 
 {
-    prefix=$1;
-    shift=$(( 32 - prefix ));
-    bitmask=""
+    local prefix=$1;
+    local shift=$(( 32 - prefix ));
+    local bitmask=""
     for (( i=0; i < 32; i++ )); do
         num=0
         if [ $i -lt $prefix ]; then
@@ -292,8 +298,8 @@ function prefix_to_bit_netmask()
 
 function bit_netmask_to_wildcard_netmask()
 {
-    bitmask=$1;
-    wildcard_mask=
+    local bitmask=$1;
+    local wildcard_mask=
     for octet in $bitmask; do
         wildcard_mask="${wildcard_mask} $(( 255 - 2#$octet ))"
     done
@@ -302,7 +308,7 @@ function bit_netmask_to_wildcard_netmask()
 
 function mask2cidr()
 {
-    nbits=0
+    local nbits=0
     IFS=.
     for dec in $1 ; do
         case $dec in
@@ -323,18 +329,18 @@ function mask2cidr()
 
 function generate_hostlist()
 {
-    ip=$1
-    host_extension=$2
-    net=$(echo $ip | cut -d '/' -f 1);
-    prefix=$(echo $ip | cut -d '/' -f 2);
+    local ip=$1
+    local host_extension=$2
+    local net=$(echo $ip | cut -d '/' -f 1);
+    local prefix=$(echo $ip | cut -d '/' -f 2);
     if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
     fi
-    bit_netmask=$(prefix_to_bit_netmask $cidr);
-    wildcard_mask=$(bit_netmask_to_wildcard_netmask "$bit_netmask");
-    str=
+    local bit_netmask=$(prefix_to_bit_netmask $cidr);
+    local wildcard_mask=$(bit_netmask_to_wildcard_netmask "$bit_netmask");
+    local str=
     for (( i = 1; i <= 4; i++ )); do
         range=$(echo $net | cut -d '.' -f $i)
         mask_octet=$(echo $wildcard_mask | cut -d ' ' -f $i)
@@ -343,8 +349,8 @@ function generate_hostlist()
         fi
         str="${str} $range"
     done
-    ips=$(echo $str | sed "s, ,\\.,g"); 
-    hostip=( $(eval echo $ips | tr ' ' '\n') )
+    local ips=$(echo $str | sed "s, ,\\.,g"); 
+    local hostip=( $(eval echo $ips | tr ' ' '\n') )
     if (( "${#host[@]}" > "${#hostip[@]}" )); then
         error_exit "Error: the /etc/hosts can NOT be generated because the IP rank is too short!"
     fi
@@ -517,7 +523,7 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use force option to overwrite the domain"
+            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain"
         else
             FORCE="--force"
         fi
@@ -624,7 +630,7 @@ function deploy()
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
-            echo "Deploying node : $NPREFIX{} ... Please wait" \; \
+            info_msg "Deploying node : $NPREFIX{} ... Please wait" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
             sleep 5 \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
