@@ -110,13 +110,13 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         mkdir $SNOW_CONF
     fi
     cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
-    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
-    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg} 
-    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
-    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
-    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
-    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
-    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/{*.xml,*.cfg}
+    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
+    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/*
     for i in $(ls -1 $SNOW_CONF/boot/templates/ | grep "-default"); do
         sed -i "s|__DEFAULT_TEMPLATE__|$i|g" $SNOW_CONF/boot/templates/$i/* $SNOW_CONF/boot/templates/$i/first_boot/*
     done

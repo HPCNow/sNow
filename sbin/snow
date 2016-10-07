@@ -8,7 +8,7 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
 #Logging
-readonly LOGFILE=/sNow/log/snow.log
+#readonly LOGFILE=/sNow/log/snow.log
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow

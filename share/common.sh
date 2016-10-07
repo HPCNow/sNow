@@ -10,8 +10,8 @@ trap "error_exit 'Received signal SIGTERM'" SIGTERM
 function error_exit()
 {
     local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
-    tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&3
+    #tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&3
     sig=1
     exit 1
 }
@@ -19,22 +19,28 @@ function error_exit()
 function error_msg()
 {
     local e_msg="${1}"
-    tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n\n" "E" "${e_msg}" 1>&3
+    #tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&3
 }
 
 function warning_msg()
 {
     local w_msg="${1}"
-    tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n\n" "W" "${w_msg}" 1>&3
+    #tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n" "W" "${w_msg}" 1>&3
 }
 
 function info_msg()
 {
     local i_msg="${1}"
-    tput cuu 1 && tput el
-    printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n\n" "I" "${i_msg}" 1>&3
+    #tput cuu 1 && tput el
+    printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "I" "${i_msg}" 1>&3
+}
+
+function print_msg()
+{
+    local msg="${1}"
+    echo $msg | tee /dev/fd/3
 }
 
 function logsetup()
@@ -57,7 +63,7 @@ function spinner()
     local spinstr='|/-\'
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
-        tput cuu 1 && tput el
+        #tput cuu 1 && tput el
         printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3 
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
@@ -67,7 +73,7 @@ function spinner()
 function error_check()
 {
     local status=$1
-    tput cuu 1 && tput el
+    #tput cuu 1 && tput el
     if [ $status -eq 0 ] || [ $sig -ne 1 ]; then
         printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK" 1>&3
     else
@@ -602,8 +608,8 @@ function list_templates()
     local templates_avail=$(ls -1 ${templates_path}//*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
     for template in ${templates_avail}; do
         local template_desc=${templates_path}/${template}/${template}.desc
-        echo "$template"
-        cat ${template_desc}
+        print_msg "$template"
+        cat ${template_desc} | tee /dev/fd/3
     done
 }
 
@@ -806,12 +812,12 @@ function clone()
 
 function list()
 {
-    xl list $opt2
+    xl list $opt2 | tee /dev/fd/3
 }
 
 function avail_domains()
 {
-    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains
+    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
 }
 
 function check_host_status()
