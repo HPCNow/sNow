@@ -23,7 +23,7 @@
 #
 #    salloc -n1 srun --x11 --pty bash
 
-source /sNow/snow-utils/etc/snow.env
+source /sNow/snow-utils/etc/slurm.env
 
 # The srun options have been defined in the slurm.conf with :
 # SallocDefaultCommand="srun -n1 -N1 --mem-per-cpu=0 --pty --preserve-env --mpi=none $SHELL"
