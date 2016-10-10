@@ -13,6 +13,7 @@ function install_easybuild()
             cd $SNOW_SOFT
             curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
             su - $sNow_USER -c "python $SNOW_SOFT/bootstrap_eb.py $SNOW_SOFT"
+            su - $sNow_USER -c "mkdir -p $SNOW_SOFT/log/tmp $SNOW_SOFT/jobs"
         fi
     fi
 } 1>>$LOGFILE 2>&1
