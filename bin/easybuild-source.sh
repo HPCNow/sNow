@@ -5,9 +5,9 @@
 #set -xv
 
 # The root user will not load this user environment
-if [[ $(id -u) -eq 0 ]] ; then
-    return
-fi
+#if [[ $(id -u) -eq 0 ]] ; then
+#    exit # return
+#fi
 
 SNOW_PATH=/sNow
 SNOW_HOME=$SNOW_PATH/home

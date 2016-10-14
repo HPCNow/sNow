@@ -97,6 +97,7 @@ function shelp()
         * update tools                      | updates the sNow! Tools 
         * update configspace                | updates configuration files from private git 
         * update template                   | updates the sNow! image used to create new domains
+        * update firewall                   | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
         * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
         * remove <domain>                   | removes an existing domain deployed with sNow!
@@ -501,6 +502,100 @@ else
     git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
 } 1>>$LOGFILE 2>&1
+
+function update_firewall()
+{
+    pub_nic=${NET_PUB[0]}
+    pub_mac=$(ip -f link addr show ${pub_nic} | gawk '{if($0 ~ /ether/){print $2}}')
+    if [[ -z $pub_mac ]]; then
+        error_exit "Your system do not have public network, so the firewall can not be setup"
+    else
+        bkp /etc/ufw/before.rules
+        if [[ ! -e /etc/ufw/before.rules.orig ]]; then
+            cp -p /etc/ufw/before.rules /etc/ufw/before.rules.orig
+            systemctl enable ufw
+        fi
+        # Include the first part of the original rules files
+        gawk 'BEGIN{dump=1}
+            {
+                if($0 ~ /#   ufw-before-forward/){
+                    dump=0
+                }
+                if(dump == "1"){
+                    print $0
+                }
+            }' /etc/ufw/before.rules.orig > /etc/ufw/before.rules
+        sed -i "s|DEFAULT_FORWARD_POLICY=\"DROP\"|DEFAULT_FORWARD_POLICY=\"ACCEPT\"|g" /etc/default/ufw
+        sed -i "s|#net/ipv4/ip_forward=1|net/ipv4/ip_forward=1|g" /etc/ufw/sysctl.conf
+        echo "*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]" >> /etc/ufw/before.rules
+
+        # Apply DNAT rules defined per role in $SNOW_TOOLS/etc/dmz_portmap.conf
+        gawk -v pub_nic=${pub_nic} 'FNR==NR{
+            if($0 !~ /^#/){
+                if($2 ~ /,/){
+                    n=split($2,a,",")
+                    for (i =0; ++i <=n;){
+                        role=a[i]
+                        ip[role]=$10
+                    }
+                }
+                else{
+                    ip[$2]=$10
+                }
+            }
+            next
+        }
+        {
+            if($0 !~ /^#/){
+                if(ip[$4] != ""){
+                printf "-A PREROUTING -p "$1" -i "pub_nic" --dport "$2" -j DNAT --to "ip[$4]":"$3"\n"
+                }
+            }
+        }' $SNOW_TOOL/etc/domains.conf $SNOW_TOOL/etc/dmz_portmap.conf >> /etc/ufw/before.rules
+
+        # Add gateway rules
+        echo "-A POSTROUTING -s ${NET_SNOW[2]}/${NET_SNOW[3]} -d ${NET_SNOW[2]}/${NET_SNOW[3]} -j ACCEPT" >> /etc/ufw/before.rules
+        echo "-A POSTROUTING -s ${NET_SNOW[2]}/${NET_SNOW[3]} -o ${pub_nic} -j MASQUERADE" >> /etc/ufw/before.rules
+        echo "COMMIT" >> /etc/ufw/before.rules
+
+        # Include the rest of the rules in the original file
+        gawk '
+        BEGIN{dump=0}
+        {
+            if($0 ~ /#   ufw-before-forward/){
+                dump=1
+            }
+            if(dump == "1"){
+                print $0
+            }
+        }' /etc/ufw/before.rules.orig >> /etc/ufw/before.rules
+
+        # Open the ports related with deployed sNow! services
+        gawk 'BEGIN{
+            print "[sNow]\ntitle=sNow Services\ndescription=sNow Services"
+            ports["tcp"]=""
+            ports["udp"]=""
+        }
+        {
+            if($0 !~ /^#/){
+                ports[$1]=ports[$1]","$2
+            }
+        }
+        END{
+            if(ports["udp"] != ""){
+                ports["udp"]=ports["udp"]"/udp"
+            }
+            if(ports["tcp"] != ""){
+                ports["tcp"]="22"ports["tcp"]"/tcp"
+            }
+            print "ports="ports["tcp"] ports["udp"]
+        }' $SNOW_TOOL/etc/dmz_portmap.conf > /etc/ufw/applications.d/ufw-snow
+
+        ufw allow sNow
+        #ufw disable
+        #ufw --force enable
+    fi
+}
 
 function update_xen_image()
 {

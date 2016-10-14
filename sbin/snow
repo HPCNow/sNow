@@ -65,6 +65,9 @@ case $opt1 in
     ;;
     update)
         case $opt2 in
+            firewall)
+                update_firewall
+            ;;
             tools)
                 update_tools
             ;;
@@ -76,7 +79,7 @@ case $opt1 in
                 spinner $!             "Updating sNow! image "
             ;;
             *)
-                error_msg "Update available options : update_tools, configspace, snow_template"
+                error_msg "Update available options : firewall, tools, configspace, template"
             ;;
         esac
     ;;
