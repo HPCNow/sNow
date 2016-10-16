@@ -74,7 +74,7 @@ function error_check()
 {
     local status=$1
     #tput cuu 1 && tput el
-    if [ $status -eq 0 ] || [ $sig -ne 1 ]; then
+    if [[ "$status" == "0" || "$sig" != "1" ]]; then
         printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK" 1>&3
     else
         printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL" 1>&3
