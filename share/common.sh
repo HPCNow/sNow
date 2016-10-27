@@ -99,7 +99,6 @@ function shelp()
         * update template                   | updates the sNow! image used to create new domains
         * update firewall                   | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
-        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
         * remove <domain>                   | removes an existing domain deployed with sNow!
         * list <all>                        | list current domains (services) and their status
         * boot <domain|server> <image>      | boot specific domain or server with optional image
@@ -112,16 +111,14 @@ function shelp()
         * reset <domain|server>             | force to reboot specific domain or server
         * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
         * console <domain|server>           | console access to specific domain or server
-        * uptime <domain|sever>             | shows uptime of specific domain or server
-        * cmd <domain|sever> <command>      | executes a command in the domain(s) or server(s)
 
     Examples:
 
         snow update tools
         snow deploy ldap01
-        snow cmd n[001-999] uname
 EOF
 }
+#        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
 
 function end_msg()
 {
@@ -450,7 +447,7 @@ function init()
     done
     bkp /etc/hosts
     generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
-    generate_hostlist ${NET_IPMI[2]}100/${NET_IPMI[3]} "${NET_IPMI[4]}" >> /etc/hosts
+    generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> /etc/hosts
     generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> /etc/hosts
     cp -p /etc/hosts ${SNOW_CONF}/system_files/etc/hosts 
 
@@ -729,24 +726,24 @@ function deploy()
         fi
         if (( $NLENG > 0 )); then
             info_msg "Deploying node range $1 ... This will take a while, Please wait"
-            #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_IPMI[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+            #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
             info_msg "Deploying node : $NPREFIX{} ... Please wait" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
             sleep 5 \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
             sleep $BLOCKD \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             sleep $BOOT_DELAY
             info_msg "Setting up disk as boot device... Please wait"
             boot_copy ${default_boot_pxe}
         else
-            check_host_status $1${NET_IPMI[4]}
+            check_host_status $1${NET_MGMT[4]}
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
             sleep 5
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
             info_msg "Deploying node : $1 ... Please wait"
             sleep $BOOT_DELAY
             cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
@@ -898,7 +895,7 @@ function clone()
             warning_msg "This will clone $node and generate the image $image."
         fi
         get_server_distribution $node
-        check_host_status ${node}${NET_IPMI[4]}
+        check_host_status ${node}${NET_MGMT[4]}
         generate_pxe_image $image
     else
         ssh $node $0 clone $@
@@ -952,13 +949,13 @@ function boot()
         fi
         if (( $NLENG > 1 )); then
             parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_IPMI[4]}" \; \
+            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             sleep $BLOCKD \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power on \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
-            check_host_status $1${NET_IPMI[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power on
+            check_host_status $1${NET_MGMT[4]}
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
         fi
     fi
 }
@@ -1052,12 +1049,12 @@ function ndestroy()
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 1 )); then
             parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_IPMI[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power off \
+            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power off \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_IPMI[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power off
+            check_host_status $1${NET_MGMT[4]}
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power off
         fi
     fi
 }
@@ -1076,12 +1073,12 @@ function npoweroff()
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 1 )); then
             parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_IPMI[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power soft \
+            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power soft \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_IPMI[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power soft
+            check_host_status $1${NET_MGMT[4]}
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power soft
         fi
     fi
 }
@@ -1108,12 +1105,12 @@ function nreset()
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 1 )); then
             parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_IPMI[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_IPMI[4]}" -U $IPMIUSER -P $IPMIPWD power reset \
+            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
+            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_IPMI[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            check_host_status $1${NET_MGMT[4]}
+            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
         fi
     fi
 }
@@ -1136,10 +1133,10 @@ function nconsole()
     if (($IS_VM)) ; then
         xl console $1
     else
-        check_host_status $1${NET_IPMI[4]}
-        ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD sol deactivate
+        check_host_status $1${NET_MGMT[4]}
+        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1${NET_IPMI[4]} -U $IPMIUSER -P $IPMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol activate
     fi
 }
 
