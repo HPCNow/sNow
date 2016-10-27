@@ -4,11 +4,9 @@
 snow01		snow
 ldap01		ldap-master
 slurm01		slurmctld-master
-slurm02		slurmctld-master
 monitor01	monitor
 syslog01	syslog
 login01		login,cfs
-login02		login,cfs
 slurmdb01	slurmdbd
 proxy01     proxy
 deploy01	deploy
