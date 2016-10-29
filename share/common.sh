@@ -10,7 +10,6 @@ trap "error_exit 'Received signal SIGTERM'" SIGTERM
 function error_exit()
 {
     local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
-    #tput cuu 1 && tput el
     printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&3
     sig=1
     exit 1
@@ -19,21 +18,18 @@ function error_exit()
 function error_msg()
 {
     local e_msg="${1}"
-    #tput cuu 1 && tput el
     printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&3
 }
 
 function warning_msg()
 {
     local w_msg="${1}"
-    #tput cuu 1 && tput el
     printf "\r\e[0K[\e[0;38;5;208m%c\e[m] %s \e[0;32m\e[m \n" "W" "${w_msg}" 1>&3
 }
 
 function info_msg()
 {
     local i_msg="${1}"
-    #tput cuu 1 && tput el
     printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m\e[m \n" "I" "${i_msg}" 1>&3
 }
 
@@ -46,8 +42,6 @@ function print_msg()
 function logsetup()
 {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
-    #exec > >(tee -a $LOGFILE)
-    #exec 3>&1
     exec 3>&1 1>>${LOGFILE} 2>&1
 }
 
@@ -63,8 +57,9 @@ function spinner()
     local spinstr='|/-\'
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
-        #tput cuu 1 && tput el
-        printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3 
+        if [[ "$sig" != "1" ]]; then
+            printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3 
+        fi
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
     done
@@ -73,8 +68,7 @@ function spinner()
 function error_check()
 {
     local status=$1
-    #tput cuu 1 && tput el
-    if [[ "$status" == "0" || "$sig" != "1" ]]; then
+    if [[ "$status" == "0" ]]; then
         printf "\r\e[0K[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK" 1>&3
     else
         printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL" 1>&3
@@ -654,7 +648,10 @@ function xen_create()
         }
         END{
         system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password="pwd " "force" "img_dst)
-        }' || error_exit "ERROR: unable to install the domain, please report the issue to HPCNow!"
+        }' 
+    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+        error_exit "Unable to install the domain, please report the issue to HPCNow!"
+    fi
     second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' ${SNOW_DOMAINS}) 
     if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/$opt2.cfg ]]; then 
         guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
@@ -947,7 +944,7 @@ function boot()
                 warning_msg "The domain $1 is already runnning"
             fi
         else
-            error_msg "The domain $1 needs to be deployed first: Execute : snow deploy $1"
+            error_exit "The domain $1 needs to be deployed first: Execute : snow deploy $1"
         fi
     else
         node_rank $1
