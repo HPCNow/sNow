@@ -17,11 +17,9 @@ IMG_DST='lvm=snow_vg'
 #IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
 # Nodes that compose the HA sNow! cluster
 SNOWNODES=( snow01 )
-SSHPORT=22
 # Admin users setup
 ADMIN_USERS="root snow"
 ADMIN_GROUPS="root snow"
-SMAIL=support@hpcnow.com
 MASTERPWD='HPCN0w!!'
 sNow_GID=2000
 sNow_GROUP=snow
@@ -36,9 +34,9 @@ HPCNow_USER=hpcnow
 # Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
 NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
 NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
-NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.240.0' '' )
-NET_IPMI=( 'xipmi0' '10.0.0.1' '10.0.0.' '255.255.240.0' '-ipmi' )
-NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
+NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' '' )
+NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.0.' '255.255.255.0' '-mgmt' )
+NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.255.0' '-ib' )
 # IPMI / BMC Setup
 IPMITYPE=lanplus
 IPMIUSER=admin
