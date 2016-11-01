@@ -76,7 +76,7 @@ dhcp-option=15,$DOMAIN
 # Broadcast Address
 # dhcp-option=28,__BROADCAST__
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=${NET_SNOW[2]}100,${NET_SNOW[3]},infinite
+dhcp-range=$DHCP_NIC,${NET_SNOW[2]}0,static,infinite
 dhcp-boot=pxelinux.0
 enable-tftp
 tftp-root=/srv/tftp
