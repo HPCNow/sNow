@@ -1,4 +1,4 @@
-# Here you can define the role to be deployed in tyour domains
+# Here you can define the role to be deployed in your domains
 # The role name MUST match with the bash script located in the following path
 #    /sNow/snow-tools/etc/role.d/[role-name]
 snow01		snow

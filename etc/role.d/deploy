@@ -44,14 +44,14 @@ chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} systemimager-server simple-state-manager
 
 # Install KickStart (RedHat and CentOS Based) 
-CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
-wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
-wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
-chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
-chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
-
+#CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
+#wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+#wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
+#chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+#chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
+#chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
+#chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
+#
 # Setup TFTP
 echo "$NFS_SERVER:$SNOW_CONF/boot/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
@@ -117,7 +117,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
     sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
     sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
     sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/*
-    for i in $(ls -1 $SNOW_CONF/boot/templates/ | grep "-default"); do
+    for i in $(ls -1 $SNOW_CONF/boot/templates/ | grep "\-default"); do
         sed -i "s|__DEFAULT_TEMPLATE__|$i|g" $SNOW_CONF/boot/templates/$i/* $SNOW_CONF/boot/templates/$i/first_boot/*
     done
 fi

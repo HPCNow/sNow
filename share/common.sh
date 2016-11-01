@@ -42,6 +42,7 @@ function print_msg()
 function logsetup()
 {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
 }
 
@@ -77,7 +78,7 @@ function error_check()
 
 function shelp()
 {
-    cat <<- EOF 
+    echo " 
     This is the sNow! Command Line Interface
     Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
     For more information, visit the official website : www.hpcnow.com
@@ -110,13 +111,13 @@ function shelp()
 
         snow update tools
         snow deploy ldap01
-EOF
+    " 1>&3
 }
 #        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
 
 function end_msg()
 {
-    cat <<- EOF 
+    echo " 
     --------------------------------------------------------------------------
 
     ███████╗███╗   ██╗ ██████╗ ██╗    ██╗██╗
@@ -135,7 +136,7 @@ function end_msg()
     Some changes may require to reboot the system. Please, consider to do it 
     before to move it into production.
     --------------------------------------------------------------------------
-EOF
+    " 1>&3
 }
 
 function config()
@@ -171,7 +172,7 @@ function bkp()
     local bkpfile=$1
     local next=$(date +%Y%m%d%H%M)
     if [[ -e $bkpfile ]]; then 
-        cp -pr $bkpfile $bkpfile.$next-snow
+        cp -pr $bkpfile $bkpfile.$next-snowbkp
     fi
 }
 
@@ -350,11 +351,11 @@ function generate_hostlist()
     local ips=$(echo $str | sed "s, ,\\.,g"); 
     local hostip=( $(eval echo $ips | tr ' ' '\n') )
     if (( "${#host[@]}" > "${#hostip[@]}" )); then
-        error_exit "Error: the /etc/hosts can NOT be generated because the IP rank is too short!"
+        error_exit "The /etc/hosts can NOT be generated because the IP rank is too short! ($ip/$cidr)"
     fi
     for (( i=0; i<${#host[@]}; i++ ));
     do 
-        printf "%s %20s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+        printf "%20s %40s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
 
@@ -362,7 +363,7 @@ function generate_hostlist()
 function init()
 {
     # Check for snow.conf
-    if [[ ! -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
+    if [[ -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
     elif [[ -f ${SNOW_TOOL}/etc/snow.conf ]]; then
         mv ${SNOW_TOOL}/etc/snow.conf ${SNOW_CONF}/system_files/etc/snow.conf
@@ -371,7 +372,7 @@ function init()
         error_exit "The snow.conf is not yet available."
     fi
     # Check for active-domains.conf 
-    if [[ ! -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
+    if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
     elif [[ -f ${SNOW_TOOL}/etc/active-domains.conf ]]; then
         mv ${SNOW_TOOL}/etc/active-domains.conf ${SNOW_CONF}/system_files/etc/active-domains.conf
@@ -643,11 +644,11 @@ function xen_create()
     if [[ -n "$IMG_DST" ]]; then
         IMG_DST_OPT="--${IMG_DST}"
     fi 
-    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst=$IMG_DST_OPT -v pwd=$MASTERPWD '{
+    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTERPWD" '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password="pwd " "force" "img_dst)
+        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
         }' 
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"

@@ -5,7 +5,7 @@
 #########################################################################################
 NFS_SERVER=snow01
 SNOW_PATH=/sNow
-SNOW_HOME=$SNOW_PATH/home
+SNOW_HOME=/home
 SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_TOOL=$SNOW_PATH/snow-tools
@@ -84,7 +84,7 @@ DHCP_NIC=eth0
 # Shared Filesystem Support
 # NFS Clients
 MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
-MOUNT_NFS[2]="$NFS_SERVER:/sNow/home   /home   nfs    defaults 0 0"
+MOUNT_NFS[2]="$NFS_SERVER:/home        /home   nfs    defaults 0 0"
 # BeeGFS Clients
 #BEEGFSMGMT=beegfs-01
 #BEEGFS_VERSION=2015.03
@@ -104,7 +104,7 @@ SLURMDBD_PWD=whatever
 MUNGE_UID=994
 MUNGE_GID=994
 # Slurmctl master
-SLURMVERSION=15.8.2
+#SLURMVERSION=15.8.2
 SLURM_CONF=/etc/slurm/slurm.conf
 SLURM_GID=995
 SLURM_UID=995
