@@ -3,8 +3,6 @@
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
 SNOW_PATH=/sNow
-SNOW_HOME=$SNOW_PATH/home
-SNOW_SOFT=$SNOW_PATH/easybuild
 SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_TOOL=$SNOW_PATH/snow-tools
 

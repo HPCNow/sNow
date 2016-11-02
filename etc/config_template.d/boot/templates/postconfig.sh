@@ -4,16 +4,13 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 
 #set -xv
-
+set -o pipefail  # trace ERR through pipes
+set -o errtrace  # trace ERR through 'time command' and other functions
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
 SNOW_PATH=/sNow
-SNOW_HOME=$SNOW_PATH/home
-SNOW_SOFT=$SNOW_PATH/easybuild
-SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_TOOL=$SNOW_PATH/snow-tools
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
-echo "\n\n"
 
 if [[ -f ${CONFIG_FILE} ]]; then
     echo "Loading sNow! configuration ..."
@@ -23,7 +20,10 @@ else
 fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    LOGFILE=/root/post-install.log
+    RETAIN_NUM_LINES=10
     source ${SNOW_TOOL}/share/common.sh
+    logsetup
     get_os_distro
     architecture_identification
 fi
@@ -38,11 +38,8 @@ else
     echo "Config file not found"
 fi
 
-LOGFILE=/root/post-install.log
-RETAIN_NUM_LINES=10
 LAST_WORKER_INDEX=$(($WORKER_COUNT - 1))
 
-#logsetup
 function setup_software()
 {
     PKG_LIST=${TEMPLATE_PATH}/packages

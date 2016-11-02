@@ -15,24 +15,23 @@ function install_slurm_client()
         ;;
         rhel|redhat|centos)
             sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/sysconfig/selinux 
-            chkconfig iptables off
-            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
+            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm slurm-devel slurm-lua slurm-munge slurm-pam_slurm slurm-plugins"
         ;;
         suse|sle[sd]|opensuse)
-            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm-client slurm-munge"
+            pkgs="munge ncurses gtk2 rrdtool libcgroup hwloc lua numactl hdf5 perl-DBI perl-Switch slurm slurm-devel slurm-lua slurm-munge slurm-pam_slurm slurm-plugins"
         ;;
         *)
             warning_msg "This distribution is not supported."
         ;;
     esac
-    install_software $pkgs
+    install_software "$pkgs"
     cp -p $SNOW_CONF/system_files/etc/munge/munge.key /etc/munge/munge.key
     chown -R munge:munge /etc/munge
     chmod 600 /etc/munge/munge.key
     systemctl enable munge.service
     systemctl start munge.service
+    mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     cp -pr $SNOW_CONF/system_files/etc/slurm/* /etc/slurm/
-    mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     systemctl enable slurmd.service
     systemctl start slurmd.service
@@ -42,7 +41,7 @@ function setup_workload_client()
 {
     #Slurm Workload Manager
     if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
-        install_slurm
+        install_slurm_client
     fi
 }
 

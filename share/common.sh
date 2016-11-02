@@ -142,11 +142,11 @@ function end_msg()
 function config()
 {
 if [[ ! -f ${SNOW_DOMAINS} ]]; then
-    echo "No ${SNOW_DOMAINS} found"
+    error_msg "No ${SNOW_DOMAINS} found"
 else
-    cat ${SNOW_PATH}/snow-tools/etc/snow.conf
-    echo "==== Active Domains ===="
-    cat ${SNOW_PATH}/snow-tools/etc/active-domains.conf | grep -v "^#" |  gawk '{print $0}'
+    cat ${SNOW_PATH}/snow-tools/etc/snow.conf 1>&3
+    echo "==== Active Domains ====" 1>&3
+    cat ${SNOW_PATH}/snow-tools/etc/active-domains.conf | grep -v "^#" |  gawk '{print $0}' 1>&3
 fi
 }
 
@@ -243,12 +243,30 @@ function add_repo()
    esac
 } 1>>$LOGFILE 2>&1
 
+function add_repo_key()
+{
+    local repo_key=$1
+    case $OS in
+        debian|ubuntu)
+            curl -sSL $repo_key | apt-key add - 
+        ;;
+        rhel|redhat|centos)
+            rpm --import $repo_key
+        ;;
+   esac
+} 1>>$LOGFILE 2>&1
+
 function add_repos()
 {
     local repos=$1
-    for repo in $(cat $repos); do
+    for repo in $(cat $repos | gawk '{print $1}'); do
         if [[ ! -z $repo ]]; then
             add_repo $repo
+        fi
+    done
+    for repo_key in $(cat $repos | gawk '{print $2}'); do
+        if [[ ! -z ${repo_key} ]]; then
+            add_repo_key ${repo_key}
         fi
     done
 }
@@ -806,15 +824,17 @@ function hooks()
 {
     local hooks_path=$1
     local hooks=$(ls -1 ${hooks_path}/??-*.sh)
-    for hook in $hooks
-    do
-        if [[ -x "$hook" ]]; then
-            $hook && error_check 0 "Running hook : $hook " || error_check 1 "Running hook error : $hook " &
-            spinner $!             "Running hook : $hook "
-        else
-            warning_msg "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
-        fi
-    done
+    if [[ ! -z $hooks ]]; then
+        for hook in $hooks
+        do
+            if [[ -x "$hook" ]]; then
+                $hook && error_check 0 "Running hook : $hook " || error_check 1 "Running hook error : $hook " &
+                spinner $!             "Running hook : $hook "
+            else
+                warning_msg "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
+            fi
+        done
+    fi
 } 
 
 function first_boot_hooks()
@@ -1140,12 +1160,12 @@ function nconsole()
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
-        xl console $1
+        xl console $1 1>&3
     else
         check_host_status $1${NET_MGMT[4]}
         ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol activate
+        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol activate 1>&3
     fi
 }
 
@@ -1159,9 +1179,9 @@ function nuptime()
 
 # End common functions
 
-# Load additional functions in ${SNOW_TOOL}/etc/common.d
-if [ -d ${SNOW_TOOL}/etc/common.d ]; then
-  for i in ${SNOW_TOOL}/etc/common.d/*.sh; do
+# Load additional functions in ${SNOW_TOOL}/share/common.d
+if [ -d ${SNOW_TOOL}/share/common.d ]; then
+  for i in ${SNOW_TOOL}/share/common.d/*.sh; do
     if [ -r $i ]; then
       source $i
     fi
@@ -1169,9 +1189,9 @@ if [ -d ${SNOW_TOOL}/etc/common.d ]; then
   unset i
 fi
 
-# Load additional functions in ${SNOW_TOOL}/etc/hooks.d
-if [ -d ${SNOW_TOOL}/etc/hooks.d ]; then
-  for i in ${SNOW_TOOL}/etc/hooks.d/*.sh; do
+# Load additional functions in ${SNOW_TOOL}/share/hooks.d
+if [ -d ${SNOW_TOOL}/share/hooks.d ]; then
+  for i in ${SNOW_TOOL}/share/hooks.d/*.sh; do
     if [ -r $i ]; then
       source $i
     fi

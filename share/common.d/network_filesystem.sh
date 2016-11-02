@@ -15,5 +15,6 @@ function setup_networkfs()
                 echo "${MOUNT_NFS[$i]}" >> /etc/fstab
             fi
         done
+        mount -a
     fi
 } 1>>$LOGFILE 2>&1

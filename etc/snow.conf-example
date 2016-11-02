@@ -101,13 +101,13 @@ SLURMDBD_USER=slurm
 SLURMDBD_PWD=whatever
 #SLURMDBD_NAME=slurm_acct_db
 # MUNGE
-MUNGE_UID=994
-MUNGE_GID=994
+MUNGE_UID=20994
+MUNGE_GID=20994
 # Slurmctl master
 #SLURMVERSION=15.8.2
 SLURM_CONF=/etc/slurm/slurm.conf
-SLURM_GID=995
-SLURM_UID=995
+SLURM_GID=20995
+SLURM_UID=20995
 LICENSES=intel*2,matlab*200,fluent*5000
 # Slurm Compute Nodes 
 SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 

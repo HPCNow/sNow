@@ -45,15 +45,15 @@ installDebianPackage ${prefix} systemimager-server simple-state-manager
 
 # Install KickStart (RedHat and CentOS Based) 
 #CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
-#wget $CENTOS_MIRROR/pykickstart-1.99.43.17-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+#wget $CENTOS_MIRROR/pykickstart-1.99.66.6-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.66.6-1.el7.noarch.rpm
 #wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-#chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.43.17-1.el7.noarch.rpm
+#chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.66.6-1.el7.noarch.rpm
 #chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-#chroot ${prefix} /usr/bin/dpkg -i /tmp/pykickstart_1.99.43.17-1.el7_all.deb
-#chroot ${prefix} /usr/bin/dpkg -i /tmp/system-config-kickstart_2.9.2-4.el7_all.deb
+#chroot ${prefix} /usr/bin/dpkg -i /pykickstart_1.99.66.6-1.el7_all.deb
+#chroot ${prefix} /usr/bin/dpkg -i /system-config-kickstart_2.9.2-4.el7_all.deb
 #
 # Setup TFTP
-echo "$NFS_SERVER:$SNOW_CONF/boot/deploy   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
 
 # Install Debian Pressed (Debian and Ubuntu based)
@@ -131,8 +131,9 @@ fi
 # Download linux kernels to boot OS from PXE defined in $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf
 while read line; do 
     download_path=$(echo $line | gawk '{print $2}')
+    download_url=$(echo $line | gawk '{print $1}')
     if [[ ! -e ${download_path} ]]; then
         mkdir -p ${download_path}
     fi
-    download $line
+    download ${download_url} ${download_path}
 done < $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf

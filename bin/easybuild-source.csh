@@ -9,9 +9,7 @@
 #endif
 
 setenv SNOW_PATH "/sNow"
-setenv SNOW_HOME "$SNOW_PATH/home"
 setenv SNOW_SOFT "$SNOW_PATH/easybuild"
-setenv SNOW_CONF "$SNOW_PATH/snow-configspace"
 setenv SNOW_TOOL "$SNOW_PATH/snow-tools"
 setenv LOGFILE   "/dev/null"
 
@@ -33,4 +31,4 @@ setenv EASYBUILD_INSTALLPATH "$EASYBUILD_PREFIX"                        # path t
 setenv EASYBUILD_SOURCEPATH "$SNOW_SOFT/sources"                         # not just the default as shared by all architectures
 setenv EASYBUILD_TMP_LOGDIR "$SNOW_SOFT/tmp"                             # so in shared filesystem not host local
 setenv EASYBUILD_MODULES_TOOL "Lmod"                                    # so EB sees exactly the same modules as users
-setenv MODULEPATH `/usr/share/lmod/lmod/libexec/addto --append MODULEPATH $EASYBUILD_PREFIX/modules/all`
+setenv MODULEPATH `${SNOW_SOFT}/lmod/lmod/libexec/addto --append MODULEPATH $EASYBUILD_PREFIX/modules/all`
