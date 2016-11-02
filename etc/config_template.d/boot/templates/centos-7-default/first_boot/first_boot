@@ -1,0 +1,89 @@
+#!/bin/bash
+#set -xv
+# sNow! paths
+# SNOW_HOME and SNOW_SOFT can be setup in different paths
+SNOW_PATH=/sNow
+SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_TOOL=$SNOW_PATH/snow-tools
+
+if [[ -f /sNow/snow-tools/etc/snow.conf ]]; then
+    echo "Loading sNow! configuration ..."
+    source /sNow/snow-tools/etc/snow.conf
+else
+    echo "sNow! config file NOT found!!!"
+fi
+
+if [[ -f /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config ]]; then
+    echo "Loading __DEFAULT_TEMPLATE__ configuration ..."
+    source /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/config
+else
+    echo "Config file not found"
+fi
+
+LOGFILE=/root/first-boot.log
+RETAIN_NUM_LINES=10
+function logsetup {
+    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    exec > >(tee -a $LOGFILE)
+    exec 2>&1
+}
+
+#logsetup
+        
+function log {
+    echo "[$(date)]: $*" 
+}
+
+spinner()
+{
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf "[\e[0;32m%c\e[m] %s" "$spinstr" "$2" 
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    done
+}
+
+error_check()
+{
+    local status=$1
+    printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+    if [ $status -eq 0 ]; then
+        printf "[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+    else
+        printf "[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
+    fi
+}
+
+hooks()
+{
+    HOOKS=$(ls -1 /sNow/snow-configspace/deploy/postconfig.d/__DEFAULT_TEMPLATE__/first_boot/??-*.sh)
+    for hook in $HOOKS
+    do
+        if [[ -x "$hook" ]]; then
+            $hook && error_check 0 'Running hook : $hook ' || error_check 1 'Running hook error : $hook ' &
+            spinner $!             'Running hook : $hook '
+        else
+            echo "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
+        fi
+    done
+} 
+
+case "$1" in
+  start)
+    hooks
+    systemctl disable first_boot
+	;;
+  stop)
+    systemctl disable first_boot
+	;;
+  *)
+	log_action_msg "Usage: systemctl {start|stop} first_boot" || true
+	exit 1
+esac
+
+exit 0

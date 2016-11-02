@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# This script is a wrapper of EasyBuild command line (eb) that submits a job via Slurm 
+# Workload manager for each architecture
+#
+# * It provides a comprehensive log in order to know who installed what.
+# * It routes the interactive job to a defined partition
+# * It uses an specific account to build and install the applications (UID)
+# In order to run the job as a different user, you will need to setup a similar
+# rule in /etc/sudoers:
+# %admin ALL=(ALL)       /usr/bin/sbatch
+#
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# Based on Alan Orth interactive script
+# URL : https://github.com/alanorth/hpc_infrastructure_scripts/blob/master/slurm/interactive
+#
+source /sNow/snow-utils/etc/slurm.env
+
+# defaults
+if [ $USER != "snow" ] ; then
+   echo "You need to use snow account!"
+   exit 0
+fi
+
+if [ ! -d /sNow/easybuild/log/tmp ]; then
+    mkdir -p /sNow/easybuild/log/tmp
+fi
+
+if [ ! -d /sNow/easybuild/jobs ]; then
+    mkdir -p /sNow/easybuild/jobs
+fi
+
+DEF_NUM_CPUS=8
+DEF_MEM_PER_CPU=4
+DEF_PARTITION=easybuild
+DEF_JOB_NAME=EasyBuild
+DEF_ACCOUNT=snow
+DEF_UID=1000
+DEF_TIME=12:00:00
+DEF_RUNEXEC="eb --tmp-logdir=/sNow/easybuild/log/tmp $@"
+
+######
+ 
+function envsetup() {
+    SBATCH_BIN=/usr/bin/sbatch
+    SBATCH_OPTS="--cpus-per-task=$DEF_NUM_CPUS"
+    SBATCH_OPTS="$SBATCH_OPTS --mem-per-cpu=$(($DEF_MEM_PER_CPU*1024))"
+    SBATCH_OPTS="$SBATCH_OPTS -J $DEF_JOB_NAME"
+    SBATCH_OPTS="$SBATCH_OPTS -A $DEF_ACCOUNT"
+
+    SRUN_BIN="/usr/bin/srun"
+    # add the interactive partition
+    SBATCH_OPTS="$SBATCH_OPTS -p $DEF_PARTITION"
+    # add the snow UID
+    SBATCH_OPTS="$SBATCH_OPTS --uid=$DEF_UID"
+    # add the default time limit
+    SBATCH_OPTS="$SBATCH_OPTS -t $DEF_TIME"
+    # add working directory 
+    SBATCH_OPTS="$SBATCH_OPTS -D /sNow/easybuild/jobs"
+
+    SRUN_OPTS="$DEF_RUNEXEC"
+}
+
+# setup the defaults
+envsetup
+
+echo "$(date)    $(logname)    $SRUN_OPTS $INTERACTIVE_SHELL" >> /sNow/easybuild/log/eb_batch.log 
+echo "---------------------------------------------------"
+echo "EB activity log : /sNow/easybuild/log/eb_batch.log"
+echo "EB tmp logs     : /sNow/easybuild/log/tmp"
+echo "---------------------------------------------------"
+$SBATCH_BIN $SBATCH_OPTS --wrap "$SRUN_BIN $SRUN_OPTS ; /sNow/snow-utils/bin/update_module_index"
+squeue -u snow

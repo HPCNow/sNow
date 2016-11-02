@@ -83,9 +83,9 @@ fi
 
 # LDAP Client Setup
 SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+LDAP_PROTO="${SITE_LDAP_PROTO:-ldap}"
 SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)
 LDAP_SERVER="${SITE_LDAP_SERVER:-$SNOW_LDAP_SERVER}"
-LDAP_PROTO="${SITE_LDAP_PROTO:-ldap}"
 SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
 LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
 LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
@@ -223,10 +223,16 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
 fi
 
 # Secondary Network Interface
-SECONDARY_NIC=$(gawk -v guest=$GUEST_HOSTNAME '{if($2 ~ /guest/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-if  [[ ! -z "$SECONDARY_NIC" ]]; then 
-    gawk -v guest=$GUEST_HOSTNAME '{if($2 ~ /guest/){
+second_nic=$(gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){print $10}}' $SNOW_TOOL/etc/domains.conf)
+if [[ "$second_nic" != "none" && "$second_nic" != "dhcp" ]]; then 
+    gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){
         printf "\n allow-hotplug %s\n auto %s\n iface %s inet static\n    address %s\n    netmask %s\n    gateway %s\n", $9, $9, $9, $10, $13, $14
+        }
+    }' $SNOW_TOOL/etc/domains.conf >> ${prefix}/etc/network/interfaces 
+fi
+if [[ "$second_nic" != "none" && "$second_nic" == "dhcp" ]]; then 
+    gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){
+        printf "\n allow-hotplug %s\n auto %s\n iface %s inet dhcp\n", $9, $9, $9
         }
     }' $SNOW_TOOL/etc/domains.conf >> ${prefix}/etc/network/interfaces 
 fi

@@ -1,0 +1,1 @@
+/sNow/snow-tools/etc/config_template.d/slurm_client/slurm_share_tree.sh
