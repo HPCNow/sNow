@@ -112,6 +112,8 @@ function shelp()
         * reset <domain|server>             | force to reboot specific domain or server
         * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
         * console <domain|server>           | console access to specific domain or server
+        * version                           | shows the version of sNow!
+        * help                              | prints this message
 
     Examples:
 
