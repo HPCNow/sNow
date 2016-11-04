@@ -379,7 +379,7 @@ function generate_hostlist()
     fi
     for (( i=0; i<${#host[@]}; i++ ));
     do 
-        printf "%20s %40s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+        printf "%s  \t  %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
 
