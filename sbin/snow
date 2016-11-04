@@ -7,6 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
+readonly SNOW_VERSION="1.0.0"
 #Logging
 #readonly LOGFILE=/sNow/log/snow.log
 readonly RETAIN_NUM_LINES=10
@@ -41,7 +42,7 @@ if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
 fi
 
 if [[ -f ${SNOW_DOMAINS} ]]; then
-    readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{print $1}' || echo "no gawk")
+    readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{if($2 !~ /^snow$/){print $1}}')
 fi
 
 if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
@@ -181,6 +182,9 @@ case $opt1 in
     uptime)
         nuptime $opt2
     ;;
+    version|-V|-version|--version)
+      msg "sNow! version : ${SNOW_VERSION}"
+      ;;
     help|-help|--help|\?|*)
       shelp
       ;;

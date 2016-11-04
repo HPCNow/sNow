@@ -15,6 +15,12 @@ function error_exit()
     exit 1
 }
 
+function msg()
+{
+    local msg="${1}"
+    echo "${msg}" 1>&3
+}
+
 function error_msg()
 {
     local e_msg="${1}"
@@ -373,7 +379,7 @@ function generate_hostlist()
     fi
     for (( i=0; i<${#host[@]}; i++ ));
     do 
-        printf "%20s %40s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+        printf "%s  \t  %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
 
@@ -450,12 +456,12 @@ function init()
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         else
-            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=${NET_PUB[2]} -v maskpub=${NET_PUB[3]} \
+            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} \
                  -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
-                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub""i, brpub, i, "02", maskpub, gwpub  
+                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub, brpub, i, "02", maskpub, gwpub  
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         fi
@@ -960,6 +966,7 @@ function boot()
         if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
             IS_UP=$(xl list $1)
             if [[ "$IS_UP" == "" ]]; then 
+                sleep 1
                 xl create ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
             else
                 warning_msg "The domain $1 is already runnning"
