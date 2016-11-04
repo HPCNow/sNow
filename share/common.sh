@@ -960,6 +960,7 @@ function boot()
         if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
             IS_UP=$(xl list $1)
             if [[ "$IS_UP" == "" ]]; then 
+                sleep 1
                 xl create ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
             else
                 warning_msg "The domain $1 is already runnning"

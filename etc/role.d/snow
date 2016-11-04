@@ -70,8 +70,8 @@ else
 fi
 
 # DNS Client Setup
-SNOW_DNS_SERVER=$(gawk 'BEGIN{i=0}{if($2 ~ /deploy/){dns[i]=$4}}END{dnslist=dns[0]; for (j = 1; j < i; j++){dnslist=dnslist","dns[j]}; print dnslist}' $SNOW_TOOL/etc/domains.conf)
-DNS_SERVERS="${SITE_DNS_SERVER:-$DNS_SERVERS}"
+SNOW_DNS_SERVERS=$(gawk 'BEGIN{i=0}{if($2 ~ /deploy/){dns[i]=$4}}END{dnslist=dns[0]; for (j = 1; j < i; j++){dnslist=dnslist","dns[j]}; print dnslist}' $SNOW_TOOL/etc/domains.conf)
+DNS_SERVERS="${SITE_DNS_SERVERS:-$DNS_SERVERS}"
 if  [[ ! -z "$SNOW_DNS_SERVERS" ]]; then 
     if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
         cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
