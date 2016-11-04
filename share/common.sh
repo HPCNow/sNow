@@ -15,6 +15,12 @@ function error_exit()
     exit 1
 }
 
+function msg()
+{
+    local msg="${1}"
+    echo "${msg}" 1>&3
+}
+
 function error_msg()
 {
     local e_msg="${1}"
