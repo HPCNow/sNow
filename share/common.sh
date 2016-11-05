@@ -661,11 +661,10 @@ function xen_create()
             FORCE="--force"
         fi
     else
-        IMG_STATUS=$(cat ${SNOW_DOMAINS} | grep "$opt2")
-        if [[ ! $IMG_STATUS ]]; then
-            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
-        else
+        if (($IS_VM)) ; then
             info_msg "Deploying the domain $1. It can take few minutes. Please wait!"
+        else
+            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
         fi
     fi
 
