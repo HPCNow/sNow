@@ -112,6 +112,8 @@ function shelp()
         * reset <domain|server>             | force to reboot specific domain or server
         * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
         * console <domain|server>           | console access to specific domain or server
+        * version                           | shows the version of sNow!
+        * help                              | prints this message
 
     Examples:
 
@@ -652,8 +654,9 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain"
+            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain."
         else
+            warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
             FORCE="--force"
         fi
     else
@@ -744,10 +747,15 @@ function deploy()
         error_exit "ERROR: No domain or node to deploy"
     fi
     get_server_distribution $1
-    warning_msg "This will install $1. All the data contained in these nodes will be removed"
     if (($IS_VM)) ; then
         xen_create $1 $2
     else
+        if [[ "$opt3" != "force" ]]; then
+            warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+            sleep 10 
+        else
+            warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
+        fi
         node_rank $1
         #BLOCKN=${2:-$BLOCKN}
         #BLOCKD=${3:-$BLOCKD}
