@@ -93,27 +93,27 @@ function shelp()
 
     Function List:
 
-        * init                              | setup the system according to the parameters defined in snow.conf and active-domains.conf
-        * config                            | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-        * update tools                      | updates the sNow! Tools 
-        * update configspace                | updates configuration files from private git 
-        * update template                   | updates the sNow! image used to create new domains
-        * update firewall                   | updates the default sNow! firewall rules (only for sNow! with public IP address)
-        * deploy <domain|server> <template> | deploy specific domain/server (optional: with specific template) 
-        * remove <domain>                   | removes an existing domain deployed with sNow!
-        * list <all>                        | list current domains (services) and their status
-        * boot <domain|server> <image>      | boot specific domain or server with optional image
-        * boot domains                      | boot all the domains (all services not available under sNow! HA)
-        * boot cluster <cluster> <image>    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-        * reboot <domain|server>            | reboot specific domain or server
-        * shutdown <domain|server>          | shutdown specific domain or server
-        * shutdown cluster <cluster>        | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|server>           | force to stop specific domain or server
-        * reset <domain|server>             | force to reboot specific domain or server
-        * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
-        * console <domain|server>           | console access to specific domain or server
-        * version                           | shows the version of sNow!
-        * help                              | prints this message
+        * init                                      | setup the system according to the parameters defined in snow.conf and active-domains.conf
+        * config                                    | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
+        * update tools                              | updates the sNow! Tools 
+        * update configspace                        | updates configuration files from private git 
+        * update template                           | updates the sNow! image used to create new domains
+        * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
+        * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
+        * remove <domain>                           | removes an existing domain deployed with sNow!
+        * list <all>                                | list current domains (services) and their status
+        * boot <domain|server> <image>              | boot specific domain or server with optional image
+        * boot domains                              | boot all the domains (all services not available under sNow! HA)
+        * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+        * reboot <domain|server>                    | reboot specific domain or server
+        * shutdown <domain|server>                  | shutdown specific domain or server
+        * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
+        * destroy <domain|server>                   | force to stop specific domain or server
+        * reset <domain|server>                     | force to reboot specific domain or server
+        * poweroff <domain|server>                  | force to shutdown specific domain or server simulating a power button press
+        * console <domain|server>                   | console access to specific domain or server
+        * version                                   | shows the version of sNow!
+        * help                                      | prints this message
 
     Examples:
 
@@ -654,17 +654,17 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain."
+            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain or remove it first with : snow remove $1."
         else
             warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
+            xen_delete $1
             FORCE="--force"
         fi
     else
-        IMG_STATUS=$(cat ${SNOW_DOMAINS} | grep "$opt2")
-        if [[ ! $IMG_STATUS ]]; then
-            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
-        else
+        if (($IS_VM)) ; then
             info_msg "Deploying the domain $1. It can take few minutes. Please wait!"
+        else
+            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
         fi
     fi
 
@@ -750,16 +750,27 @@ function deploy()
     if (($IS_VM)) ; then
         xen_create $1 $2
     else
-        if [[ "$opt3" != "force" ]]; then
-            warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
-            sleep 10 
+        if [[ -z "$opt4" ]]; then
+            if [[ "$opt3" != "force" ]]; then
+                local template=$opt3
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                sleep 10 
+            else
+                local template=${DEFAULT_TEMPLATE}
+                warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
+            fi
         else
-            warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
+            if [[ "$opt4" != "force" ]]; then
+                error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
+            else
+                local template=$opt3
+                warning_msg "The node(s) $1 will be deployed with $template template. All the data located in the local file system will be removed."
+            fi
         fi
         node_rank $1
         #BLOCKN=${2:-$BLOCKN}
         #BLOCKD=${3:-$BLOCKD}
-        local template=${2:-$DEFAULT_TEMPLATE}
+        #local template=${2:-$DEFAULT_TEMPLATE}
         local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
         local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
         if ! [[ -f ${template_pxe} ]] ; then
@@ -1011,7 +1022,7 @@ function get_server_distribution()
         # VM ranks are not yet supported
         IS_VM=0
     else
-        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if (match($1, vm)){isvm=1}}END{print isvm}')
+        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 ~ /^vm$/){isvm=1}}END{print isvm}')
     fi
 }
 
