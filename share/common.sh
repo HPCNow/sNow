@@ -15,6 +15,12 @@ function error_exit()
     exit 1
 }
 
+function msg()
+{
+    local msg="${1}"
+    echo "${msg}" 1>&3
+}
+
 function error_msg()
 {
     local e_msg="${1}"
@@ -106,6 +112,8 @@ function shelp()
         * reset <domain|server>             | force to reboot specific domain or server
         * poweroff <domain|server>          | force to shutdown specific domain or server simulating a power button press
         * console <domain|server>           | console access to specific domain or server
+        * version                           | shows the version of sNow!
+        * help                              | prints this message
 
     Examples:
 
@@ -373,7 +381,7 @@ function generate_hostlist()
     fi
     for (( i=0; i<${#host[@]}; i++ ));
     do 
-        printf "%20s %40s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+        printf "%s  \t  %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
 
@@ -450,12 +458,12 @@ function init()
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         else
-            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=${NET_PUB[2]} -v maskpub=${NET_PUB[3]} \
+            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} \
                  -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
-                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub""i, brpub, i, "02", maskpub, gwpub  
+                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub, brpub, i, "02", maskpub, gwpub  
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         fi
@@ -646,8 +654,9 @@ function xen_create()
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain"
+            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain."
         else
+            warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
             FORCE="--force"
         fi
     else
@@ -738,10 +747,15 @@ function deploy()
         error_exit "ERROR: No domain or node to deploy"
     fi
     get_server_distribution $1
-    warning_msg "This will install $1. All the data contained in these nodes will be removed"
     if (($IS_VM)) ; then
         xen_create $1 $2
     else
+        if [[ "$opt3" != "force" ]]; then
+            warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+            sleep 10 
+        else
+            warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
+        fi
         node_rank $1
         #BLOCKN=${2:-$BLOCKN}
         #BLOCKD=${3:-$BLOCKD}
@@ -960,6 +974,7 @@ function boot()
         if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
             IS_UP=$(xl list $1)
             if [[ "$IS_UP" == "" ]]; then 
+                sleep 1
                 xl create ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
             else
                 warning_msg "The domain $1 is already runnning"

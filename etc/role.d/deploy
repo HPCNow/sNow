@@ -89,7 +89,7 @@ cp -p /etc/hosts ${prefix}/etc/hosts
 
 # DNS Client Setup
 if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then 
-    cp -p $SNOW_CONF/system_files/etc/resolv.conf ${prefix}/etc/
+    echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
     SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
     PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
     echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf

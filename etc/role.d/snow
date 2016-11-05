@@ -3,7 +3,6 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -25,6 +24,10 @@ fi
 /usr/bin/curl -sSL http://snow.hpcnow.com/apt/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
 echo "deb http://snow.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
 chroot ${prefix} /usr/bin/apt-get update
+
+# Hostname 
+GUEST_FQDN=$hostname
+GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}') 
 
 # Config Manager
 if  [[ ! -z "$CF_SERVER" ]]; then 
@@ -66,14 +69,14 @@ else
 fi
 
 # DNS Client Setup
-SNOW_DNS_SERVER=$(gawk 'BEGIN{i=0}{if($2 ~ /deploy/){dns[i]=$4}}END{dnslist=dns[0]; for (j = 1; j < i; j++){dnslist=dnslist","dns[j]}; print dnslist}' $SNOW_TOOL/etc/domains.conf)
-INTERNAL_DNS_SERVERS="${SITE_DNS_SERVER:-$SNOW_DNS_SERVER}"
-if  [[ ! -z "$INTERNAL_DNS_SERVERS" ]]; then 
+SNOW_DNS_SERVERS=$(gawk 'BEGIN{i=0}{if($2 ~ /deploy/){dns[i]=$4}}END{dnslist=dns[0]; for (j = 1; j < i; j++){dnslist=dnslist","dns[j]}; print dnslist}' $SNOW_TOOL/etc/domains.conf)
+DNS_SERVERS="${SITE_DNS_SERVERS:-$DNS_SERVERS}"
+if  [[ ! -z "$SNOW_DNS_SERVERS" ]]; then 
     if [[ -e /sNow/snow-configspace/system_files/etc/resolv.conf ]]; then 
         cp -p /sNow/snow-configspace/system_files/etc/resolv.conf ${prefix}/etc/
     else
-        RESOLV=$(echo $INTERNAL_DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
-        #echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
+        RESOLV=$(echo $SNOW_DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
         echo "$RESOLV" >> ${prefix}/etc/resolv.conf
         PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
         echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
@@ -223,6 +226,7 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
 fi
 
 # Secondary Network Interface
+echo $GUEST_HOSTNAME
 second_nic=$(gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){print $10}}' $SNOW_TOOL/etc/domains.conf)
 if [[ "$second_nic" != "none" && "$second_nic" != "dhcp" ]]; then 
     gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){
@@ -230,7 +234,7 @@ if [[ "$second_nic" != "none" && "$second_nic" != "dhcp" ]]; then
         }
     }' $SNOW_TOOL/etc/domains.conf >> ${prefix}/etc/network/interfaces 
 fi
-if [[ "$second_nic" != "none" && "$second_nic" == "dhcp" ]]; then 
+if [[ "$second_nic" == "dhcp" ]]; then 
     gawk -v guest=$GUEST_HOSTNAME '{if($1 == guest){
         printf "\n allow-hotplug %s\n auto %s\n iface %s inet dhcp\n", $9, $9, $9
         }

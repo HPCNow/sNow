@@ -21,6 +21,10 @@ else
     exit 1
 fi
 
+# Hostname 
+GUEST_FQDN=$hostname
+GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}') 
+
 # NTP Server Setup
 SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 NTP_SERVER="${SITE_NTP_SERVER:-3.pool.ntp.org}"
