@@ -1022,7 +1022,7 @@ function get_server_distribution()
         # VM ranks are not yet supported
         IS_VM=0
     else
-        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 ~ /^vm$/){isvm=1}}END{print isvm}')
+        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
     fi
 }
 
