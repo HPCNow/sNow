@@ -751,7 +751,7 @@ function deploy()
         xen_create $1 $2
     else
         if [[ -z "$opt4" ]]; then
-            if [[ "$opt3" != "force" ]]; then
+            if [[ "$opt3" != "force" || "$opt3" != "" ]]; then
                 local template=$opt3
                 warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
                 sleep 10 
