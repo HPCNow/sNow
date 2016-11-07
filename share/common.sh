@@ -754,20 +754,25 @@ function deploy()
         xen_create $1 $2
     else
         if [[ -z "$opt4" ]]; then
-            if [[ "$opt3" != "force" || "$opt3" != "" ]]; then
-                local template=$opt3
+            if [[ -z "$opt3" ]]; then
+                local template=${DEFAULT_TEMPLATE}
                 warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
-                sleep 10 
-            else
+                sleep 10
+            elif [[ "$opt3" == "force"  ]]; then
                 local template=${DEFAULT_TEMPLATE}
                 warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
-            fi
-        else
-            if [[ "$opt4" != "force" ]]; then
-                error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
+            #elif [[ "$opt3" != "force"  ]]; then
             else
                 local template=$opt3
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                sleep 10
+            fi
+        else
+            if [[ "$opt4" == "force" ]]; then
+                local template=$opt3
                 warning_msg "The node(s) $1 will be deployed with $template template. All the data located in the local file system will be removed."
+            else
+                error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
             fi
         fi
         node_rank $1
