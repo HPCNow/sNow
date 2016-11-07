@@ -679,14 +679,17 @@ function xen_create()
         }' 
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"
+        error_check 1 "Deployment of $1 Failed."
+    else
+        second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' ${SNOW_DOMAINS}) 
+        if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/$opt2.cfg ]]; then 
+            guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
+            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
+            mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
+        fi
+        error_check 0 "Deployment of $1 Completed."
     fi
-    second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' ${SNOW_DOMAINS}) 
-    if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/$opt2.cfg ]]; then 
-        guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
-        gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
-        mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
-    fi
-} #1>>$LOGFILE 2>&1
+} 1>>$LOGFILE 2>&1
 
 function xen_delete()
 {
@@ -777,28 +780,33 @@ function deploy()
             error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
         fi
         if (( $NLENG > 0 )); then
-            info_msg "Deploying node range $1 ... This will take a while, Please wait"
+            info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
-            info_msg "Deploying node : $NPREFIX{} ... Please wait" \; \
+            info_msg "Booting node : $NPREFIX{} ... Please wait" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
             sleep 5 \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
             sleep $BLOCKD \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             sleep $BOOT_DELAY
-            info_msg "Setting up disk as boot device... Please wait"
+            info_msg "You can monitor the deployment with : snow console <compute-node-name>"
+            #info_msg "Setting up default boot device... Please wait"
             boot_copy ${default_boot_pxe}
+            error_check 0 "Deployment started."
         else
             check_host_status $1${NET_MGMT[4]}
+            info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
             ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
             sleep 5
             ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
             info_msg "Deploying node : $1 ... Please wait"
             sleep $BOOT_DELAY
+            info_msg "You can monitor the deployment with : snow console $1"
             cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+            error_check 0 "Deployment started."
         fi
     fi
 }  1>>$LOGFILE 2>&1

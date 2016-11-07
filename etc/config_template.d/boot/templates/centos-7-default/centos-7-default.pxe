@@ -3,4 +3,4 @@ default sNow
 label sNow
 menu label ^1) Install CentOS 7 x64 with Local Repo using Kickstart
 kernel templates/centos-7-default/vmlinuz
-append initrd=templates/centos-7-default/initrd.img inst.ks=nfs:snowprod01:/sNow/snow-configspace/boot/templates/centos-7-default/centos-7-default.cfg inst.repo=nfs:snowprod01:/sNow/OS/CentOS/7.0/DVD1 inst.text netdevice=eno0 ip=dhcp console=tty0 console=ttyS0,115200n8
+append initrd=templates/centos-7-default/initrd.img inst.ks=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/templates/centos-7-default/centos-7-default.cfg inst.repo=nfs:__NFS_SERVER__:/sNow/OS/CentOS/7.0/DVD1 inst.text netdevice=eno0 ip=dhcp console=tty0 console=ttyS0,115200n8
