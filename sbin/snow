@@ -92,7 +92,7 @@ case $opt1 in
         xen_delete $opt2
     ;;
     deploy)
-        deploy $opt2 $opt3 $opt4 $opt5 && error_check 0 "System deployed " || error_check 1 "System deployed " &
+        deploy $opt2 $opt3 $opt4 $opt5 & #&& error_check 0 "System deployed " || error_check 1 "System deployed " &
         spinner $!             "Deploying $opt2"
     ;;
     clone)
