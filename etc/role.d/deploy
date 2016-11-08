@@ -28,7 +28,7 @@ fi
 
 #  Update APT lists.
 chroot ${prefix} /usr/bin/apt-get update
-installDebianPackage ${prefix} ipmitool openipmi freeipmi rpm rinse alien nfs-common
+installDebianPackage ${prefix} ipmitool openipmi freeipmi nfs-common
 
 # KickStart (RedHat Based) - Ref : http://www.tecmint.com/multiple-centos-installations-using-kickstart/
 # Preseed (Debian Based) - Ref :  https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
@@ -43,22 +43,9 @@ chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
 chroot ${prefix} /usr/bin/apt-get update
 installDebianPackage ${prefix} systemimager-server simple-state-manager
 
-# Install KickStart (RedHat and CentOS Based) 
-#CENTOS_MIRROR="http://mirror.centos.org/centos/7/os/x86_64/Packages"
-#wget $CENTOS_MIRROR/pykickstart-1.99.66.6-1.el7.noarch.rpm -O ${prefix}/tmp/pykickstart-1.99.66.6-1.el7.noarch.rpm
-#wget $CENTOS_MIRROR/system-config-kickstart-2.9.2-4.el7.noarch.rpm -O ${prefix}/tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-#chroot ${prefix} /usr/bin/alien -k /tmp/pykickstart-1.99.66.6-1.el7.noarch.rpm
-#chroot ${prefix} /usr/bin/alien -k /tmp/system-config-kickstart-2.9.2-4.el7.noarch.rpm
-#chroot ${prefix} /usr/bin/dpkg -i /pykickstart_1.99.66.6-1.el7_all.deb
-#chroot ${prefix} /usr/bin/dpkg -i /system-config-kickstart_2.9.2-4.el7_all.deb
-#
 # Setup TFTP
 echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
-
-# Install Debian Pressed (Debian and Ubuntu based)
-wget http://ftp.debian.org/debian/dists/jessie/main/installer-amd64/current/images/netboot/netboot.tar.gz -O ${prefix}/srv/tftp/netboot.tar.gz
-cd ${prefix}/srv/tftp; tar zxf netboot.tar.gz ; rm netboot.tar.gz
 
 # Setup DNSMASQ
 SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
@@ -110,15 +97,17 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         mkdir $SNOW_CONF
     fi
     cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
-    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/*
-    for i in $(ls -1 $SNOW_CONF/boot/templates/ | grep "\-default"); do
-        sed -i "s|__DEFAULT_TEMPLATE__|$i|g" $SNOW_CONF/boot/templates/$i/* $SNOW_CONF/boot/templates/$i/first_boot/*
+    for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
+        for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
+            sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
+            sed -i "s|__LANG__|$LANG|g" $file
+            sed -i "s|__KEYMAP__|$KEYMAP|g" $file
+            sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
+            sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $file
+            sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
+            sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
+            sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 
+        done 
     done
 fi
 
