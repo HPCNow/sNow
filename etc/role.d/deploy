@@ -97,16 +97,16 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         mkdir $SNOW_CONF
     fi
     cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
-    sed -i "s|__LANG__|$LANG|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__KEYMAP__|$KEYMAP|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__TIMEZONE__|$TIMEZONE|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $SNOW_CONF/boot/templates/*-default/*
-    sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $SNOW_CONF/boot/templates/*-default/*
     for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
         for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
             sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
+            sed -i "s|__LANG__|$LANG|g" $file
+            sed -i "s|__KEYMAP__|$KEYMAP|g" $file
+            sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
+            sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $file
+            sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
+            sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
+            sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 
         done 
     done
 fi
