@@ -73,6 +73,7 @@ else
     cp -p $SNOW_CONF/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
 cp -p /etc/hosts ${prefix}/etc/hosts
+cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
 # DNS Client Setup
 if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then 
