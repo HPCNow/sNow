@@ -3,9 +3,6 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-trap "error_exit 'Received signal SIGHUP'" SIGHUP
-trap "error_exit 'Received signal SIGINT'" SIGINT
-trap "error_exit 'Received signal SIGTERM'" SIGTERM
 
 function error_exit()
 {
