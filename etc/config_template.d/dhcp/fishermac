@@ -28,5 +28,5 @@ BEGIN{
             uid=ui[2]
         }
     }
-    print "dhcp-host="ether","ip","hostname
+    print ether"  "ip
 }
