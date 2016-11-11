@@ -1,0 +1,90 @@
+.\" Manpage for sNow!
+.\" Contact devel@hpcnow.com to correct errors or typos.
+.TH man 8 "09 Jun 2016" "1.0.0" "sNow! man page"
+.SH NAME
+snow \- sNow! Command Line Interface
+.SH SYNOPSIS
+snow [function] <option|domain|server>
+.SH DESCRIPTION
+sNow! is an Open Source suite designed to manage large and mission critical High Performance Computing (HPC) infrastructures. This suite has been developed and maintained since 2008 by the HPCNow! team who have extensive experience in the use, management and administration of HPC in scientific and engineering environments. sNow! is easy to use and installs software that provides all the necessary tools to deploy and operate a computing cluster such as the operating system, monitoring tools, cluster filesystem, batch queue system as well as parallel and scientific libraries.
+For more information, visit the official website : www.hpckp.org/snow
+.SH FUNCTIONS
+.TP
+\fBinit\fR
+initiates the system configuration according to the parameters defined in snow.conf and active-domains.conf
+.TP
+.TP
+\fBconfig\fR
+updates the sNow! configuration based on the changes applied in snow.conf and domains.conf
+.TP
+\fBupdate tools\fR
+updates the sNow! Tools
+.TP
+\fBupdate configspace\fR
+updates configuration files from private git
+.TP
+\fBupdate template\fR
+updates the sNow! image used to create new domains
+.TP
+\fBdeploy <domain|server>\fR
+deploy specific domain/server
+.TP
+\fBremove <domain>\fR
+removes an existing domain deployed with sNow!
+.TP
+\fBlist\fR 
+list current domains (services) and their status
+.TP
+\fBboot <domain|server>\fR
+boot specific domain or server
+.TP
+\fBboot domains\fR
+boot all the domains (all services not available under sNow! HA)
+.TP
+\fBboot cluster <clustername>\fR
+boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+.TP
+\fBreboot <domain|server>\fR
+reboot specific domain or server
+.TP
+\fBshutdown <domain|server>\fR
+shutdown specific domain or server
+.TP
+\fBshutdown cluster <clustername>\fR
+shutdown all the compute nodes of the selected cluster
+.TP
+\fBdestroy <domain|server>\fR
+force to stop specific domain or server
+.TP
+\fBreset <domain|server>\fR
+force to reboot specific domain or server
+.TP
+\fBpoweroff <domain|server>\fR
+force to shutdown specific domain or server simulating a power button press
+.TP
+\fBconsole <domain|server>\fR
+console access to specific domain or server
+.TP
+\fBuptime <domain|sever>\fR
+shows uptime of specific domain or server
+.TP
+\fBcmd <domain|sever> <command>\fR
+executes a command in the domain(s) or server(s)
+.SH EXAMPLES
+Some examples of usage
+.SH AUTHOR
+Written by Jordi Blasco (jordi.blasco@hpcnow.com)
+.SH "REPORTING BUGS"
+Report bugs to the official git repository of sNow! <https://bitbucket.org/hpcnow/snow-tools/issues>
+.br
+.SH COPYRIGHT
+Copyright \(co 2014 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+snow.conf(8), domains.conf(8), active-domains.conf(8)
+.PP
+.br
+Full documentation at: <http://www.www.hpckp.org/snow>

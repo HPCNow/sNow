@@ -1,0 +1,208 @@
+#!/bin/bash
+# This is the sNow! Command Line Interface 
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+#set -xv
+set -o pipefail  # trace ERR through pipes
+set -o errtrace  # trace ERR through 'time command' and other functions
+readonly PROGNAME=$(basename "$0")
+readonly SNOW_VERSION="1.0.0"
+trap "error_exit 'Received signal SIGHUP'" SIGHUP
+trap "error_exit 'Received signal SIGINT'" SIGINT
+trap "error_exit 'Received signal SIGTERM'" SIGTERM
+# User privileges
+if [[ $(id -u) -ne 0 ]] ; then
+    error_exit "sNow! Tools CLI must be run as root. Use : 'sudo su -' or prepend your command with sudo : 'sudo snow <options>'."
+fi
+#Logging
+#readonly LOGFILE=/sNow/log/snow.log
+readonly RETAIN_NUM_LINES=10
+# Load the configuration
+SNOW_PATH=/sNow
+SNOW_HOME=${SNOW_PATH}/home
+SNOW_SOFT=${SNOW_PATH}/easybuild
+SNOW_CONF=${SNOW_PATH}/snow-configspace
+SNOW_TOOL=${SNOW_PATH}/snow-tools
+readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
+readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
+readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
+readonly opt1=$1
+readonly opt2=$2
+readonly opt3=$3
+readonly opt4=$4
+readonly opt5=$5
+declare -A CLUSTERS
+HAS_EE=false
+
+if [[ -f ${CONFIG_FILE} ]]; then
+    source ${CONFIG_FILE}
+    export PDSH_RCMD_TYPE
+fi
+
+if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    source ${SNOW_TOOL}/share/common.sh
+    logsetup
+    get_os_distro
+    architecture_identification
+fi
+
+if [[ -f ${SNOW_DOMAINS} ]]; then
+    readonly SELF_ACTIVE_DOMAINS=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{if($2 !~ /^snow$/){print $1}}')
+fi
+
+if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
+    source ${ENTERPRISE_EXTENSIONS}
+    HAS_EE=true
+fi
+
+if ! [[ -d ${SNOW_PATH}/log ]]; then
+    mkdir ${SNOW_PATH}/log
+fi
+
+#
+# Start Cases
+#
+case $opt1 in
+    init)
+        init
+    ;;
+    config)
+        config
+    ;;
+    update)
+        case $opt2 in
+            firewall)
+                update_firewall
+            ;;
+            tools)
+                update_tools
+            ;;
+            configspace)
+                update_configspace
+            ;;
+            template)
+                update_xen_image && error_check 0 "sNow! image updated " || error_check 1 "sNow! image updated " &
+                spinner $!             "Updating sNow! image "
+            ;;
+            *)
+                error_msg "Update available options : firewall, tools, configspace, template"
+            ;;
+        esac
+    ;;
+    remove)
+        xen_delete $opt2
+    ;;
+    deploy)
+        deploy $opt2 $opt3 $opt4 $opt5 & #&& error_check 0 "System deployed " || error_check 1 "System deployed " &
+        spinner $!             "Deploying $opt2"
+    ;;
+    clone)
+        clone $opt2 $opt3 $opt4 $opt5 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+        spinner $!             "Cloning $opt2"
+    ;;
+    create)
+        case $opt2 in
+            base)
+                create_base
+            ;;
+            *)
+                create $opt2
+            ;;
+        esac
+    ;;
+    list)
+        case $opt2 in
+            all)
+                avail_domains
+            ;;
+            *)
+                list $opt2 
+            ;;
+        esac
+    ;;
+    takeover)
+        takeover $opt2
+    ;;
+    boot)
+        case $opt2 in
+            domains)  
+                boot_domains $opt3 && error_check 0 "Domains are UP " || error_check 1 "Domains are UP " &
+                spinner $!             'Booting domains'
+            ;;
+            cluster)
+                boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Cluster booted " || error_check 1 "Cluster booted " &
+                spinner $!             "Booting cluster "
+            ;;
+            *)
+                boot $opt2 $opt3 $opt4 && error_check 0 "Node(s) booted " || error_check 1 "Node(s) booted " &
+                spinner $!             "Booting node(s) "
+            ;;
+        esac
+    ;;
+    cmd)
+        ncmd $opt2 $opt3 $opt4 $opt5
+    ;;
+    reboot)
+        nreboot $opt2
+    ;;
+    reset)
+        case $opt2 in
+            domains)  
+                nreset_domains 
+            ;;
+            *)
+                nreset $opt2
+            ;;
+        esac
+    ;;
+    poweroff)
+        case $opt2 in
+            domains)  
+                poweroff_domains 
+            ;;
+            *)
+                npoweroff $opt2
+            ;;
+        esac
+    ;;
+    shutdown)
+        case $opt2 in
+            domains)  
+                shutdown_domains 
+            ;;
+            cluster)
+                shutdown_cluster $opt3 
+            ;;
+            *)
+                nshutdown $opt2 
+            ;;
+        esac
+    ;;
+    destroy)
+        ndestroy $opt2
+    ;;
+    console)
+        nconsole $opt2
+    ;;
+    uptime)
+        nuptime $opt2
+    ;;
+    version|-V|-version|--version)
+      msg "sNow! version : ${SNOW_VERSION}"
+      ;;
+    help|-help|--help|\?|*)
+      shelp
+      ;;
+  esac
+
+#
+# End Cases
+#
+
+#
+# Log the sNow! activity
+#
+
+echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 

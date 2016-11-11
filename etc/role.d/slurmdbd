@@ -1,0 +1,91 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Slurm Database Server Setup
+SLURMDBD_NAME="${SLURMDBD_NAME:-slurm_acct_db}"
+SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
+    echo "mysql-server-5.5 mysql-server/root_password password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    installDebianPackage ${prefix} curl pbzip2 mysql-server
+    chroot ${prefix} /bin/systemctl start mysql.service
+    chroot ${prefix} /usr/bin/mysqld_safe &
+    #chroot ${prefix} /bin/systemctl enable mysql.service
+    sleep 30
+    echo "create database $SLURMDBD_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
+    echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
+    #chroot ${prefix} /bin/systemctl stop mysql.service
+    /usr/bin/killall -9 mysqld_safe mysqld
+    chroot ${prefix} /usr/bin/apt-get update -q 
+    installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
+    chroot ${prefix} /bin/systemctl enable munge.service
+    sed -i 's|slurm-llnl|slurm|g' ${prefix}/etc/init.d/slurm* ${prefix}/lib/systemd/system/slurm*.service
+    sed -i 's|PIDFile=/var/run/slurm/|PIDFile=/var/run/|g' ${prefix}/lib/systemd/system/slurm*.service
+    chroot ${prefix} /bin/ln -s /usr/bin/mail /bin/mail 
+    # Check UIDs and GIDs
+    if [[ "$(chroot ${prefix} id -u munge)" != "$MUNGE_UID"  &&  "$(chroot ${prefix} id -g munge)" != "$MUNGE_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $MUNGE_GID munge
+        chroot ${prefix} /usr/sbin/usermod -u $MUNGE_UID -g $MUNGE_GID munge
+    fi
+    if [[ "$(chroot ${prefix} id -u slurm)" != "$SLURM_UID"  &&  "$(chroot ${prefix} id -g slurm)" != "$SLURM_GID" ]]; then
+        chroot ${prefix} /usr/sbin/groupmod -g $SLURM_GID slurm
+        chroot ${prefix} /usr/sbin/usermod -u $SLURM_UID -g $SLURM_GID slurm
+    fi
+    # Setup Munge key slurm
+    # Note that if you alredy have the config files available, no changes will be performed.
+    chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    if [[ ! -e $SNOW_CONF/system_files/etc/munge/munge.key ]]; then
+        dd if=/dev/urandom bs=1 count=1024 > ${prefix}/etc/munge/munge.key 
+        mkdir -p $SNOW_CONF/system_files/etc/munge
+        cp -p ${prefix}/etc/munge/munge.key $SNOW_CONF/system_files/etc/munge/munge.key
+    else
+        cp -p $SNOW_CONF/system_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
+    fi
+    chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
+    chroot ${prefix} /bin/chmod 700 /etc/munge
+    chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
+    if [[ -e $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf ]]; then 
+        # The current configuration located in $SNOW_CONF/system_files/etc/slurm 
+        # will be used for this sNow! domain.
+        chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -pr $SNOW_CONF/system_files/etc/slurm ${prefix}/etc/
+    else
+        # Setup initial Slurm Database configuration based on the environment.
+        # Note that if you alredy have the config files available, no changes will be performed.
+        mkdir -p $SNOW_CONF/system_files/etc/slurm
+        chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+        cp -pr $SNOW_TOOL/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
+        sed -i "s|__SLURMDBD_PWD__|$SLURMDBD_PWD|g" ${prefix}/etc/slurm/slurmdbd.conf
+        sed -i "s|__SLURMDBD_USER__|$SLURMDBD_USER|g" ${prefix}/etc/slurm/slurmdbd.conf
+        cp -p ${prefix}/etc/slurm/slurmdbd.conf $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf
+    fi
+    chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
+    echo "SLURM_CONF=/etc/slurm/slurmdbd.conf" >> ${prefix}/etc/default/slurmdbd
+    if [[ -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_CONF/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    else
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
+        cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
+    fi
+fi
+

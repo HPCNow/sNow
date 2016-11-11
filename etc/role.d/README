@@ -1,6 +1,12 @@
-These files are roles which you can use with xen-create-image(1) with
-the --role= option.
+These files define the roles of the domains used in the sNow! HPC suite.
+Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 
-If you add new roles to the xen-tools distribution in this directory,
-please document them in the POD code of bin/xen-create-image under
-"ROLES".
+The roles are shell scripts which relies on xen-create-image and sNow! 
+enviroment to build the final domain images.
+
+If you wish to contribute in sNow! by includig new roles to the sNow! Tools,
+please consider to use the provided template available in :
+-->  etc/role.d/snow_reference_template
+and document them in the man page of snow.conf (roles subsection). 
+
+For more information, visit the official website : www.hpcnow.com/snow

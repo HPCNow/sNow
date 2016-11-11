@@ -1,0 +1,78 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    . /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    . /sNow/snow-tools/etc/snow.conf
+else
+    echo "The /sNow/snow-tools/etc/snow.conf is not available."
+    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    exit 1
+fi
+
+# Check for NFS mount points in the snow.conf
+NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if [[ "$NFS_CLIENT" == "TRUE" ]]; then
+    installDebianPackage ${prefix} nfs-common
+    for i in {1..100}; do
+        if [[ ! -z ${MOUNT_NFS[$i]} ]]; then
+            mkdir -p $(echo "${MOUNT_NFS[$i]}" | gawk '{print $2}')
+            echo "${MOUNT_NFS[$i]}" >> ${prefix}/etc/fstab
+        fi
+    done
+fi
+                                                    
+# Check for BeeGFS mount points in the snow.conf
+BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if [[ "$BEEGFS_CLIENT" == "TRUE" ]]; then
+    wget -q http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb8.list -P ${prefix}/etc/apt/sources.list.d/
+    wget -q http://www.beegfs.com/release/latest-stable/gpg/DEB-GPG-KEY-beegfs -O- | chroot ${prefix} /usr/bin/apt-key add -
+    chroot ${prefix} /usr/bin/apt-get update 
+    installDebianPackage ${prefix} beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client linux-kernel-headers
+    for i in {1..100}; do
+        if [[ ! -z ${MOUNT_BEEGFS[$i]} ]]; then
+            mkdir -p $(echo ${MOUNT_BEEGFS[$i]} | gawk '{print $1}')
+            echo "${MOUNT_BEEGFS[$i]}" >> ${prefix}/etc/beegfs/beegfs-mounts.conf
+        fi
+    done
+fi
+
+# Check for Lustre mount points in the snow.conf - EXPERIMENTAL
+LUSTRE_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_LUSTRE/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if [[ "$LUSTRE_CLIENT" == "TRUE" ]]; then
+    # Lustre packages are available in the HPCNow! repository
+    installDebianPackage ${prefix} lustre-tests
+    for i in {1..100}; do
+        if [[ ! -z ${MOUNT_LUSTRE[$i]} ]]; then
+            mkdir -p $(echo "${MOUNT_LUSTRE[$i]}" | gawk '{print $2}')
+            echo "${MOUNT_LUSTRE[$i]}" >> ${prefix}/etc/fstab
+        fi
+    done
+fi
+
+# Check for GPFS mount points in the snow.conf - EXPERIMENTAL
+GPFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_GPFS|^GPFS_VERSION/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+if [[ "$GPFS_CLIENT" == "TRUE" ]]; then
+    installDebianPackage ${prefix} compat-libstdc++ libstdc++ rsh ksh
+    chroot ${prefix} /usr/bin/dpkg -i /sNow/OS/Debian/8.2/GPFS/${GPFS_VERSION}/x86_64/gpfs*.deb
+    cp -p /sNow/snow-tools/etc/role.d/first_boot/gpfs_restore_config.sh  ${prefix}/usr/local/first_boot/gpfs_restore_config.sh
+    echo "export PATH=$PATH:/usr/lpp/mmfs/bin/" >> /etc/profile.conf
+    for i in {1..100}; do
+        if [[ ! -z ${MOUNT_GPFS[$i]} ]]; then
+            mkdir -p $(echo "${MOUNT_GPFS[$i]}" | gawk '{print $2}')
+            echo "${MOUNT_GPFS[$i]}" >> ${prefix}/etc/fstab
+        fi
+    done
+fi
+

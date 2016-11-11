@@ -1,0 +1,43 @@
+#!/bin/bash
+#set -xv
+# This is a simple script that will create a backup of the snow Domains (VMs/containers)
+# The suitability of this script will depend on the institutional backup system.
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+
+# If you don't want to backup all the domains, change the following line with a list
+DOMAINS2BKP=$(snow list| egrep -v "Name|Domain-0"|gawk '{print $1}')
+
+SNOWPATH=$(dirname "$0")
+# Load the configuration
+CONFIG_FILE=$SNOWPATH/../etc/snow.conf
+SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
+SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}')
+#DOMAINS2BKP=${SELF_ACTIVE_DOMAINS:-$DOMAINS2BKP}
+
+if [[ -f $CONFIG_FILE ]]; then
+    source $CONFIG_FILE
+fi
+
+if ! [[ -d $SNOW_PATH/log ]]; then
+    mkdir $SNOW_PATH/log
+fi
+
+if ! [[ -d $SNOW_PATH/backup ]]; then
+    mkdir $SNOW_PATH/backup
+fi
+
+for VMNAME in $DOMAINS2BKP 
+do 
+    DATE=$(date +%Y%m%d)
+    LAST=$(tail -1 $SNOW_PATH/log/snapshots-$VMNAME.history)
+    /sbin/lvcreate -s -L 1G -n $VMNAME-snap-$DATE $SNOWVG/${VMNAME} &> $SNOW_PATH/log/snapshots-$VMNAME.log
+    echo "$VMNAME-snap-$DATE" >> $SNOW_PATH/log/snapshots-$VMNAME.history
+    dd if=/dev/$SNOWVG/$VMNAME-snap-$DATE of=$SNOW_PATH/backup/$VMNAME-snap-$DATE
+    bzip2 $SNOW_PATH/backup/$VMNAME-snap-$DATE
+    rm $SNOW_PATH/backup/$LAST.bz2 
+    /sbin/lvremove -f /dev/$SNOWVG/$LAST
+    #echo "Backup module $VMNAME finished" | nail -s "[sNow!] Snapshot $VMNAME" -a $SNOW_PATH/log/snapshots-$VMNAME.log -r $SMAIL $SMAIL
+    echo "Backup module $VMNAME finished" | logger -t snow -p user.notice
+done
