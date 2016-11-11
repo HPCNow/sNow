@@ -66,11 +66,19 @@ dhcp-option=15,$DOMAIN
 dhcp-range=$DHCP_NIC,${NET_SNOW[2]}0,static,infinite
 dhcp-boot=pxelinux.0
 enable-tftp
+read-ethers
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
     cp -p ${prefix}/etc/dnsmasq.conf $SNOW_CONF/system_files/etc/dnsmasq.conf
 else
     cp -p $SNOW_CONF/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
+fi
+
+if [[ ! -f $SNOW_CONF/system_files/etc/ethers ]]; then
+    touch ${prefix}/etc/ethers
+    cp -p ${prefix}/etc/ethers $SNOW_CONF/system_files/etc/ethers
+else
+    cp -p $SNOW_CONF/system_files/etc/ethers ${prefix}/etc/ethers
 fi
 cp -p /etc/hosts ${prefix}/etc/hosts
 cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
