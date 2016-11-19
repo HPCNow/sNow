@@ -3,7 +3,6 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -80,6 +79,7 @@ if [[ ! -f $SNOW_CONF/system_files/etc/ethers ]]; then
 else
     cp -p $SNOW_CONF/system_files/etc/ethers ${prefix}/etc/ethers
 fi
+
 cp -p /etc/hosts ${prefix}/etc/hosts
 cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
@@ -93,14 +93,6 @@ if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then
 fi
 
 # Install and setup sNow! deploy system
-SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
-    PROXY_SERVER=$SNOW_PROXY_SERVER
-    PROXY_PORT=8080
-else
-    PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
-    PROXY_PORT="${SITE_PROXY_PORT:-8080}"
-fi
 if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
     if [[ ! -d $SNOW_CONF ]]; then 
         mkdir $SNOW_CONF
@@ -132,6 +124,6 @@ while read line; do
     download_url=$(echo $line | gawk '{print $1}')
     if [[ ! -e ${download_path} ]]; then
         mkdir -p ${download_path}
+        download ${download_url} ${download_path}
     fi
-    download ${download_url} ${download_path}
 done < $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf
