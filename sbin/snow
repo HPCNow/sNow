@@ -114,11 +114,20 @@ case $opt1 in
     ;;
     list)
         case $opt2 in
-            all)
+            domains)
                 avail_domains
             ;;
+            templates)
+                avail_templates
+            ;;
+            images)
+                avail_images
+            ;;
+            nodes)
+                avail_nodes
+            ;;
             *)
-                list $opt2 
+                error_msg "Option not available: $opt2"
             ;;
         esac
     ;;

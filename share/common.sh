@@ -98,7 +98,10 @@ function shelp()
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
         * remove <domain>                           | removes an existing domain deployed with sNow!
-        * list <all>                                | list current domains (services) and their status
+        * list domains                              | list the current domains (services) and their status
+        * list templates                            | list the available templates
+        * list images                               | list the available images
+        * list nodes                                | list the available compute nodes and their status
         * boot <domain|server> <image>              | boot specific domain or server with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
@@ -382,6 +385,22 @@ function generate_hostlist()
     done
 }
 
+function generate_nodes_json()
+{
+    local cluster=$1
+    local nodes=$2
+    #local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local nodes_json='{"compute": {}}'
+    for node in $nodes; do
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node} = {} ")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.cluster = \"$cluster\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.image = \"${DEFAULT_BOOT}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${DEFAULT_TEMPLATE}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"null\"")
+        #nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+    done
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+}
 
 function init()
 {
@@ -473,6 +492,7 @@ function init()
     do 
         node_rank ${CLUSTERS[$i]}
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        generate_nodes_json "$i" "$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
     done
     bkp /etc/hosts
     generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
@@ -753,7 +773,8 @@ function deploy()
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
                 local template=${DEFAULT_TEMPLATE}
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
                 local template=${DEFAULT_TEMPLATE}
@@ -761,7 +782,8 @@ function deploy()
             #elif [[ "$opt3" != "force"  ]]; then
             else
                 local template=$opt3
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             fi
         else
@@ -778,10 +800,17 @@ function deploy()
         #local template=${2:-$DEFAULT_TEMPLATE}
         local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
         local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
+        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
         if ! [[ -f ${template_pxe} ]] ; then
             error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
         fi
         if (( $NLENG > 0 )); then
+            local nodes="$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
+            for node in $nodes; do
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+            done
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
@@ -799,6 +828,10 @@ function deploy()
             error_check 0 "Deployment started."
         else
             check_host_status $1${NET_MGMT[4]}
+            local node=$1
+            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
+            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
             ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
@@ -974,6 +1007,87 @@ function list()
 function avail_domains()
 {
     LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
+}
+
+function avail_templates()
+{
+    local templates=$(find $SNOW_CONF/boot/templates/ -type d | sed -e "s|$SNOW_CONF/boot/templates/||g")
+    printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+    printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+    for tmpl in $templates; do
+        if [[ -e $SNOW_CONF/boot/templates/${tmpl}/${tmpl}.pxe ]]; then
+            if [[ -e $SNOW_CONF/boot/templates/${tmpl}/description ]]; then
+                desc=$(cat $SNOW_CONF/boot/templates/${tmpl}/description)
+            else
+                desc=""
+            fi
+            printf "%-30s    %-80s\n" "$tmpl" "$desc" 1>&3
+            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/templates/${tmpl}" 1>&3
+            hooks=$(ls -1 ${SNOW_CONF}/boot/templates/${tmpl}/??-*.sh)
+            if [[ ! -z $hooks ]]; then
+                printf "%-30s    %-80s\n" "" "hooks:" 1>&3
+                for hook in $hooks; do
+                    if [[ -x "$hook" ]]; then
+                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/templates/$tmpl/||g")
+                        printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
+                    fi
+                done
+            fi 
+        fi
+    done
+}
+
+function avail_images()
+{
+    local images=$(find $SNOW_CONF/boot/images/ -type d | sed -e "s|$SNOW_CONF/boot/images/||g")
+    printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
+    printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+    for img in $images; do
+        if [[ -e $SNOW_CONF/boot/images/${img}/${img}.pxe ]]; then
+            if [[ -e $SNOW_CONF/boot/images/${img}/description ]]; then
+                desc=$(cat $SNOW_CONF/boot/images/${img}/description)
+            else
+                desc=""
+            fi
+            printf "%-30s    %-80s\n" "$img" "$desc" 1>&3
+            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/images/${img}" 1>&3
+            hooks=$(ls -1 ${SNOW_CONF}/boot/images/${img}/??-*.sh)
+            if [[ ! -z $hooks ]]; then
+                printf "%-30s    %-80s\n" "" "hooks:" 1>&3
+                for hook in $hooks; do
+                    if [[ -x "$hook" ]]; then
+                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/images/$img/||g")
+                        printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
+                    fi
+                done
+            fi 
+        fi
+    done
+}
+
+function avail_nodes()
+{
+    set -xv
+    if [[ -z $1 ]]; then 
+        for i in "${!CLUSTERS[@]}"; do
+            node_rank ${CLUSTERS[$i]}
+            nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        done
+    else
+        node_rank $1
+        nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+    fi
+    printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
+    for node in $nodes; do 
+        #check_host_status ${node}${NET_MGMT[4]}
+        hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}')"
+        cluster=$(jq ".compute.${node}.cluster" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        os_status="$(ssh ${node} uptime -p || echo 'down')"
+        current_image=$(jq ".compute.${node}.image" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        current_template=$(jq ".compute.${node}.template" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        last_deploy=$(jq ".compute.${node}.last_deploy" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
+    done
 }
 
 function check_host_status()
