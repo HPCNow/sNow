@@ -1037,7 +1037,27 @@ function avail_images()
 
 function avail_nodes()
 {
-    msg "not yet"
+    set -xv
+    if [[ -z $1 ]]; then 
+        for i in "${!CLUSTERS[@]}"; do
+            node_rank ${CLUSTERS[$i]}
+            nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        done
+    else
+        node_rank $1
+        nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+    fi
+    printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
+    for node in $nodes; do 
+        #check_host_status ${node}${NET_MGMT[4]}
+        hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}')"
+        cluster=$(jq ".compute.${node}.cluster" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        os_status="$(ssh ${node} uptime -p || echo 'down')"
+        current_image=$(jq ".compute.${node}.image" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        current_template=$(jq ".compute.${node}.template" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        last_deploy=$(jq ".compute.${node}.last_deploy" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
+    done
 }
 
 function check_host_status()

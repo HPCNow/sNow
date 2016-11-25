@@ -30,6 +30,7 @@ etc/domains.conf
 etc/snow.conf
 etc/snow_exports.conf
 etc/vms.conf
+etc/nodes.json
 
 # Temporary vi and emacs files 
 *.swp
