@@ -1009,7 +1009,30 @@ function avail_templates()
 
 function avail_images()
 {
-    msg "not yet"
+    local images=$(find $SNOW_CONF/boot/images/ -type d | sed -e "s|$SNOW_CONF/boot/images/||g")
+    printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
+    printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+    for img in $images; do
+        if [[ -e $SNOW_CONF/boot/images/${img}/${img}.pxe ]]; then
+            if [[ -e $SNOW_CONF/boot/images/${img}/description ]]; then
+                desc=$(cat $SNOW_CONF/boot/images/${img}/description)
+            else
+                desc=""
+            fi
+            printf "%-30s    %-80s\n" "$img" "$desc" 1>&3
+            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/images/${img}" 1>&3
+            hooks=$(ls -1 ${SNOW_CONF}/boot/images/${img}/??-*.sh)
+            if [[ ! -z $hooks ]]; then
+                printf "%-30s    %-80s\n" "" "hooks:" 1>&3
+                for hook in $hooks; do
+                    if [[ -x "$hook" ]]; then
+                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/images/$img/||g")
+                        printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
+                    fi
+                done
+            fi 
+        fi
+    done
 }
 
 function avail_nodes()
