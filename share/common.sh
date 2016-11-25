@@ -999,14 +999,22 @@ function clone()
     fi
 }
 
-function list()
-{
-    xl list $opt2 | tee /dev/fd/3
-}
-
 function avail_domains()
 {
-    LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
+    #LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
+    set -xv 
+    local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
+    printf "%-20s  %-10s  %-40s  %-20s\n" "Domain" "HW status" "OS status" "Roles" 1>&3
+    for domain_cfg in ${domains_cfg}; do
+        domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
+        if [[ ! -z $domain ]]; then 
+            hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
+            os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
+            #last_deploy=$(jq ".compute.${domain}.last_deploy" ${SNOW_TOOL}/etc/domains.json | sed -e 's|"||g')
+            printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
+        fi
+    done
 }
 
 function avail_templates()

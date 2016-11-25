@@ -34,12 +34,12 @@ echo hash: ${hash}
 active_domains=$(snow list | egrep -v "Name|Domain-0" | wc -l)
 if [[ ! -z "$self_active_domains" ]]; then 
     for domain in $self_active_domains; do
-        active_domain=$(snow list $domain | wc -l)
+        active_domain=$(snow list domains $domain | wc -l)
         if [[ "$active_domain" > "0" ]]; then
             snow poweroff $domain
             sleep 10
         fi
-        deployed_domain=$(snow list all | grep "Name: $domain" | wc -l )
+        deployed_domain=$(snow list domains all | grep "Name: $domain" | wc -l )
         if [[ "$deployed_domain" > "0" ]]; then
             snow remove $domain 
         fi
