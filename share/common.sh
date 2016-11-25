@@ -385,6 +385,22 @@ function generate_hostlist()
     done
 }
 
+function generate_nodes_json()
+{
+    local cluster=$1
+    local nodes=$2
+    #local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local nodes_json='{"compute": {}}'
+    for node in $nodes; do
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node} = {} ")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.cluster = \"$cluster\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.image = \"${DEFAULT_BOOT}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${DEFAULT_TEMPLATE}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"null\"")
+        #nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+    done
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+}
 
 function init()
 {
@@ -476,6 +492,7 @@ function init()
     do 
         node_rank ${CLUSTERS[$i]}
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        generate_nodes_json "$i" "$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
     done
     bkp /etc/hosts
     generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
@@ -756,7 +773,8 @@ function deploy()
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
                 local template=${DEFAULT_TEMPLATE}
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
                 local template=${DEFAULT_TEMPLATE}
@@ -764,7 +782,8 @@ function deploy()
             #elif [[ "$opt3" != "force"  ]]; then
             else
                 local template=$opt3
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'. Use 'force' option to avoid the waiting."
+                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             fi
         else
@@ -781,10 +800,17 @@ function deploy()
         #local template=${2:-$DEFAULT_TEMPLATE}
         local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
         local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
+        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
         if ! [[ -f ${template_pxe} ]] ; then
             error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
         fi
         if (( $NLENG > 0 )); then
+            local nodes="$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
+            for node in $nodes; do
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+            done
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
@@ -802,6 +828,10 @@ function deploy()
             error_check 0 "Deployment started."
         else
             check_host_status $1${NET_MGMT[4]}
+            local node=$1
+            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
+            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
             ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
