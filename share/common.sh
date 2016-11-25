@@ -98,7 +98,10 @@ function shelp()
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
         * remove <domain>                           | removes an existing domain deployed with sNow!
-        * list <all>                                | list current domains (services) and their status
+        * list domains                              | list the current domains (services) and their status
+        * list templates                            | list the available templates
+        * list images                               | list the available images
+        * list nodes                                | list the available compute nodes and their status
         * boot <domain|server> <image>              | boot specific domain or server with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
@@ -974,6 +977,44 @@ function list()
 function avail_domains()
 {
     LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
+}
+
+function avail_templates()
+{
+    local templates=$(find $SNOW_CONF/boot/templates/ -type d | sed -e "s|$SNOW_CONF/boot/templates/||g")
+    printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+    printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+    for tmpl in $templates; do
+        if [[ -e $SNOW_CONF/boot/templates/${tmpl}/${tmpl}.pxe ]]; then
+            if [[ -e $SNOW_CONF/boot/templates/${tmpl}/description ]]; then
+                desc=$(cat $SNOW_CONF/boot/templates/${tmpl}/description)
+            else
+                desc=""
+            fi
+            printf "%-30s    %-80s\n" "$tmpl" "$desc" 1>&3
+            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/templates/${tmpl}" 1>&3
+            hooks=$(ls -1 ${SNOW_CONF}/boot/templates/${tmpl}/??-*.sh)
+            if [[ ! -z $hooks ]]; then
+                printf "%-30s    %-80s\n" "" "hooks:" 1>&3
+                for hook in $hooks; do
+                    if [[ -x "$hook" ]]; then
+                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/templates/$tmpl/||g")
+                        printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
+                    fi
+                done
+            fi 
+        fi
+    done
+}
+
+function avail_images()
+{
+    msg "not yet"
+}
+
+function avail_nodes()
+{
+    msg "not yet"
 }
 
 function check_host_status()
