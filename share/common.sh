@@ -781,8 +781,12 @@ function remove_node()
 function add_node()
 {
     local node=$1
+    local cluster=$2
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
     local node_query=$(echo ${nodes_json} | jq -r ".compute.${node}")
+    if [[ -z "$cluster" ]]; then
+        error_exit "The cluster name is not provided"
+    fi
     if [[ "${node_query}" != "null" ]]; then
         error_msg "There node $node already exist in the database."
     else
@@ -790,7 +794,11 @@ function add_node()
         read -t 20 -u 3 answer 
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq "add(.compute.${node})")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node} = {} ")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.cluster = \"$cluster\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.image = \"${DEFAULT_BOOT}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${DEFAULT_TEMPLATE}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"null\"")
             #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
@@ -1043,7 +1051,31 @@ function generate_rootfs()
     sed -e "s|__IMAGE__|$image|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${image_pxe}
 }
 
-function clone()
+function clone_template()
+{
+    local old_template=$1
+    local new_template=$2
+    if [[ -z "${old_template}" ]]; then
+        error_exit "ERROR: no template name to clone is provided"
+    fi
+    if [[ -z "${new_template}" ]]; then
+        error_exit "ERROR: no name is provided for the new template"
+    fi
+    if [[ ! -f ${SNOW_CONF}/boot/templates/${old_template}/${old_template}.pxe ]]; then
+        error_msg "There is no template with this name (${old_template}). Please, review the name with : snow list templates."
+    else
+        if [[ -f ${SNOW_CONF}/boot/templates/${new_template}/${new_template}.pxe ]]; then
+            error_msg "The template ${new_template} already exist. Please remove it before to create a new one."
+        fi
+        cp -pr ${SNOW_CONF}/boot/templates/${old_template} ${SNOW_CONF}/boot/templates/${new_template}
+        grep -rl "${old_template}" ${SNOW_CONF}/boot/templates/${new_template}/* | xargs sed -i "s|${old_template}|${new_template}|g"
+        for extension in cfg pxe; do 
+            mv ${SNOW_CONF}/boot/templates/${new_template}/${old_template}.$extension ${SNOW_CONF}/boot/templates/${new_template}/${new_template}.$extension
+        done
+    fi
+}
+
+function clone_node()
 {
     local node=$1
     local image=$2
@@ -1142,7 +1174,6 @@ function avail_images()
 
 function avail_nodes()
 {
-    set -xv
     if [[ -z $1 ]]; then 
         for i in "${!CLUSTERS[@]}"; do
             node_rank ${CLUSTERS[$i]}
