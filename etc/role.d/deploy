@@ -59,11 +59,12 @@ dhcp-option=3,$GATEWAY
 dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
 dhcp-option=15,$DOMAIN
-# Broadcast Address
-# dhcp-option=28,__BROADCAST__
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=$DHCP_NIC,${NET_SNOW[2]}0,static,infinite
+dhcp-range=$DHCP_NIC,${NET_SNOW[2]}100,${NET_SNOW[3]},24h
 dhcp-boot=pxelinux.0
+addn-hosts=/etc/static_hosts
+dhcp-sequential-ip
+clear-on-reload
 enable-tftp
 read-ethers
 tftp-root=/srv/tftp
@@ -73,14 +74,14 @@ else
     cp -p $SNOW_CONF/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
 
-if [[ ! -f $SNOW_CONF/system_files/etc/ethers ]]; then
+if [[ ! -e $SNOW_CONF/system_files/etc/ethers ]]; then
     touch ${prefix}/etc/ethers
     cp -p ${prefix}/etc/ethers $SNOW_CONF/system_files/etc/ethers
 else
     cp -p $SNOW_CONF/system_files/etc/ethers ${prefix}/etc/ethers
 fi
 
-cp -p /etc/hosts ${prefix}/etc/hosts
+cp -p $SNOW_CONF/system_files/etc/static_hosts ${prefix}/etc/static_hosts
 cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
 # DNS Client Setup
