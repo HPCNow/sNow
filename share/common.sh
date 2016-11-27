@@ -669,7 +669,7 @@ else
 fi 
 } 1>>$LOGFILE 2>&1
 
-function xen_create()
+function deploy_domain_xen()
 {
     get_server_distribution $1 
     if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
@@ -677,7 +677,7 @@ function xen_create()
             error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain or remove it first with : snow remove $1."
         else
             warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
-            xen_delete $1
+            remove_domain_xen $1
             FORCE="--force"
         fi
     else
@@ -711,7 +711,7 @@ function xen_create()
     fi
 } 1>>$LOGFILE 2>&1
 
-function xen_delete()
+function remove_domain_xen()
 {
     get_server_distribution $1 
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
@@ -725,7 +725,7 @@ function xen_delete()
     fi
 } 1>>$LOGFILE 2>&1
 
-function template_delete()
+function remove_template()
 {
     local template=$1
     if [[ ! -f ${SNOW_CONF}/boot/templates/${template}/${template}.pxe ]]; then
@@ -741,7 +741,7 @@ function template_delete()
     fi
 } 1>>$LOGFILE 2>&1
 
-function image_delete()
+function remove_image()
 {
     local image=$1
     if [[ ! -f ${SNOW_CONF}/boot/images/${image}/${image}.pxe ]]; then
@@ -757,7 +757,7 @@ function image_delete()
     fi
 } 1>>$LOGFILE 2>&1
 
-function node_delete()
+function remove_node()
 {
     local node=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
@@ -778,13 +778,26 @@ function node_delete()
     fi
 } 1>>$LOGFILE 2>&1
 
-function create_base()
+function add_node()
 {
-    if [[ "$opt3" == "force" ]]; then
-        FORCE="--force"
-    fi 
-    xen_create deploy
-}
+    local node=$1
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_query=$(echo ${nodes_json} | jq -r ".compute.${node}")
+    if [[ "${node_query}" != "null" ]]; then
+        error_msg "There node $node already exist in the database."
+    else
+        warning_msg "Do you want to add the node ${node}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer 
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            #for node in $nodes; do
+                nodes_json=$(echo "${nodes_json}" | jq "add(.compute.${node})")
+            #done
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+        else
+            info_msg "Well done. It's better to be sure." 
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
 
 function node_rank()
 {
@@ -824,7 +837,7 @@ function deploy()
     fi
     get_server_distribution $1
     if (($IS_VM)) ; then
-        xen_create $1 $2
+        deploy_domain_xen $1 $2
     else
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then

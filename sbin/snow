@@ -94,16 +94,16 @@ case $opt1 in
     remove)
         case $opt2 in
             domain)
-                xen_delete $opt3
+                remove_domain_xen $opt3
             ;;
             node)
-                node_delete $opt3
+                remove_node $opt3
             ;;
             template)
-                template_delete $opt3
+                remove_template $opt3
             ;;
             image)
-                image_delete $opt3
+                remove_image $opt3
             ;;
             *)
                 error_msg "You can remove : domain, node, template, image"
@@ -115,16 +115,42 @@ case $opt1 in
         spinner $!             "Deploying $opt2"
     ;;
     clone)
-        clone $opt2 $opt3 $opt4 $opt5 && error_check 0 "System cloned " || error_check 1 "System cloned " &
-        spinner $!             "Cloning $opt2"
-    ;;
-    create)
         case $opt2 in
-            base)
-                create_base
+            domain)
+                clone_domain_xen $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+                spinner $!             "Cloning $opt3"
+            ;;
+            node)
+                clone_node $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+                spinner $!             "Cloning $opt3"
+            ;;
+            template)
+                clone_template $opt3 $opt4 $opt5
+            ;;
+            image)
+                clone_image $opt3 $opt4 $opt5
             ;;
             *)
-                create $opt2
+                error_msg "You can clone : domain, node, template, image"
+            ;;
+        esac
+    ;;
+    add)
+        case $opt2 in
+            domain)
+                add_domain_xen $opt3
+            ;;
+            node)
+                add_node $opt3
+            ;;
+            template)
+                add_template $opt3
+            ;;
+            image)
+                add_image $opt3
+            ;;
+            *)
+                error_msg "You can add : domain, node, template, image"
             ;;
         esac
     ;;
