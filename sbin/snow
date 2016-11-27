@@ -92,33 +92,84 @@ case $opt1 in
         esac
     ;;
     remove)
-        xen_delete $opt2
+        case $opt2 in
+            domain)
+                remove_domain_xen $opt3
+            ;;
+            node)
+                remove_node $opt3
+            ;;
+            template)
+                remove_template $opt3
+            ;;
+            image)
+                remove_image $opt3
+            ;;
+            *)
+                error_msg "You can remove : domain, node, template, image"
+            ;;
+        esac
     ;;
     deploy)
         deploy $opt2 $opt3 $opt4 $opt5 & #&& error_check 0 "System deployed " || error_check 1 "System deployed " &
         spinner $!             "Deploying $opt2"
     ;;
     clone)
-        clone $opt2 $opt3 $opt4 $opt5 && error_check 0 "System cloned " || error_check 1 "System cloned " &
-        spinner $!             "Cloning $opt2"
-    ;;
-    create)
         case $opt2 in
-            base)
-                create_base
+            domain)
+                clone_domain_xen $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+                spinner $!             "Cloning $opt3"
+            ;;
+            node)
+                clone_node $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+                spinner $!             "Cloning $opt3"
+            ;;
+            template)
+                clone_template $opt3 $opt4 "$opt5"
+            ;;
+            image)
+                clone_image $opt3 $opt4 $opt5
             ;;
             *)
-                create $opt2
+                error_msg "You can clone : domain, node, template, image"
+            ;;
+        esac
+    ;;
+    add)
+        case $opt2 in
+            domain)
+                add_domain_xen $opt3
+            ;;
+            node)
+                add_node $opt3 $opt4
+            ;;
+            template)
+                add_template $opt3
+            ;;
+            image)
+                add_image $opt3
+            ;;
+            *)
+                error_msg "You can add : domain, node, template, image"
             ;;
         esac
     ;;
     list)
         case $opt2 in
-            all)
+            domains)
                 avail_domains
             ;;
+            templates)
+                avail_templates
+            ;;
+            images)
+                avail_images
+            ;;
+            nodes)
+                avail_nodes
+            ;;
             *)
-                list $opt2 
+                error_msg "Option not available: $opt2"
             ;;
         esac
     ;;
@@ -140,9 +191,6 @@ case $opt1 in
                 spinner $!             "Booting node(s) "
             ;;
         esac
-    ;;
-    cmd)
-        ncmd $opt2 $opt3 $opt4 $opt5
     ;;
     reboot)
         nreboot $opt2
@@ -185,9 +233,6 @@ case $opt1 in
     ;;
     console)
         nconsole $opt2
-    ;;
-    uptime)
-        nuptime $opt2
     ;;
     version|-V|-version|--version)
       msg "sNow! version : ${SNOW_VERSION}"
