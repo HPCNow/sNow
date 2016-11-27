@@ -125,7 +125,7 @@ case $opt1 in
                 spinner $!             "Cloning $opt3"
             ;;
             template)
-                clone_template $opt3 $opt4 $opt5
+                clone_template $opt3 $opt4 "$opt5"
             ;;
             image)
                 clone_image $opt3 $opt4 $opt5

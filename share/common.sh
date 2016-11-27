@@ -97,6 +97,8 @@ function shelp()
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
+        * add node <node> <cluster>                 | adds a new node in the sNow! database
+        * clone template <old> <new> <description>  | creates a new template based on an existing one
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
@@ -734,7 +736,7 @@ function remove_template()
         warning_msg "Do you want to remove the template ${template}? [y/N] (20 seconds)"
         read -t 20 -u 3 answer 
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            rm -f ${SNOW_CONF}/boot/templates/${template}/
+            rm -fr ${SNOW_CONF}/boot/templates/${template}/
         else
             info_msg "Well done. It's better to be sure." 
         fi
@@ -750,7 +752,7 @@ function remove_image()
         warning_msg "Do you want to remove the image ${image}? [y/N] (20 seconds)"
         read -t 20 -u 3 answer 
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            rm -f ${SNOW_CONF}/boot/images/${image}/
+            rm -fr ${SNOW_CONF}/boot/images/${image}/
         else
             info_msg "Well done. It's better to be sure." 
         fi
@@ -1053,8 +1055,9 @@ function generate_rootfs()
 
 function clone_template()
 {
-    local old_template=$1
-    local new_template=$2
+    local old_template="$1"
+    local new_template="$2"
+    local new_description="$3"
     if [[ -z "${old_template}" ]]; then
         error_exit "ERROR: no template name to clone is provided"
     fi
@@ -1072,6 +1075,9 @@ function clone_template()
         for extension in cfg pxe; do 
             mv ${SNOW_CONF}/boot/templates/${new_template}/${old_template}.$extension ${SNOW_CONF}/boot/templates/${new_template}/${new_template}.$extension
         done
+        if [[ ! -z "${new_description}" ]]; then
+            echo "${new_description}" > ${SNOW_CONF}/boot/templates/${new_template}/description
+        fi
     fi
 }
 
