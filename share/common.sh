@@ -97,7 +97,10 @@ function shelp()
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
-        * remove <domain>                           | removes an existing domain deployed with sNow!
+        * remove domain <domain>                    | removes an existing domain deployed with sNow!
+        * remove node <node>                        | removes an existing node from sNow! configuration
+        * remove template <template>                | removes an existing template
+        * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
         * list templates                            | list the available templates
         * list images                               | list the available images
@@ -381,7 +384,7 @@ function generate_hostlist()
     fi
     for (( i=0; i<${#host[@]}; i++ ));
     do 
-        printf "%s  \t  %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
+        printf "%-16s    %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
 
@@ -449,7 +452,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute exportfs -rv"
         fi
@@ -512,7 +515,7 @@ function init()
     cp /etc/ssh/shosts.equiv /root/.shosts
     # Update /etc/ssh/ssh_config
     bkp /etc/ssh/ssh_config
-    if [[ ! $(grep -q "HostbasedAuthentication yes" /etc/ssh/ssh_config) ]]; then
+    if ( ! $(grep "HostbasedAuthentication yes" /etc/ssh/ssh_config | grep -qv "^#") ); then
         echo "    HostbasedAuthentication yes" >> /etc/ssh/ssh_config
         echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
         echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
@@ -719,6 +722,59 @@ function xen_delete()
         fi 
         xen-delete-image $IMG_DST_OPT --hostname=$1
         rm -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg
+    fi
+} 1>>$LOGFILE 2>&1
+
+function template_delete()
+{
+    local template=$1
+    if [[ ! -f ${SNOW_CONF}/boot/templates/${template}/${template}.pxe ]]; then
+        error_msg "There is no template with this name. Please, review the name with : snow list templates."
+    else
+        warning_msg "Do you want to remove the template ${template}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer 
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            rm -f ${SNOW_CONF}/boot/templates/${template}/
+        else
+            info_msg "Well done. It's better to be sure." 
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
+
+function image_delete()
+{
+    local image=$1
+    if [[ ! -f ${SNOW_CONF}/boot/images/${image}/${image}.pxe ]]; then
+        error_msg "There is no image with this name. Please, review the name with : snow list images."
+    else
+        warning_msg "Do you want to remove the image ${image}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer 
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            rm -f ${SNOW_CONF}/boot/images/${image}/
+        else
+            info_msg "Well done. It's better to be sure." 
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
+
+function node_delete()
+{
+    local node=$1
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_query=$(echo ${nodes_json} | jq -r ".compute.${node}")
+    if [[ "${node_query}" == "null" ]]; then
+        error_msg "There is no node with this name ($node). Please, review the name with : snow list nodes."
+    else
+        warning_msg "Do you want to remove the node ${node}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer 
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            #for node in $nodes; do
+                nodes_json=$(echo "${nodes_json}" | jq "del(.compute.${node})")
+            #done
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+        else
+            info_msg "Well done. It's better to be sure." 
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -1001,17 +1057,15 @@ function clone()
 
 function avail_domains()
 {
-    #LC_ALL=C xen-list-images --test /sNow/snow-tools/etc/domains | tee /dev/fd/3
-    set -xv 
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s\n" "Domain" "HW status" "OS status" "Roles" 1>&3
+    #for domain in ${SELF_ACTIVE_DOMAINS}; do
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then 
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
             os_status="$(ssh ${domain} uptime -p || echo 'down')"
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
-            #last_deploy=$(jq ".compute.${domain}.last_deploy" ${SNOW_TOOL}/etc/domains.json | sed -e 's|"||g')
             printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
         fi
     done
@@ -1083,12 +1137,12 @@ function avail_nodes()
         done
     else
         node_rank $1
-        nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        nodes=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
     fi
     printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
-    for node in $nodes; do 
+    for node in ${nodes[@]}; do 
         #check_host_status ${node}${NET_MGMT[4]}
-        hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}')"
+        hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}' || echo 'IPMI down')"
         cluster=$(jq ".compute.${node}.cluster" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         os_status="$(ssh ${node} uptime -p || echo 'down')"
         current_image=$(jq ".compute.${node}.image" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
@@ -1134,7 +1188,7 @@ function boot()
         else
             boot_copy $IMAGE
         fi
-        if (( $NLENG > 1 )); then
+        if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             sleep $BLOCKD \; \
@@ -1234,7 +1288,7 @@ function ndestroy()
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 1 )); then
+        if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power off \
@@ -1258,7 +1312,7 @@ function npoweroff()
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 1 )); then
+        if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power soft \
@@ -1290,7 +1344,7 @@ function nreset()
         node_rank $1
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 1 )); then
+        if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \

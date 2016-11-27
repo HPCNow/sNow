@@ -92,7 +92,23 @@ case $opt1 in
         esac
     ;;
     remove)
-        xen_delete $opt2
+        case $opt2 in
+            domain)
+                xen_delete $opt3
+            ;;
+            node)
+                node_delete $opt3
+            ;;
+            template)
+                template_delete $opt3
+            ;;
+            image)
+                image_delete $opt3
+            ;;
+            *)
+                error_msg "You can remove : domain, node, template, image"
+            ;;
+        esac
     ;;
     deploy)
         deploy $opt2 $opt3 $opt4 $opt5 & #&& error_check 0 "System deployed " || error_check 1 "System deployed " &
@@ -150,9 +166,6 @@ case $opt1 in
             ;;
         esac
     ;;
-    cmd)
-        ncmd $opt2 $opt3 $opt4 $opt5
-    ;;
     reboot)
         nreboot $opt2
     ;;
@@ -194,9 +207,6 @@ case $opt1 in
     ;;
     console)
         nconsole $opt2
-    ;;
-    uptime)
-        nuptime $opt2
     ;;
     version|-V|-version|--version)
       msg "sNow! version : ${SNOW_VERSION}"
