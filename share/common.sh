@@ -499,11 +499,14 @@ function init()
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
         generate_nodes_json "$i" "$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
     done
+    if [[ ! -e /etc/hosts.base ]]; then
+        cp -p /etc/hosts /etc/hosts.base
+    fi
     bkp /etc/hosts
-    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> /etc/hosts
-    generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> /etc/hosts
-    generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> /etc/hosts
-    cp -p /etc/hosts ${SNOW_CONF}/system_files/etc/hosts 
+    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" > $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
 
     # Generate /etc/ssh/ssh_known_hosts
     bkp /etc/ssh/ssh_known_hosts
@@ -1191,10 +1194,19 @@ function avail_nodes()
     fi
     printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
     for node in ${nodes[@]}; do 
-        #check_host_status ${node}${NET_MGMT[4]}
-        hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}' || echo 'IPMI down')"
+        ping -c 1 -W 1 ${node}${NET_MGMT[4]} &> /dev/null
+        if [[ "$?" != "0" ]]; then
+            hw_status="IPMI down"
+        else
+            hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}' || echo 'IPMI down')"
+        fi 
+        ping -c 1 -W 1 ${node} &> /dev/null
+        if [[ "$?" != "0" ]]; then
+            os_status="down"
+        else
+            os_status="$(ssh ${node} uptime -p || echo 'down')"
+        fi 
         cluster=$(jq ".compute.${node}.cluster" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
-        os_status="$(ssh ${node} uptime -p || echo 'down')"
         current_image=$(jq ".compute.${node}.image" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         current_template=$(jq ".compute.${node}.template" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         last_deploy=$(jq ".compute.${node}.last_deploy" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
@@ -1204,7 +1216,7 @@ function avail_nodes()
 
 function check_host_status()
 {
-    PING=$(ping -c 1 $1 &> /dev/null)
+    ping -c 1 $1 &> /dev/null
     if [[ "$?" != "0" ]]; then
         error_exit "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
     fi 

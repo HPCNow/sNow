@@ -31,17 +31,16 @@ echo branch: ${branch}
 echo role: ${role}
 echo hash: ${hash}
 ########## AUTHENTICATION MICROSERVICE ##########
-active_domains=$(snow list | egrep -v "Name|Domain-0" | wc -l)
 if [[ ! -z "$self_active_domains" ]]; then 
     for domain in $self_active_domains; do
-        active_domain=$(snow list domains $domain | wc -l)
-        if [[ "$active_domain" > "0" ]]; then
+        active_domain=$(snow list domains | gawk -v role=$role '{if($NF ~ role){print $3}}')
+        if [[ "$active_domain" == "up" ]]; then
             snow poweroff $domain
             sleep 10
         fi
-        deployed_domain=$(snow list domains all | grep "Name: $domain" | wc -l )
+        deployed_domain=$(snow list domains | grep "^$domain " | wc -l )
         if [[ "$deployed_domain" > "0" ]]; then
-            snow remove $domain 
+            snow remove domain $domain 
         fi
         if [[ -e /dev/snow_vg/${domain}-disk || -e /dev/snow_vg/${domain}-swap ]]; then
             lvremove -f /dev/snow_vg/${domain}-disk
