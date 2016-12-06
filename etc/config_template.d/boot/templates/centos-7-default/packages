@@ -52,6 +52,7 @@ python-pip
 read-edid
 rpcbind
 rsync
+rsyslog
 screen
 strace
 sudo

@@ -125,6 +125,6 @@ while read line; do
     download_url=$(echo $line | gawk '{print $1}')
     if [[ ! -e ${download_path} ]]; then
         mkdir -p ${download_path}
-        download ${download_url} ${download_path}
     fi
+    download ${download_url} ${download_path}
 done < $SNOW_TOOL/etc/config_template.d/boot/templates/pxe_kernels.conf
