@@ -1126,7 +1126,11 @@ function avail_domains()
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then 
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
-            os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            if [[ "$hw_status" == "on" ]]; then
+                os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            else
+                os_status="down"
+            fi
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
             printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
         fi
