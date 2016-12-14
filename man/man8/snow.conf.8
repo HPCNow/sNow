@@ -62,16 +62,16 @@ The domains will be stored inside a loopback file located inside /sNow/domains f
 \fBIMG_DST='nfs=$NFS_SERVER:/sNow/domains\fR' (experimental)
 The domains file system will be stored in NFS server and booted via NFSROOT.
 .TP
-\fBSNOWVG\fR
-SNOWVG=snow_vg
+\fBSNOW_VG\fR
+SNOW_VG=snow_vg
 .RE
 
 .TP
-\fBSNOWNODES\fR
+\fBSNOW_NODES\fR
 Defines the node or list of nodes which will compose the sNow! High Availability cluster (not the compute cluster). Default value is snow01.
 
 .TP
-\fBSSHPORT\fR
+\fBSSH_PORT\fR
 Defines the default TPC port for SSH. Default value is 22.
 
 .TP
@@ -89,8 +89,8 @@ This parameter defines the email of email list (coma separated and without space
 .RE
 
 .TP
-\fBMASTERPWD\fR
-Defines the master password which will be used for setting up the root password for the deployed domains and compute nodes and also for some other services. We strongly suggest to change the default value which is MASTERPWD='HPCN0w!!'.
+\fBMASTER_PASSWORD\fR
+Defines the master password which will be used for setting up the root password for the deployed domains and compute nodes and also for some other services. We strongly suggest to change the default value which is MASTER_PASSWORD='HPCN0w!!'.
 
 .TP
 \fBsNow! User Definition\fR
@@ -176,15 +176,15 @@ NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.240.0' '-ib' )
 \fBIPMI / BMC Setup\fR
 The following parameters provide the required information to interact with the compute nodes IPMI.
 .TP
-\fBIPMITYPE\fR
+\fBIPMI_TYPE\fR
 IPMI type used by ipmitools. Default value is lanplus.
 
 .TP
-\fBIPMIUSER\fR
+\fBIPMI_USER\fR
 IPMI user. Default value is admin.
 
 .TP
-\fBIPMIPWD\fR
+\fBIPMI_PASSWORD\fR
 IPMI password associated with the user descrived above. Default value is admin.
 
 .TP
@@ -213,13 +213,13 @@ Since the configuration managers are quite complex to setup and it also strongly
 The default values are unset.
 .RS
 .TP
-\fBSNOWCM\fR
+\fBCM_SOFTWARE\fR
 Defines the name of the configuration manager to be used. Default value is empty.
 .TP
-\fBCF_SERVER\fR
+\fBCM_SERVER\fR
 Defines the configuration manager server. Default value is empty.
 .TP
-\fBCFENGINE_VER\fR
+\fBCM_VERSION\fR
 Defines the version of the configuration manager to be used. Default value is empty.
 .RE
 
@@ -306,7 +306,7 @@ SITE_MAIL_SERVER=smtp.gmail.com::587
 
 SITE_MAIL_USER=
 
-SITE_MAIL_PASSWD=
+SITE_MAIL_PASSWORD=
 
 SITE_SYSLOG_SERVER=192.168.7.1
 
@@ -318,7 +318,7 @@ MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
 
 BeeGFS Clients
 
-BEEGFSMGMT=beegfs-01
+BEEGFS_MGMT=beegfs-01
 
 BEEGFS_VERSION=2015.03
 
@@ -347,7 +347,7 @@ Slurm Database
 
 SLURMDBD_USER=slurm
 
-SLURMDBD_PWD=whatever
+SLURMDBD_PASSWORD=whatever
 
 SLURMDBD_NAME=slurm_acct_db
 
@@ -365,7 +365,7 @@ MUNGE_GID=994
 \fBSlurmctl master\fR
 # Slurmctl master
 
-SLURMVERSION=15.8.2
+SLURM_VERSION=15.8.2
 
 SLURM_CONF=/etc/slurm/slurm.conf
 

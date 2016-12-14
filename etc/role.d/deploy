@@ -105,7 +105,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
             sed -i "s|__LANG__|$LANG|g" $file
             sed -i "s|__KEYMAP__|$KEYMAP|g" $file
             sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
-            sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $file
+            sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" $file
             sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
             sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
             sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 

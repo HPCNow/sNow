@@ -32,12 +32,12 @@ for VMNAME in $DOMAINS2BKP
 do 
     DATE=$(date +%Y%m%d)
     LAST=$(tail -1 $SNOW_PATH/log/snapshots-$VMNAME.history)
-    /sbin/lvcreate -s -L 1G -n $VMNAME-snap-$DATE $SNOWVG/${VMNAME} &> $SNOW_PATH/log/snapshots-$VMNAME.log
+    /sbin/lvcreate -s -L 1G -n $VMNAME-snap-$DATE $SNOW_VG/${VMNAME} &> $SNOW_PATH/log/snapshots-$VMNAME.log
     echo "$VMNAME-snap-$DATE" >> $SNOW_PATH/log/snapshots-$VMNAME.history
-    dd if=/dev/$SNOWVG/$VMNAME-snap-$DATE of=$SNOW_PATH/backup/$VMNAME-snap-$DATE
+    dd if=/dev/$SNOW_VG/$VMNAME-snap-$DATE of=$SNOW_PATH/backup/$VMNAME-snap-$DATE
     bzip2 $SNOW_PATH/backup/$VMNAME-snap-$DATE
     rm $SNOW_PATH/backup/$LAST.bz2 
-    /sbin/lvremove -f /dev/$SNOWVG/$LAST
+    /sbin/lvremove -f /dev/$SNOW_VG/$LAST
     #echo "Backup module $VMNAME finished" | nail -s "[sNow!] Snapshot $VMNAME" -a $SNOW_PATH/log/snapshots-$VMNAME.log -r $SMAIL $SMAIL
     echo "Backup module $VMNAME finished" | logger -t snow -p user.notice
 done
