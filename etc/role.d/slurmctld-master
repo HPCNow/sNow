@@ -26,7 +26,7 @@ SNOW_SLURMCTLD_MASTER=$(gawk '{if($2 ~ /slurmctld-master/){print $1}}' $SNOW_TOO
 if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then 
     installDebianPackage ${prefix} curl pbzip2
     chroot ${prefix} /usr/bin/apt-get update -q 
-    installDebianPackage ${prefix} slurm-llnl slurm-client 
+    installDebianPackage ${prefix} slurm-wlm slurm-client 
     chroot ${prefix} /bin/systemctl enable munge.service
     sed -i 's|slurm-llnl|slurm|g' ${prefix}/etc/init.d/slurm* ${prefix}/lib/systemd/system/slurm*.service
     sed -i 's|PIDFile=/var/run/slurm/|PIDFile=/var/run/|g' ${prefix}/lib/systemd/system/slurm*.service
