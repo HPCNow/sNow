@@ -29,8 +29,8 @@ HPCNow_UID=2001
 HPCNow_GID=2000
 HPCNow_USER=hpcnow
 # Private GIT Repo Setup
-#TOKEN=
-#PRIVATE_REPO=
+#PRIVATE_GIT_TOKEN=
+#PRIVATE_GIT_REPO=
 # Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
 NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
 NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )

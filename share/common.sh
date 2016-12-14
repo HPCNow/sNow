@@ -556,12 +556,12 @@ if [[ ! -d ${SNOW_CONF}  ]]; then
     git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
-    if [[ -z "$TOKEN" || -z "$PRIVATE_REPO" ]]; then
+    if [[ -z "$PRIVATE_GIT_TOKEN" || -z "$PRIVATE_GIT_REPO" ]]; then
         error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
         exit 1
     fi
     cd ${SNOW_CONF}
-    git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+    git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
 } 1>>$LOGFILE 2>&1
 
