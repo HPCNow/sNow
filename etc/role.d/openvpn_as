@@ -23,7 +23,7 @@ wget http://swupdate.openvpn.org/as/openvpn-as-2.0.25-Debian8.amd_64.deb -O ${pr
 
 # Stage domain entrypoint script
 cp -p $SNOW_TOOL/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_boot/openvpn_as.sh
-sed -i "s|__MASTERPWD__|$MASTERPWD|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
+sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 
 # Domain Setup
 if [[ -d /sNow/snow-configspace/files/etc/openvpn_as ]]; then

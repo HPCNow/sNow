@@ -11,7 +11,7 @@ curl ifconfig.me > /tmp/ip.txt 2> /dev/null
 dpkg -i /root/openvpn-as-2.0.25-Debian8.amd_64.deb
 
 # Update the OpenVPN user password
-echo 'openvpn:__MASTERPWD__' | chpasswd
+echo 'openvpn:__MASTER_PASSWORD__' | chpasswd
 
 # Install the domain
 if [[ "$OPENVPNAS_RECONFIGURE" == "__OPENVPNAS_RECONFIGURE__" ]]; then
