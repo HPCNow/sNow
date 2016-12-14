@@ -99,6 +99,14 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         mkdir $SNOW_CONF
     fi
     cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
+    SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
+        PROXY_SERVER=$SNOW_PROXY_SERVER
+        PROXY_PORT=8080
+    else
+        PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+        PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+    fi
     for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
         for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
             sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
