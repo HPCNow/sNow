@@ -30,8 +30,8 @@ GUEST_FQDN=$hostname
 GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}') 
 
 # Config Manager
-if  [[ ! -z "$CF_SERVER" ]]; then 
-    case $SNOWCF in
+if  [[ ! -z "$CM_SERVER" ]]; then 
+    case $CM_SOFTWARE in
         CFENGINE|cfengine)
             # There is a bug in the CFEngine debian repos. Using package instead
             #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
@@ -39,14 +39,14 @@ if  [[ ! -z "$CF_SERVER" ]]; then
             #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
             #chroot ${prefix} /usr/bin/apt-get update
             #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
-            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb \
-                -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CM_VERSION}_amd64.deb \
+                -O ${prefix}/tmp/cfengine-community_${CM_VERSION}_amd64.deb
+            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CM_VERSION}_amd64.deb
             cp -p /sNow/snow-tools/etc/role.d/first_boot/cfengine_bootstrap.sh  ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
-            sed -i "s|__CF_SERVER__|$CF_SERVER|g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
+            sed -i "s|__CM_SERVER__|$CM_SERVER|g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
             ;;
         *)
-            echo "$SNOWCF is NOT supported"
+            echo "$CM_SOFTWARE is NOT supported"
             ;;
     esac
 fi

@@ -25,19 +25,19 @@ fi
 SLURMDBD_NAME="${SLURMDBD_NAME:-slurm_acct_db}"
 SNOW_SLURMDBD_SERVER=$(gawk '{if($2 ~ /slurmdbd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then 
-    echo "mysql-server-5.5 mysql-server/root_password password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
-    echo "mysql-server-5.5 mysql-server/root_password_again password $MASTERPWD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
     installDebianPackage ${prefix} curl pbzip2 mysql-server
     chroot ${prefix} /bin/systemctl start mysql.service
     chroot ${prefix} /usr/bin/mysqld_safe &
     #chroot ${prefix} /bin/systemctl enable mysql.service
     sleep 30
-    echo "create database $SLURMDBD_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
-    echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PWD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTERPWD
+    echo "create database $SLURMDBD_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTER_PASSWORD
+    echo "grant all on $SLURMDBD_NAME.* to $SLURMDBD_USER@localhost identified by '$SLURMDBD_PASSWORD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTER_PASSWORD
     #chroot ${prefix} /bin/systemctl stop mysql.service
     /usr/bin/killall -9 mysqld_safe mysqld
     chroot ${prefix} /usr/bin/apt-get update -q 
-    installDebianPackage ${prefix} slurm-llnl-slurmdbd slurm-client 
+    installDebianPackage ${prefix} slurmdbd slurm-client 
     chroot ${prefix} /bin/systemctl enable munge.service
     sed -i 's|slurm-llnl|slurm|g' ${prefix}/etc/init.d/slurm* ${prefix}/lib/systemd/system/slurm*.service
     sed -i 's|PIDFile=/var/run/slurm/|PIDFile=/var/run/|g' ${prefix}/lib/systemd/system/slurm*.service
@@ -75,7 +75,7 @@ if  [[ ! -z "$SNOW_SLURMDBD_SERVER" ]]; then
         mkdir -p $SNOW_CONF/system_files/etc/slurm
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         cp -pr $SNOW_TOOL/etc/config_template.d/slurmdbd/slurmdbd.conf ${prefix}/etc/slurm/
-        sed -i "s|__SLURMDBD_PWD__|$SLURMDBD_PWD|g" ${prefix}/etc/slurm/slurmdbd.conf
+        sed -i "s|__SLURMDBD_PASSWORD__|$SLURMDBD_PASSWORD|g" ${prefix}/etc/slurm/slurmdbd.conf
         sed -i "s|__SLURMDBD_USER__|$SLURMDBD_USER|g" ${prefix}/etc/slurm/slurmdbd.conf
         cp -p ${prefix}/etc/slurm/slurmdbd.conf $SNOW_CONF/system_files/etc/slurm/slurmdbd.conf
     fi

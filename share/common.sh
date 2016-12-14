@@ -444,7 +444,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            snow_servers_exports=$(echo "${SNOWNODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
+            snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
             gawk -v snow_servers_exports=$snow_servers_exports '{
                 if ($1 !~ /^#|snow/){
                     print "/sNow/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
@@ -704,7 +704,7 @@ function deploy_domain_xen()
     if [[ -n "$IMG_DST" ]]; then
         IMG_DST_OPT="--${IMG_DST}"
     fi 
-    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTERPWD" '{
+    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
@@ -906,9 +906,9 @@ function deploy()
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
             info_msg "Booting node : $NPREFIX{} ... Please wait" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
             sleep 5 \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
             sleep $BLOCKD \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             sleep $BOOT_DELAY
@@ -924,9 +924,9 @@ function deploy()
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
             sleep 5
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
             info_msg "Deploying node : $1 ... Please wait"
             sleep $BOOT_DELAY
             info_msg "You can monitor the deployment with : snow console $1"
@@ -1126,7 +1126,11 @@ function avail_domains()
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then 
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
-            os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            if [[ "$hw_status" == "on" ]]; then
+                os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            else
+                os_status="down"
+            fi
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
             printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
         fi
@@ -1206,7 +1210,7 @@ function avail_nodes()
         if [[ "$?" != "0" ]]; then
             hw_status="IPMI down"
         else
-            hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}' || echo 'IPMI down')"
+            hw_status="$(ipmitool -I $IPMI_TYPE -H ${node}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power status | gawk '{print $4}' || echo 'IPMI down')"
         fi 
         ping -c 1 -W 1 ${node} &> /dev/null
         if [[ "$?" != "0" ]]; then
@@ -1262,11 +1266,11 @@ function boot()
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             sleep $BLOCKD \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
         fi
     fi
 }
@@ -1361,11 +1365,11 @@ function ndestroy()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power off \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power off
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
         fi
     fi
 }
@@ -1385,11 +1389,11 @@ function npoweroff()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power soft \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power soft
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
         fi
     fi
 }
@@ -1417,11 +1421,11 @@ function nreset()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
         fi
     fi
 }
@@ -1445,9 +1449,9 @@ function nconsole()
         xl console $1 1>&3
     else
         check_host_status $1${NET_MGMT[4]}
-        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol deactivate
+        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol activate 1>&3
+        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
     fi
 }
 
