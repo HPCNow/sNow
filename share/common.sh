@@ -506,7 +506,8 @@ function init()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
-    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" > $SNOW_CONF/system_files/etc/static_hosts
+    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
