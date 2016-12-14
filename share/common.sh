@@ -171,11 +171,15 @@ function download()
     download_url=$1
     download_path=$2
     case $DOWNLD in
-        axel) 
+        axel)
             axel -q -n 10 ${download_url} -o ${download_path} 
         ;;
+        curl)
+            f=$(gawk -F'/' '{print $NF}' <<< ${download_url})
+            curl ${download_url} -o ${download_path}/$f
+        ;;
         wget)
-            wget -q -P ${download_path} ${download_url}
+            wget -q -NS --content-disposition -P ${download_path} ${download_url}
         ;;
         *) 
             error_exit "Error: $DOWNLD is not supported"
