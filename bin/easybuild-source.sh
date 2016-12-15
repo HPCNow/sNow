@@ -27,8 +27,13 @@ export EASYBUILD_INSTALLPATH=$EASYBUILD_PREFIX                        # path to 
 export EASYBUILD_SOURCEPATH=${SNOW_SOFT}/sources                         # not just the default as shared by all architectures
 export EASYBUILD_TMP_LOGDIR=${SNOW_SOFT}/tmp                             # so in shared filesystem not host local
 export EASYBUILD_MODULES_TOOL=Lmod                                    # so EB sees exactly the same modules as users
+if [[ -e $SNOW_SOFT/modules/all ]]; then
+    export MODULEPATH=$(${SNOW_SOFT}/lmod/lmod/libexec/addto --append MODULEPATH $SNOW_SOFT/modules/all)
+else
+    echo "Easybuild module path is not available"
+fi
 if [[ -e $EASYBUILD_PREFIX/modules/all ]]; then
     export MODULEPATH=$(${SNOW_SOFT}/lmod/lmod/libexec/addto --append MODULEPATH $EASYBUILD_PREFIX/modules/all)
 else
-    warning_msg "Easybuild module path is not available"
+    echo "Applications module path is not available"
 fi

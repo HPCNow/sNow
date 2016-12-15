@@ -4,9 +4,10 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
+TEMPLATE=__DEFAULT_TEMPLATE__
 SNOW_PATH=/sNow
 SNOW_TOOL=$SNOW_PATH/snow-tools
-TEMPLATE_PATH=${SNOW_CONF}/boot/templates/__DEFAULT_TEMPLATE__
+TEMPLATE_PATH=${SNOW_CONF}/boot/templates/$TEMPLATE
 # Load sNow! functions
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     LOGFILE=/root/first-boot.log
@@ -25,7 +26,7 @@ else
 fi
 
 if [[ -f ${TEMPLATE_PATH}/config ]]; then
-    info_msg "Loading __DEFAULT_TEMPLATE__ configuration ..."
+    info_msg "Loading $TEMPLATE configuration ..."
     source ${TEMPLATE_PATH}/config
 else
     info_msg "Config file not found"

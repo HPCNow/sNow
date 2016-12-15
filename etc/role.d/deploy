@@ -51,6 +51,7 @@ SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.co
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+    local last_ip=$(generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" | gawk '{if($1 !~ /^#/){print $1}}' | tail -1)
     echo "
 interface=$DHCP_NIC
 # Gateway
@@ -60,7 +61,7 @@ dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
 dhcp-option=15,$DOMAIN
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=$DHCP_NIC,${NET_SNOW[2]}100,${NET_SNOW[3]},24h
+dhcp-range=$DHCP_NIC,${NET_SNOW[2]}100,${last_ip},24h
 dhcp-boot=pxelinux.0
 addn-hosts=/etc/static_hosts
 dhcp-sequential-ip
