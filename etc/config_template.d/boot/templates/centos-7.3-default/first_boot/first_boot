@@ -1,0 +1,48 @@
+#!/bin/bash
+#set -xv
+set -o pipefail  # trace ERR through pipes
+set -o errtrace  # trace ERR through 'time command' and other functions
+# sNow! paths
+# SNOW_HOME and SNOW_SOFT can be setup in different paths
+TEMPLATE=__DEFAULT_TEMPLATE__
+SNOW_PATH=/sNow
+SNOW_TOOL=$SNOW_PATH/snow-tools
+TEMPLATE_PATH=${SNOW_CONF}/boot/templates/$TEMPLATE
+# Load sNow! functions
+if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    LOGFILE=/root/first-boot.log
+    RETAIN_NUM_LINES=10
+    source ${SNOW_TOOL}/share/common.sh
+    logsetup
+    get_os_distro
+    architecture_identification
+fi
+# Load sNow! configuration
+if [[ -e ${SNOW_TOOL}/etc/snow.conf ]]; then
+    source ${SNOW_TOOL}/etc/snow.conf
+else
+    error_msg  "The ${SNOW_TOOL}/etc/snow.conf is not available."
+    error_exit "Please use the ${SNOW_TOOL}/etc/snow.conf-example to setup your environment."
+fi
+
+if [[ -f ${TEMPLATE_PATH}/config ]]; then
+    info_msg "Loading $TEMPLATE configuration ..."
+    source ${TEMPLATE_PATH}/config
+else
+    info_msg "Config file not found"
+fi
+
+case "$1" in
+  start)
+    hooks ${TEMPLATE_PATH}/first_boot/ 
+    systemctl disable first_boot
+	;;
+  stop)
+    systemctl disable first_boot
+	;;
+  *)
+	log_action_msg "Usage: systemctl {start|stop} first_boot" || true
+	exit 1
+esac
+
+exit 0
