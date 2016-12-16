@@ -5,6 +5,21 @@
 #
 function install_lmod()
 {
+    case $OS in
+        debian|ubuntu)
+            pkgs="lua lua-filesystem lua-posix liblua5.2-dev"
+        ;;
+        rhel|redhat|centos)
+            pkgs="lua-devel lua-filesystem lua-posix"
+        ;;
+        suse|sle[sd]|opensuse)
+            pkgs="lua lua-filesystem lua-posix"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
     if is_golden_node; then
         if [[ ! -e $SNOW_SOFT/lmod/lmod/init/profile ]]; then
             chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
