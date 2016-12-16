@@ -45,6 +45,7 @@ function print_msg()
 function logsetup()
 {
     TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    chown root:root $LOGFILE
     chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
 }
@@ -102,14 +103,12 @@ function shelp()
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
-        * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
         * list templates                            | list the available templates
-        * list images                               | list the available images
         * list nodes                                | list the available compute nodes and their status
-        * boot <domain|server> <image>              | boot specific domain or server with optional image
+        * boot <domain|server>                      | boot specific domain or server
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
-        * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+        * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
         * reboot <domain|server>                    | reboot specific domain or server
         * shutdown <domain|server>                  | shutdown specific domain or server
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
@@ -127,6 +126,10 @@ function shelp()
     " 1>&3
 }
 #        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
+#        * remove image <image>                      | removes an existing image
+#        * list images                               | list the available images
+#        * boot <domain|server> <image>              | boot specific domain or server with optional image
+#        * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
 
 function end_msg()
 {
@@ -168,11 +171,15 @@ function download()
     download_url=$1
     download_path=$2
     case $DOWNLD in
-        axel) 
+        axel)
             axel -q -n 10 ${download_url} -o ${download_path} 
         ;;
+        curl)
+            f=$(gawk -F'/' '{print $NF}' <<< ${download_url})
+            curl ${download_url} -o ${download_path}/$f
+        ;;
         wget)
-            wget -q -P ${download_path} ${download_url}
+            wget -q -NS --content-disposition -P ${download_path} ${download_url}
         ;;
         *) 
             error_exit "Error: $DOWNLD is not supported"
@@ -357,6 +364,32 @@ function mask2cidr()
     echo "$nbits"
 }
 
+function last_ip_in_range()
+{
+    local ip=$1
+    local net=$(echo $ip | cut -d '/' -f 1);
+    local prefix=$(echo $ip | cut -d '/' -f 2);
+    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        cidr=$(mask2cidr $prefix)
+    else
+        cidr=$prefix
+    fi
+    local bit_netmask=$(prefix_to_bit_netmask $cidr);
+    local wildcard_mask=$(bit_netmask_to_wildcard_netmask "$bit_netmask");
+    local str=
+    for (( i = 1; i <= 4; i++ )); do
+        range=$(echo $net | cut -d '.' -f $i)
+        mask_octet=$(echo $wildcard_mask | cut -d ' ' -f $i)
+        if [ $mask_octet -gt 0 ]; then
+            range="{$range..$(( $range | $mask_octet ))}";
+        fi
+        str="${str} $range"
+    done
+    local ips=$(echo $str | sed "s, ,\\.,g"); 
+    local hostip=( $(eval echo $ips | tr ' ' '\n') )
+    echo ${hostip[-2]}
+}
+
 function generate_hostlist()
 {
     local ip=$1
@@ -437,7 +470,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            snow_servers_exports=$(echo "${SNOWNODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
+            snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
             gawk -v snow_servers_exports=$snow_servers_exports '{
                 if ($1 !~ /^#|snow/){
                     print "/sNow/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
@@ -503,7 +536,8 @@ function init()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
-    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" > $SNOW_CONF/system_files/etc/static_hosts
+    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
@@ -548,12 +582,12 @@ if [[ ! -d ${SNOW_CONF}  ]]; then
     git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
     cd -
 else
-    if [[ -z "$TOKEN" || -z "$PRIVATE_REPO" ]]; then
+    if [[ -z "$PRIVATE_GIT_TOKEN" || -z "$PRIVATE_GIT_REPO" ]]; then
         error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
         exit 1
     fi
     cd ${SNOW_CONF}
-    git pull https://$TOKEN:x-oauth-basic@$PRIVATE_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+    git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
 fi
 } 1>>$LOGFILE 2>&1
 
@@ -696,7 +730,7 @@ function deploy_domain_xen()
     if [[ -n "$IMG_DST" ]]; then
         IMG_DST_OPT="--${IMG_DST}"
     fi 
-    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTERPWD" '{
+    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
@@ -898,9 +932,9 @@ function deploy()
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
             info_msg "Booting node : $NPREFIX{} ... Please wait" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \; \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
             sleep 5 \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \; \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
             sleep $BLOCKD \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             sleep $BOOT_DELAY
@@ -916,9 +950,9 @@ function deploy()
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
             sleep 5
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
             info_msg "Deploying node : $1 ... Please wait"
             sleep $BOOT_DELAY
             info_msg "You can monitor the deployment with : snow console $1"
@@ -1118,7 +1152,11 @@ function avail_domains()
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then 
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
-            os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            if [[ "$hw_status" == "on" ]]; then
+                os_status="$(ssh ${domain} uptime -p || echo 'down')"
+            else
+                os_status="down"
+            fi
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
             printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
         fi
@@ -1198,7 +1236,7 @@ function avail_nodes()
         if [[ "$?" != "0" ]]; then
             hw_status="IPMI down"
         else
-            hw_status="$(ipmitool -I $IPMITYPE -H ${node}${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power status | gawk '{print $4}' || echo 'IPMI down')"
+            hw_status="$(ipmitool -I $IPMI_TYPE -H ${node}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power status | gawk '{print $4}' || echo 'IPMI down')"
         fi 
         ping -c 1 -W 1 ${node} &> /dev/null
         if [[ "$?" != "0" ]]; then
@@ -1254,11 +1292,11 @@ function boot()
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             sleep $BLOCKD \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power on \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power on
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
         fi
     fi
 }
@@ -1353,11 +1391,11 @@ function ndestroy()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power off \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power off
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
         fi
     fi
 }
@@ -1377,11 +1415,11 @@ function npoweroff()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power soft \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power soft
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
         fi
     fi
 }
@@ -1409,11 +1447,11 @@ function nreset()
         if (( $NLENG > 0 )); then
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMITYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMIUSER -P $IPMIPWD power reset \
+            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
             check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD power reset
+            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
         fi
     fi
 }
@@ -1437,9 +1475,9 @@ function nconsole()
         xl console $1 1>&3
     else
         check_host_status $1${NET_MGMT[4]}
-        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol deactivate
+        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
         sleep 1
-        ipmitool -I $IPMITYPE -H $1${NET_MGMT[4]} -U $IPMIUSER -P $IPMIPWD sol activate 1>&3
+        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
     fi
 }
 

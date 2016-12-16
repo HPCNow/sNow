@@ -21,7 +21,7 @@ else
 fi
 
 # Include HPCNow! repository
-/usr/bin/curl -sSL http://snow.hpcnow.com/apt/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
+/usr/bin/curl -sSL http://snow.hpcnow.com/hpcnow.gpg.key | chroot ${prefix} /usr/bin/apt-key add - 
 echo "deb http://snow.hpcnow.com/apt/debian jessie main" > ${prefix}/etc/apt/sources.list.d/snow.list 
 chroot ${prefix} /usr/bin/apt-get update
 
@@ -30,8 +30,8 @@ GUEST_FQDN=$hostname
 GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}') 
 
 # Config Manager
-if  [[ ! -z "$CF_SERVER" ]]; then 
-    case $SNOWCF in
+if  [[ ! -z "$CM_SERVER" ]]; then 
+    case $CM_SOFTWARE in
         CFENGINE|cfengine)
             # There is a bug in the CFEngine debian repos. Using package instead
             #wget http://cfengine.com/pub/gpg.key -O ${prefix}/tmp/gpg.key
@@ -39,33 +39,50 @@ if  [[ ! -z "$CF_SERVER" ]]; then
             #/bin/echo "deb http://cfengine.com/pub/apt/packages stable main" > ${prefix}/etc/apt/sources.list.d/cfengine-community.list
             #chroot ${prefix} /usr/bin/apt-get update
             #chroot ${prefix} /usr/bin/apt-get install cfengine-community debian-keyring
-            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CFENGINE_VER}_amd64.deb \
-                -O ${prefix}/tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
-            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CFENGINE_VER}_amd64.deb
+            wget --no-check-certificate https://cfengine-package-repos.s3.amazonaws.com/community_binaries/cfengine-community_${CM_VERSION}_amd64.deb \
+                -O ${prefix}/tmp/cfengine-community_${CM_VERSION}_amd64.deb
+            chroot ${prefix} /usr/bin/dpkg -i /tmp/cfengine-community_${CM_VERSION}_amd64.deb
             cp -p /sNow/snow-tools/etc/role.d/first_boot/cfengine_bootstrap.sh  ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
-            sed -i "s|__CF_SERVER__|$CF_SERVER|g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
+            sed -i "s|__CM_SERVER__|$CM_SERVER|g" ${prefix}/usr/local/first_boot/01-cfengine_bootstrap.sh
             ;;
         *)
-            echo "$SNOWCF is NOT supported"
+            echo "$CM_SOFTWARE is NOT supported"
             ;;
     esac
 fi
 
+# Check UIDs and GIDs for sNow! User
+if [[ -z $(chroot ${prefix} /usr/bin/getent passwd $sNow_USER) ]]; then
+    chroot ${prefix} /usr/sbin/groupadd -g $sNow_GID $sNow_GROUP
+    chroot ${prefix} /usr/sbin/useradd -u $sNow_UID -g $sNow_GID -c "sNow! Admin User" -s /bin/bash -d $SNOW_HOME/$sNow_USER  $sNow_USER 
+elif [[ "$(chroot ${prefix} /usr/bin/id -u $sNow_USER)" != "$sNow_UID"  &&  "$(chroot ${prefix} /usr/bin/id -g $sNow_USER)" != "$sNow_GID" ]]; then
+    chroot ${prefix} /usr/sbin/groupmod -g $sNow_GID $sNow_GROUP
+    chroot ${prefix} /usr/sbin/usermod -u $sNow_UID -g $sNow_GID $sNow_USER
+    chroot ${prefix} /usr/sbin/usermod -c "sNow! Admin User" -g $sNow_GID -d $SNOW_HOME/$sNow_USER -s /bin/bash -m -u $sNow_UID $sNow_USER
+fi
+# Don't require password for sNow! Admin user sudo
+echo "$sNow_USER ALL=(ALL) NOPASSWD: ALL" >> ${prefix}/etc/sudoers
+
 # SSH Setup
 ADMIN_USERS="${ADMIN_USERS:-root snow}"
 ADMIN_GROUPS="${ADMIN_GROUPS:-root snow}"
+mkdir -p ${prefix}/root/.ssh
+cp -p $SNOW_HOME/$sNow_USER/.ssh/authorized_keys ${prefix}/root/.ssh/authorized_keys
+cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa.pub ${prefix}/root/.ssh/id_rsa.pub
+cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa ${prefix}/root/.ssh/id_rsa
+chown -R root:root ${prefix}/root/.ssh
+chmod 700 ${prefix}/root/.ssh
+chmod 640 ${prefix}/root/.ssh/authorized_keys
+cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* ${prefix}/etc/ssh/
 if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/ssh/sshd_config ${prefix}/etc/ssh/sshd_config
-    mkdir -p ${prefix}/root/.ssh
-    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 else
+    sed -i "s|#PermitRootLogin no|PermitRootLogin yes|g" ${prefix}/etc/ssh/sshd_config
     echo "UseDNS no" >> ${prefix}/etc/ssh/sshd_config
     echo "AllowUsers $ADMIN_USERS" >> ${prefix}/etc/ssh/sshd_config
     echo "AllowGroups $ADMIN_GROUPS" >> ${prefix}/etc/ssh/sshd_config
     mkdir -p /sNow/snow-configspace/system_files/etc/ssh
     cp -p ${prefix}/etc/ssh/sshd_config /sNow/snow-configspace/system_files/etc/ssh/sshd_config
-    mkdir -p ${prefix}/root/.ssh
-    cat /root/.ssh/id_rsa.pub >> ${prefix}/root/.ssh/authorized_keys
 fi
 
 # DNS Client Setup
