@@ -364,6 +364,32 @@ function mask2cidr()
     echo "$nbits"
 }
 
+function last_ip_in_range()
+{
+    local ip=$1
+    local net=$(echo $ip | cut -d '/' -f 1);
+    local prefix=$(echo $ip | cut -d '/' -f 2);
+    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        cidr=$(mask2cidr $prefix)
+    else
+        cidr=$prefix
+    fi
+    local bit_netmask=$(prefix_to_bit_netmask $cidr);
+    local wildcard_mask=$(bit_netmask_to_wildcard_netmask "$bit_netmask");
+    local str=
+    for (( i = 1; i <= 4; i++ )); do
+        range=$(echo $net | cut -d '.' -f $i)
+        mask_octet=$(echo $wildcard_mask | cut -d ' ' -f $i)
+        if [ $mask_octet -gt 0 ]; then
+            range="{$range..$(( $range | $mask_octet ))}";
+        fi
+        str="${str} $range"
+    done
+    local ips=$(echo $str | sed "s, ,\\.,g"); 
+    local hostip=( $(eval echo $ips | tr ' ' '\n') )
+    echo ${hostip[-2]}
+}
+
 function generate_hostlist()
 {
     local ip=$1

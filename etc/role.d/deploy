@@ -51,7 +51,7 @@ SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.co
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
-    local last_ip=$(generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" | gawk '{if($1 !~ /^#/){print $1}}' | tail -1)
+    last_ip=$(last_ip_in_range ${NET_SNOW[2]}100/${NET_SNOW[3]})
     echo "
 interface=$DHCP_NIC
 # Gateway
