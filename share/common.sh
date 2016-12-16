@@ -943,20 +943,20 @@ function deploy()
             boot_copy ${default_boot_pxe}
             error_check 0 "Deployment started."
         else
-            check_host_status $1${NET_MGMT[4]}
             local node=$1
+            check_host_status $node${NET_MGMT[4]}
             nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
             nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-            info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
-            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}')
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
+            info_msg "Booting node range $node for deployment... This will take a while, Please wait."
+            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
+            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
             sleep 5
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
-            info_msg "Deploying node : $1 ... Please wait"
+            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
+            info_msg "Deploying node : $node ... Please wait"
             sleep $BOOT_DELAY
-            info_msg "You can monitor the deployment with : snow console $1"
-            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $1 | gawk '{print $3}') 
+            info_msg "You can monitor the deployment with : snow console $node"
+            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
             error_check 0 "Deployment started."
         fi
     fi
@@ -1262,41 +1262,49 @@ function check_host_status()
 
 function boot()
 {
-    if [ -z "$1" ]; then
+    local node=$1
+    if [ -z "$node" ]; then
         error_exit "ERROR: No domain or node to boot."
     fi
-    IMAGE=$2
-    get_server_distribution $1
+    get_server_distribution $node
     if (($IS_VM)) ; then
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg ]]; then 
-            IS_UP=$(xl list $1)
+        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg ]]; then 
+            IS_UP=$(xl list $node)
             if [[ "$IS_UP" == "" ]]; then 
                 sleep 1
-                xl create ${SNOW_PATH}/snow-tools/etc/domains/${1}${DOM_EXT}.cfg
+                xl create ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg
             else
-                warning_msg "The domain $1 is already runnning"
+                warning_msg "The domain $node is already runnning"
             fi
         else
-            error_exit "The domain $1 needs to be deployed first: Execute : snow deploy $1"
+            error_exit "The domain $node needs to be deployed first: Execute : snow deploy $node"
         fi
     else
-        node_rank $1
+        local image=$2
+        local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
+        node_rank $node
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if [ -z "$IMAGE" ]; then
-            boot_copy $DEFAULT_BOOT
-        else
-            boot_copy $IMAGE
-        fi
         if (( $NLENG > 0 )); then
+            if [ -z "$image" ]; then
+                boot_copy ${default_boot_pxe}
+            else
+                boot_copy ${image_pxe}
+            fi
             parallel -j $BLOCKN \
             echo "$NPREFIX{}${NET_MGMT[4]}" \; \
             sleep $BLOCKD \; \
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else 
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
+            if [ -z "$image" ]; then
+                cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
+            else
+                cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
+            fi
+            check_host_status $node${NET_MGMT[4]}
+            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
         fi
     fi
 }
