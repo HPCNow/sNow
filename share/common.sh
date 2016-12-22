@@ -430,12 +430,11 @@ function generate_nodes_json()
     #local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
     local nodes_json='{"compute": {}}'
     for node in $nodes; do
-        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node} = {} ")
-        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.cluster = \"$cluster\"")
-        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.image = \"${DEFAULT_BOOT}\"")
-        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${DEFAULT_TEMPLATE}\"")
-        nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"null\"")
-        #nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
     done
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
@@ -800,7 +799,7 @@ function remove_node()
 {
     local node=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".compute.${node}")
+    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
     if [[ "${node_query}" == "null" ]]; then
         error_msg "There is no node with this name ($node). Please, review the name with : snow list nodes."
     else
@@ -808,7 +807,7 @@ function remove_node()
         read -t 20 -u 3 answer 
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq "del(.compute.${node})")
+                nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
             #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
@@ -822,7 +821,7 @@ function add_node()
     local node=$1
     local cluster=$2
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".compute.${node}")
+    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
     if [[ -z "$cluster" ]]; then
         error_exit "The cluster name is not provided"
     fi
@@ -833,11 +832,11 @@ function add_node()
         read -t 20 -u 3 answer 
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node} = {} ")
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.cluster = \"$cluster\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.image = \"${DEFAULT_BOOT}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${DEFAULT_TEMPLATE}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"null\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
             #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
@@ -923,8 +922,8 @@ function deploy()
         if (( $NLENG > 0 )); then
             local nodes="$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
             for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
             done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
@@ -945,8 +944,8 @@ function deploy()
         else
             local node=$1
             check_host_status $node${NET_MGMT[4]}
-            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.template = \"${template}\"")
-            nodes_json=$(echo "${nodes_json}" | jq ".compute.${node}.last_deploy = \"$(date)\"")
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node range $node for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
@@ -1244,10 +1243,10 @@ function avail_nodes()
         else
             os_status="$(ssh ${node} uptime -p || echo 'down')"
         fi 
-        cluster=$(jq ".compute.${node}.cluster" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
-        current_image=$(jq ".compute.${node}.image" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
-        current_template=$(jq ".compute.${node}.template" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
-        last_deploy=$(jq ".compute.${node}.last_deploy" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        cluster=$(jq ".\"compute\".\"${node}\".\"cluster\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        current_image=$(jq ".\"compute\".\"${node}\".\"image\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        current_template=$(jq ".\"compute\".\"${node}\".\"template\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
+        last_deploy=$(jq ".\"compute\".\"${node}\".\"last_deploy\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
     done
 }
