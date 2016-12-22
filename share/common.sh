@@ -425,10 +425,13 @@ function generate_hostlist()
 
 function generate_nodes_json()
 {
-    local cluster=$1
-    local nodes=$2
-    #local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local nodes_json='{"compute": {}}'
+    local cluster="$1"
+    local nodes="$2"
+    if [[ -e ${SNOW_TOOL}/etc/nodes.json ]]; then
+        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    else
+        local nodes_json='{"compute": {}}'
+    fi
     for node in $nodes; do
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
@@ -525,7 +528,7 @@ function init()
     fi
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
-    for i in "${!CLUSTERS[@]}"
+    for i in ${!CLUSTERS[@]}
     do 
         node_rank ${CLUSTERS[$i]}
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
