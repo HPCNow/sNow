@@ -10,6 +10,7 @@ set -o errtrace  # trace ERR through 'time command' and other functions
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
 SNOW_PATH=/sNow
 SNOW_TOOL=$SNOW_PATH/snow-tools
+SNOW_CONF=$SNOW_PATH/snow-configspace
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 
 if [[ -f ${CONFIG_FILE} ]]; then

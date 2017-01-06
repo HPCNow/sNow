@@ -1025,7 +1025,7 @@ function hooks()
 
 function first_boot_hooks()
 {
-    hooks_path=$1
+    local hooks_path=$1
     cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
     cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
     chmod 700 /usr/local/bin/first_boot

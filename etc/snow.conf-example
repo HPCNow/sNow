@@ -57,7 +57,7 @@ DEFAULT_TEMPLATE=centos-7.3-default
 CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
 GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
-DOWNLD=axel
+DOWNLD=wget
 DOM_EXT=''
 # Locales
 LANG=en_US
