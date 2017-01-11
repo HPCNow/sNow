@@ -985,20 +985,21 @@ function patch_network_configuration()
 
 function generate_pxe_image()
 {
-    IMAGE=$1
+    local image=$1
+    mkdir -p ${SNOW_CONF}/boot/images/$image/
     case $OS in
         debian|ubuntu)
-            cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
-            generate_rootfs $IMAGE
+            cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$image/initrd.img
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
+            generate_rootfs $image
         ;;
         rhel|redhat|centos)
-            dracut -a "nfs network base" --host-only -f ${SNOW_CONF}/boot/images/$IMAGE/initrd-$(uname -r).img $(uname -r) root=dhcp 
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$IMAGE/
-            generate_rootfs $IMAGE
+            dracut -a "nfs network base" --host-only -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r) 
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
+            generate_rootfs $image
        ;;
        suse|sle[sd]|opensuse)
-           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$IMAGE
+           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$image
            mv initrd-netboot-*.gz initrd-$(uname -r)
            mv initrd-netboot-*.kernel linux-$(uname -r)
            mv *x86_64* root.gz
@@ -1034,6 +1035,7 @@ function first_boot_hooks()
 
 function generate_rootfs()
 {
+    local image=$1
     # path to the PXE config file
     local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
     # rootfs size in megabytes
@@ -1086,10 +1088,13 @@ function generate_rootfs()
     # * if local scratch disk /tmp
     patch_network_configuration
 
+    cd ${mount_point}
+    find . -print0 | sudo cpio --null -ov --format=newc | gzip -9 > ${SNOW_CONF}/boot/images/$image/rootfs.gz
     umount ${mount_point}
-    gzip -c rootfs | dd of=${SNOW_CONF}/boot/images/$image/rootfs.gz
+    #gzip -c rootfs | dd of=${SNOW_CONF}/boot/images/$image/rootfs.gz
     # create PXE boot configuration
-    sed -e "s|__IMAGE__|$image|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${image_pxe}
+    #sed -e "s|__IMAGE__|$image|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${image_pxe}
+    sed -e "s|__IMAGE__|$image|" ${SNOW_CONF}/boot/pxelinux.cfg/diskless > ${image_pxe}
 }
 
 function clone_template()
@@ -1138,9 +1143,9 @@ function clone_node()
             warning_msg "This will clone $node and generate the image $image."
         fi
         get_server_distribution $node
-        check_host_status ${node}${NET_MGMT[4]}
         generate_pxe_image $image
     else
+        check_host_status ${node}${NET_MGMT[4]}
         ssh $node $0 clone $@
     fi
 }
