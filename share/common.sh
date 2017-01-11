@@ -933,7 +933,6 @@ function deploy()
             #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
             boot_copy ${template_pxe}
             parallel -j $BLOCKN \
-            info_msg "Booting node : $NPREFIX{} ... Please wait" \; \
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
             sleep 5 \; \
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
@@ -950,12 +949,11 @@ function deploy()
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-            info_msg "Booting node range $node for deployment... This will take a while, Please wait."
+            info_msg "Booting node $node for deployment... This will take a while, Please wait."
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
             ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
             sleep 5
             ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
-            info_msg "Deploying node : $node ... Please wait"
             sleep $BOOT_DELAY
             info_msg "You can monitor the deployment with : snow console $node"
             cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
