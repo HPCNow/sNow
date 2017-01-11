@@ -75,3 +75,6 @@ else
     sed -i 's|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS|ExecStart=/usr/sbin/sshd -D $SSHD_OPTS -f /etc/ssh/sshd_config.pub|g' ${prefix}/etc/systemd/system/sshd_pub.service 
     cp -p ${prefix}/etc/ssh/sshd_config.pub /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub
 fi
+
+# Create a home directory for new users
+echo "session    required   pam_mkhomedir.so skel=/etc/skel/ umask=0002" >> ${prefix}/etc/pam.d/common-account
