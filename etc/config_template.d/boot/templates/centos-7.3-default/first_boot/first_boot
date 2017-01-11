@@ -34,7 +34,7 @@ fi
 
 case "$1" in
   start)
-    hooks ${TEMPLATE_PATH}/first_boot/ 
+    hooks ${TEMPLATE_PATH}/first_boot
     systemctl disable first_boot
 	;;
   stop)
