@@ -99,6 +99,7 @@ function shelp()
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
         * add node <node> <cluster>                 | adds a new node in the sNow! database
+        * set node <node> [-option value]           | sets parameters in the node description. Options available are: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
@@ -437,6 +438,8 @@ function generate_nodes_json()
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${DEFAULT_REPO}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${DEFAULT_CONSOLE_OPTIONS}\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
     done
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
@@ -847,7 +850,98 @@ function add_node()
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${DEFAULT_REPO}\"")
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${DEFAULT_CONSOLE_OPTIONS}\"")
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
+            #done
+            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+        else
+            info_msg "Well done. It's better to be sure." 
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
+
+
+function set_options() 
+{
+    while getopts ":cluster:image:template:install_repo:console_options:" opt; do
+        case $opt in
+            cluster)
+                local cluster=$OPTARG
+                ;; 
+            image)
+                local image=$OPTARG
+                ;; 
+            template)
+                local template=$OPTARG
+                ;; 
+            install_repo)
+                local install_repo=$OPTARG
+                ;; 
+            console_options)
+                local console_options=$OPTARG
+                ;; 
+            \?|:)
+                help
+                ;;
+        esac
+    done
+}
+
+function set_node()
+{
+    local node=$1
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+
+    while getopts ":cluster:image:template:install_repo:console_options:" opt; do
+        case $opt in
+            cluster)
+                local cluster="$OPTARG"
+                ;; 
+            image)
+                local image="$OPTARG"
+                ;; 
+            template)
+                local template="$OPTARG"
+                ;; 
+            install_repo)
+                local install_repo="$OPTARG"
+                ;; 
+            console_options)
+                local console_options="$OPTARG"
+                ;; 
+            \?|:)
+                help
+                ;;
+        esac
+    done
+
+    if [[ "${node_query}" == "null" ]]; then
+        error_msg "There node $node does not exist in the database."
+    else
+        # pass the shell's argument array to the parsing function
+        #set_node_options "$@"
+        # setup the defaults
+        warning_msg "Do you want to apply the changes in the node(s) ${node}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer 
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            #for node in $nodes; do
+            if [[ -n "$cluster" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
+            fi
+            if [[ -n "$image" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+            fi
+            if [[ -n "$template" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
+            fi
+            if [[ -n "$install_repo" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
+            fi
+            if [[ -n "$console_options" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${console_options}\"")
+            fi
             #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
@@ -953,18 +1047,21 @@ function deploy()
             error_check 0 "Deployment started."
         else
             local node=$1
+            local node_hash=$(gethostip $node | gawk '{print $3}')
             check_host_status $node${NET_MGMT[4]}
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
             info_msg "Booting node $node for deployment... This will take a while, Please wait."
-            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
+            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
             ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
             sleep 5
             ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
             sleep $BOOT_DELAY
             info_msg "You can monitor the deployment with : snow console $node"
-            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
+            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
             error_check 0 "Deployment started."
         fi
     fi

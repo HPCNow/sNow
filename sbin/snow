@@ -1,7 +1,7 @@
 #!/bin/bash
 # This is the sNow! Command Line Interface 
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-# For more information, visit the official website : www.hpcnow.com/snow
+# For more information, visit the official website: www.hpcnow.com/snow
 #
 #set -xv
 set -o pipefail  # trace ERR through pipes
@@ -13,7 +13,7 @@ trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
 # User privileges
 if [[ $(id -u) -ne 0 ]] ; then
-    error_exit "sNow! Tools CLI must be run as root. Use : 'sudo su -' or prepend your command with sudo : 'sudo snow <options>'."
+    error_exit "sNow! Tools CLI must be run as root. Use: 'sudo su -' or prepend your command with sudo: 'sudo snow <options>'."
 fi
 #Logging
 #readonly LOGFILE=/sNow/log/snow.log
@@ -87,7 +87,7 @@ case $opt1 in
                 spinner $!             "Updating sNow! image "
             ;;
             *)
-                error_msg "Update available options : firewall, tools, configspace, template"
+                error_msg "Update available options: firewall, tools, configspace, template"
             ;;
         esac
     ;;
@@ -106,7 +106,7 @@ case $opt1 in
                 remove_image $opt3
             ;;
             *)
-                error_msg "You can remove : domain, node, template, image"
+                error_msg "You can remove: domain, node, template, image"
             ;;
         esac
     ;;
@@ -131,7 +131,7 @@ case $opt1 in
                 clone_image $opt3 $opt4 $opt5
             ;;
             *)
-                error_msg "You can clone : domain, node, template, image"
+                error_msg "You can clone: domain, node, template, image"
             ;;
         esac
     ;;
@@ -150,7 +150,26 @@ case $opt1 in
                 add_image $opt3
             ;;
             *)
-                error_msg "You can add : domain, node, template, image"
+                error_msg "You can add: domain, node, template, image"
+            ;;
+        esac
+    ;;
+    set)
+        case $opt2 in
+            #domain)
+            #    set_domain_xen $opt3
+            #;;
+            node)
+                set_node $opt3 "$@"
+            ;;
+            #template)
+            #    set_template $opt3
+            #;;
+            #image)
+            #    set_image $opt3
+            #;;
+            *)
+                error_msg "You can set: domain, node, template, image"
             ;;
         esac
     ;;
@@ -235,7 +254,7 @@ case $opt1 in
         nconsole $opt2
     ;;
     version|-V|-version|--version)
-      msg "sNow! version : ${SNOW_VERSION}"
+      msg "sNow! version: ${SNOW_VERSION}"
       ;;
     help|-help|--help|\?|*)
       shelp
