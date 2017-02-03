@@ -97,26 +97,30 @@ function shelp()
         * update configspace                        | updates configuration files from private git
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
-        * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server)
+        * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
         * add node <node> <cluster>                 | adds a new node in the sNow! database
         * set node <node> [-option value]           | sets parameters in the node description. Options available are: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
+        * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
+        * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
-        * list templates                            | list the available templates
         * list nodes                                | list the available compute nodes and their status
-        * boot <domain|server>                      | boot specific domain or server
+        * list templates                            | list the available templates
+        * list images                               | list the available images
+        * boot <domain>                             | boot specific domain
+        * boot <node> <image>                       | boot specific node with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-        * reboot <domain|server>                    | reboot specific domain or server
-        * shutdown <domain|server>                  | shutdown specific domain or server
+        * reboot <domain|node>                      | reboot specific domain or node
+        * shutdown <domain|node>                    | shutdown specific domain or node
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|server>                   | force to stop specific domain or server
-        * reset <domain|server>                     | force to reboot specific domain or server
-        * poweroff <domain|server>                  | force to shutdown specific domain or server simulating a power button press
-        * console <domain|server>                   | console access to specific domain or server
+        * destroy <domain|node>                     | force to stop specific domain or node
+        * reset <domain|node>                       | force to reboot specific domain or node
+        * poweroff <domain|node>                    | force to shutdown specific domain or node simulating a power button press
+        * console <domain|node>                     | console access to specific domain or node
         * version                                   | shows the version of sNow!
         * help                                      | prints this message
 
@@ -126,10 +130,6 @@ function shelp()
         snow deploy ldap01
     " 1>&3
 }
-#        * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
-#        * remove image <image>                      | removes an existing image
-#        * list images                               | list the available images
-#        * boot <domain|server> <image>              | boot specific domain or server with optional image
 #        * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
 
 function end_msg()
