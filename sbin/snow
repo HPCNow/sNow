@@ -160,6 +160,7 @@ case $opt1 in
             #    set_domain_xen $opt3
             #;;
             node)
+                shift 3
                 set_node $opt3 "$@"
             ;;
             #template)

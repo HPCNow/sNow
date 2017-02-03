@@ -54,7 +54,6 @@ CM_SERVER=
 # Cluster provisioning : deploy / cloning system
 DEFAULT_BOOT=localboot
 DEFAULT_TEMPLATE=centos-7.3-default
-DEFAULT_REPO="nfs:${NFS_SERVER}:/sNow/OS/CentOS/7.3.1611/DVD1"
 DEFAULT_CONSOLE_OPTIONS="console=tty0 console=ttyS0,115200n8"
 CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
 GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
