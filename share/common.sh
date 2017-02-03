@@ -443,6 +443,7 @@ function generate_nodes_json()
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${DEFAULT_CONSOLE_OPTIONS}\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
     done
+    unset node
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
@@ -944,6 +945,7 @@ function set_node()
             fi
         fi
     done
+    unset node
     warning_msg "Do you want to apply the changes in the node(s) ${nodelist}? [y/N] (20 seconds)"
     read -t 20 -u 3 answer
     if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
@@ -1005,8 +1007,7 @@ function boot_copy()
     local default_config=$2
     local nodelist=$3
     source ${default_config}
-    for node in $(node_list "${nodelist}")
-    do
+    for node in $(node_list "${nodelist}"); do
         local node_hash=$(gethostip $node | gawk '{print $3}')
         local console_options=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"console_options\"")
         local install_repo=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"install_repo\"")
@@ -1020,6 +1021,7 @@ function boot_copy()
         sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
     done
+    unset node
 }
 
 function list_templates()
@@ -1077,7 +1079,8 @@ function deploy()
         for node in $(node_list "${nodelist}"); do
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
-            done
+        done
+        unset node
         echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         info_msg "Booting node range ${nodelist} for deployment... This will take a while, Please wait."
         boot_copy ${template_pxe} ${template_config} "${nodelist}"
@@ -1474,6 +1477,7 @@ function avail_nodes()
         last_deploy=$(jq ".\"compute\".\"${node}\".\"last_deploy\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
     done
+    unset node
 }
 
 function check_host_status()
