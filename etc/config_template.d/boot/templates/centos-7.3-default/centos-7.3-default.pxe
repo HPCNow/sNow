@@ -1,0 +1,6 @@
+default sNow
+# install
+label sNow
+menu label ^1) Install CentOS 7 x64 with Local Repo using Kickstart
+kernel templates/centos-7.3-default/vmlinuz
+append initrd=templates/centos-7.3-default/initrd.img inst.ks=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/templates/centos-7.3-default/centos-7.3-default.cfg inst.repo=nfs:__NFS_SERVER__:/sNow/OS/CentOS/7.3.1611/DVD1 inst.text netdevice=eth0 ip=dhcp console=tty0 console=ttyS0,115200n8

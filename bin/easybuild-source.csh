@@ -31,4 +31,6 @@ setenv EASYBUILD_INSTALLPATH "$EASYBUILD_PREFIX"                        # path t
 setenv EASYBUILD_SOURCEPATH "$SNOW_SOFT/sources"                         # not just the default as shared by all architectures
 setenv EASYBUILD_TMP_LOGDIR "$SNOW_SOFT/tmp"                             # so in shared filesystem not host local
 setenv EASYBUILD_MODULES_TOOL "Lmod"                                    # so EB sees exactly the same modules as users
-setenv MODULEPATH `${SNOW_SOFT}/lmod/lmod/libexec/addto --append MODULEPATH $EASYBUILD_PREFIX/modules/all`
+if ( -d $EASYBUILD_PREFIX/modules/all ) then
+    setenv MODULEPATH `${SNOW_SOFT}/lmod/lmod/libexec/addto --append MODULEPATH $EASYBUILD_PREFIX/modules/all`
+endif

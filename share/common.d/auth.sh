@@ -5,8 +5,23 @@
 #
 function setup_ldap_client()
 {
-    if [[ -f $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn ]]; then
-        cp -p $SNOW_CONF/system_files/etc/sssd/sssd.conf.cn /etc/sssd/sssd.conf
+    case $OS in
+        debian|ubuntu)
+            pkgs="libpam-ldap sssd-ldap sssd-tools sssd-common"
+        ;;
+        rhel|redhat|centos)
+            pkgs="sssd-common sssd-client sssd-ldap"
+        ;;
+        suse|sle[sd]|opensuse)
+            pkgs="sssd"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
+    if [[ -f $SNOW_CONF/system_files/etc/sssd/sssd.conf ]]; then
+        cp -p $SNOW_CONF/system_files/etc/sssd/sssd.conf /etc/sssd/sssd.conf
         chown root:root /etc/sssd/sssd.conf
         chmod 600 /etc/sssd/sssd.conf
         systemctl enable sssd.service

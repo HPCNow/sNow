@@ -3,30 +3,10 @@
 # This script is part of sNow! Command Line Interface 
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
-BEGIN{
-    RS="}"
-    FS="\n"
-}
-/lease/{
-    for(i=1;i<=NF;i++){
-        gsub(";","",$i)
-        if ($i ~ /lease/) {
-            m=split($i, IP," ")
-            ip=IP[2]
-        }
-        if( $i ~ /hardware/ ){
-            m=split($i, hw," ")
-            ether=hw[3]
-        }
-        if ( $i ~ /client-hostname/){
-            gsub("\"","",$i)
-            m=split($i,ch, " ")
-            hostname=ch[2]
-        }
-        if ( $i ~ /uid/){
-            m=split($i,ui, " ")
-            uid=ui[2]
-        }
-    }
-    print "dhcp-host="ether","ip","hostname
+{
+    timestamp=$1
+    mac=$2
+    ip=$3
+    host=$4
+    print mac"  "ip
 }

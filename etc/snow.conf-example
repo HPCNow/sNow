@@ -11,16 +11,16 @@ SNOW_CONF=$SNOW_PATH/snow-configspace
 SNOW_TOOL=$SNOW_PATH/snow-tools
 LOGFILE=/sNow/log/snow.log
 # Destination of the sNow! domains OS images
-SNOWVG=snow_vg
+SNOW_VG=snow_vg
 IMG_DST='lvm=snow_vg'
 #IMG_DST='dir=/sNow/domains'
 #IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
 # Nodes that compose the HA sNow! cluster
-SNOWNODES=( snow01 )
+SNOW_NODES=( snow01 )
 # Admin users setup
 ADMIN_USERS="root snow"
 ADMIN_GROUPS="root snow"
-MASTERPWD='HPCN0w!!'
+MASTER_PASSWORD='HPCN0w!!'
 sNow_GID=2000
 sNow_GROUP=snow
 sNow_UID=2000
@@ -29,8 +29,8 @@ HPCNow_UID=2001
 HPCNow_GID=2000
 HPCNow_USER=hpcnow
 # Private GIT Repo Setup
-#TOKEN=
-#PRIVATE_REPO=
+#PRIVATE_GIT_TOKEN=
+#PRIVATE_GIT_REPO=
 # Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
 NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
 NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
@@ -38,9 +38,9 @@ NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' '' )
 NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.0.' '255.255.255.0' '-mgmt' )
 NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.255.0' '-ib' )
 # IPMI / BMC Setup
-IPMITYPE=lanplus
-IPMIUSER=admin
-IPMIPWD=admin
+IPMI_TYPE=lanplus
+IPMI_USER=admin
+IPMI_PASSWORD=admin
 # Number of nodes to be boot every cycle
 BLOCKN=4
 # Delay between cycles
@@ -48,16 +48,16 @@ BLOCKD=5
 # Expected time required to boot a compute node and being fully operational
 BOOT_DELAY=300
 # Config Manager 
-SNOWCM=
-CF_SERVER=
-#CFENGINE_VER="3.7.2-1"
+CM_SOFTWARE=
+CM_SERVER=
+#CM_VERSION="3.7.2-1"
 # Cluster provisioning : deploy / cloning system
 DEFAULT_BOOT=localboot
-DEFAULT_TEMPLATE=centos-7-default
+DEFAULT_TEMPLATE=centos-7.3-default
 CLUSTERS=([mycluster01]="knl[01-99]" [mycluster02]="hsw[01-99]" [mycluster03]="skl[01-99]")
 GOLDEN_NODES=( knl-01 hsw-01 skl-01 )
 PDSH_RCMD_TYPE=ssh
-DOWNLD=axel
+DOWNLD=wget
 DOM_EXT=''
 # Locales
 LANG=en_US
@@ -79,14 +79,14 @@ DHCP_NIC=eth0
 #SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
 #SITE_MAIL_SERVER=smtp.gmail.com::587
 #SITE_MAIL_USER=
-#SITE_MAIL_PASSWD=
+#SITE_MAIL_PASSWORD=
 #SITE_SYSLOG_SERVER=192.168.7.1
 # Shared Filesystem Support
 # NFS Clients
 MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
 MOUNT_NFS[2]="$NFS_SERVER:/home        /home   nfs    defaults 0 0"
 # BeeGFS Clients
-#BEEGFSMGMT=beegfs-01
+#BEEGFS_MGMT=beegfs-01
 #BEEGFS_VERSION=2015.03
 #MOUNT_BEEGFS01="/scratch /etc/beegfs/beegfs-client.conf"
 # Lustre Clients
@@ -98,13 +98,13 @@ MOUNT_NFS[2]="$NFS_SERVER:/home        /home   nfs    defaults 0 0"
 # Slurm Configuration
 # Slurm Database
 SLURMDBD_USER=slurm
-SLURMDBD_PWD=whatever
+SLURMDBD_PASSWORD=whatever
 #SLURMDBD_NAME=slurm_acct_db
 # MUNGE
 MUNGE_UID=20994
 MUNGE_GID=20994
 # Slurmctl master
-#SLURMVERSION=15.8.2
+#SLURM_VERSION=15.8.2
 SLURM_CONF=/etc/slurm/slurm.conf
 SLURM_GID=20995
 SLURM_UID=20995

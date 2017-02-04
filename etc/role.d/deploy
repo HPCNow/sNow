@@ -3,7 +3,6 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -52,6 +51,7 @@ SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.co
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
+    last_ip=$(last_ip_in_range ${NET_SNOW[2]}100/${NET_SNOW[3]})
     echo "
 interface=$DHCP_NIC
 # Gateway
@@ -60,19 +60,29 @@ dhcp-option=3,$GATEWAY
 dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
 dhcp-option=15,$DOMAIN
-# Broadcast Address
-# dhcp-option=28,__BROADCAST__
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=$DHCP_NIC,${NET_SNOW[2]}0,static,infinite
+dhcp-range=$DHCP_NIC,${NET_SNOW[2]}100,${last_ip},24h
 dhcp-boot=pxelinux.0
+addn-hosts=/etc/static_hosts
+dhcp-sequential-ip
+clear-on-reload
 enable-tftp
+read-ethers
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
     cp -p ${prefix}/etc/dnsmasq.conf $SNOW_CONF/system_files/etc/dnsmasq.conf
 else
     cp -p $SNOW_CONF/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
-cp -p /etc/hosts ${prefix}/etc/hosts
+
+if [[ ! -e $SNOW_CONF/system_files/etc/ethers ]]; then
+    touch ${prefix}/etc/ethers
+    cp -p ${prefix}/etc/ethers $SNOW_CONF/system_files/etc/ethers
+else
+    cp -p $SNOW_CONF/system_files/etc/ethers ${prefix}/etc/ethers
+fi
+
+cp -p $SNOW_CONF/system_files/etc/static_hosts ${prefix}/etc/static_hosts
 cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
 # DNS Client Setup
@@ -85,26 +95,26 @@ if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then
 fi
 
 # Install and setup sNow! deploy system
-SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
-    PROXY_SERVER=$SNOW_PROXY_SERVER
-    PROXY_PORT=8080
-else
-    PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
-    PROXY_PORT="${SITE_PROXY_PORT:-8080}"
-fi
 if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
     if [[ ! -d $SNOW_CONF ]]; then 
         mkdir $SNOW_CONF
     fi
     cp -pr $SNOW_TOOL/etc/config_template.d/boot $SNOW_CONF/
+    SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then 
+        PROXY_SERVER=$SNOW_PROXY_SERVER
+        PROXY_PORT=8080
+    else
+        PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
+        PROXY_PORT="${SITE_PROXY_PORT:-8080}"
+    fi
     for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
         for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
             sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
             sed -i "s|__LANG__|$LANG|g" $file
             sed -i "s|__KEYMAP__|$KEYMAP|g" $file
             sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
-            sed -i "s|__MASTER_PASSWD__|$MASTERPWD|g" $file
+            sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" $file
             sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
             sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
             sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 
