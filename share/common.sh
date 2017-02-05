@@ -44,7 +44,7 @@ function print_msg()
 
 function logsetup()
 {
-    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
@@ -99,7 +99,7 @@ function shelp()
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
         * add node <node> <cluster>                 | adds a new node in the sNow! database
-        * set node <node> [-option value]           | sets parameters in the node description. Options available are: cluster, image, template, install_repo, console_options
+        * set node <node> [--option value]          | sets parameters in the node description. Options available are: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
         * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
@@ -169,8 +169,8 @@ fi
 
 function download()
 {
-    download_url=$1
-    download_path=$2
+    local download_url=$1
+    local download_path=$2
     case $DOWNLD in
         axel)
             axel -q -n 10 ${download_url} -o ${download_path}
@@ -468,6 +468,8 @@ function init()
         error_exit "The active-domains.conf is not yet available."
     fi
 
+    # If the system uses shared (and external) NFS to enable HA, then the following block will help to setup the required configuration in the
+    # NFS server.
     if (! ${HA_NFSROOT}) ; then
         # NFS_ROOT Exports
         if [[ ! -d /etc/exports.d ]]; then
@@ -477,10 +479,10 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
+            local snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
             gawk -v snow_servers_exports=$snow_servers_exports '{
                 if ($1 !~ /^#|snow/){
-                    print "/sNow/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
+                    print "/sNow/domains/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
                 }
             }' ${SNOW_ACTIVE_DOMAINS} > ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports
             ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
@@ -510,8 +512,10 @@ function init()
     if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
-            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+            local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
+            local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
+            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} -v macdmz=${macdmz} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
@@ -519,8 +523,10 @@ function init()
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         else
-            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+            local macpub=$(ip -f link addr show ${NET_PUB[0]} | grep ether | gawk '{print $2}')
+            local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
+            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} -v macpub=${macpub} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
@@ -570,32 +576,34 @@ function init()
 
 function update_tools()
 {
-if [[ ! -d ${SNOW_TOOL} ]]; then
-    mkdir -p ${SNOW_TOOL}
-    cd ${SNOW_TOOL}
-    git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-    cd -
-else
-    cd ${SNOW_TOOL}
-    git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-fi
+    if [[ ! -d ${SNOW_TOOL} ]]; then
+        mkdir -p ${SNOW_TOOL}
+        cd ${SNOW_TOOL}
+        git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+        cd -
+    else
+        cd ${SNOW_TOOL}
+        git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+        cd -
+    fi
 } 1>>$LOGFILE 2>&1
 
 function update_configspace()
 {
-if [[ ! -d ${SNOW_CONF}  ]]; then
-    mkdir -p ${SNOW_CONF}
-    cd ${SNOW_CONF}
-    git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-    cd -
-else
     if [[ -z "$PRIVATE_GIT_TOKEN" || -z "$PRIVATE_GIT_REPO" ]]; then
         error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
-        exit 1
+    else
+        if [[ ! -d ${SNOW_CONF}  ]]; then
+            mkdir -p ${SNOW_CONF}
+            cd ${SNOW_CONF}
+            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            cd -
+        else
+            cd ${SNOW_CONF}
+            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            cd -
+        fi
     fi
-    cd ${SNOW_CONF}
-    git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-fi
 } 1>>$LOGFILE 2>&1
 
 function update_firewall()
