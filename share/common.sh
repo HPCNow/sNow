@@ -608,8 +608,8 @@ function update_configspace()
 
 function update_firewall()
 {
-    pub_nic=${NET_PUB[0]}
-    pub_mac=$(ip -f link addr show ${pub_nic} | gawk '{if($0 ~ /ether/){print $2}}')
+    local pub_nic=${NET_PUB[0]}
+    local pub_mac=$(ip -f link addr show ${pub_nic} | gawk '{if($0 ~ /ether/){print $2}}')
     if [[ -z $pub_mac ]]; then
         error_exit "Your system do not have public network, so the firewall can not be setup"
     else
@@ -708,10 +708,10 @@ if [[ ! -d ${SNOW_PATH}/domains/template ]]; then
     wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
     if [[ -f ${SNOW_PATH}/domains/template/snow-template.tar.bz2 ]]; then
-        MD5LOCAL=$(md5sum ${SNOW_PATH}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
+        local md5local=$(md5sum ${SNOW_PATH}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
         wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-        MD5HPCNOW=$(cat ${SNOW_PATH}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
-        if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
+        local md5hpcnow=$(cat ${SNOW_PATH}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
+        if [[ "$md5local" != "$md5hpcnow" ]]; then
             info_msg "Downloading most recent sNow! domain template"
             wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
@@ -725,20 +725,21 @@ fi
 
 function deploy_domain_xen()
 {
-    get_server_distribution $1
-    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+    local domain=$1
+    get_server_distribution ${domain}
+    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain or remove it first with: snow remove $1."
+            error_exit "The domain ${domain} already exist, please use 'force' option to overwrite the domain or remove it first with: snow remove ${domain}."
         else
-            warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
-            remove_domain_xen $1
+            warning_msg "The domain ${domain} will be installed and all the data contained in this domain will be removed."
+            remove_domain_xen ${domain}
             FORCE="--force"
         fi
     else
         if (($IS_VM)) ; then
-            info_msg "Deploying the domain $1. It can take few minutes. Please wait!"
+            info_msg "Deploying the domain ${domain}. It can take few minutes. Please wait!"
         else
-            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
+            error_exit "The domain ${domain} is NOT available in the ${SNOW_DOMAINS}."
         fi
     fi
 
@@ -751,17 +752,17 @@ function deploy_domain_xen()
         END{
         system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
         }'
-    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"
-        error_check 1 "Deployment of $1 Failed."
+        error_check 1 "Deployment of ${domain} Failed."
     else
-        second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' ${SNOW_DOMAINS})
-        if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/$opt2.cfg ]]; then
-            guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
-            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
-            mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
+        second_nic=$(gawk -v guest=${domain} '{if($1 == guest){print $10}}' ${SNOW_DOMAINS})
+        if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/${domain}.cfg ]]; then
+            guest_network=$(gawk -v guest=${domain} '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
+            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/${domain}.cfg > ${SNOW_TOOL}/etc/domains/${domain}.cfg.extended
+            mv ${SNOW_TOOL}/etc/domains/${domain}.cfg.extended ${SNOW_TOOL}/etc/domains/${domain}.cfg
         fi
-        error_check 0 "Deployment of $1 completed."
+        error_check 0 "Deployment of ${domain} completed."
     fi
 } 1>>$LOGFILE 2>&1
 
