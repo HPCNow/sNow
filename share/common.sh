@@ -1151,7 +1151,7 @@ function deploy()
         local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
         local template_config=${SNOW_CONF}/boot/templates/${template}/config
         local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        local default_boot_config=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
+        local default_boot_config=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/config
         local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
         if ! [[ -f ${template_pxe} ]] ; then
             error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
@@ -1571,50 +1571,55 @@ function check_host_status()
 
 function boot()
 {
-    local node=$1
-    if [ -z "$node" ]; then
-        error_exit "ERROR: No domain or node to boot."
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
+        error_exit "No domain or node to boot."
     fi
-    get_server_distribution $node
+    get_server_distribution ${nodelist}
     if (($IS_VM)) ; then
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg ]]; then
-            IS_UP=$(xl list $node)
-            if [[ "$IS_UP" == "" ]]; then
+        local domain=${nodelist}
+        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg ]]; then
+            local is_up=$(xl list ${domain})
+            if [[ "${is_up}" == "" ]]; then
                 sleep 1
-                xl create ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg
+                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg
             else
-                warning_msg "The domain $node is already runnning"
+                warning_msg "The domain ${domain} is already runnning"
             fi
         else
-            error_exit "The domain $node needs to be deployed first. Execute: snow deploy $node"
+            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
         local image=$2
         local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+        local image_config=${SNOW_CONF}/boot/images/${image}/config
         local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        node_rank $node
-        BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            if [ -z "$image" ]; then
-                boot_copy ${default_boot_pxe}
-            else
-                boot_copy ${image_pxe}
-            fi
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            sleep $BLOCKD \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
+        local default_boot_config=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/config
+        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+        local BLOCKN=${2:-$BLOCKN}
+        local BLOCKD=${3:-$BLOCKD}
+        if [ -z "$image" ]; then
+            boot_copy ${default_boot_pxe} ${default_boot_config} "${nodelist}"
         else
-            if [ -z "$image" ]; then
-                cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
-            else
-                cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
-            fi
-            check_host_status $node${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
+            boot_copy ${image_pxe} ${image_config} "${nodelist}"
         fi
+        if ! [[ -f ${image_pxe} ]] ; then
+            error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+        fi
+        for node in $(node_list "${nodelist}"); do
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+        done
+        unset node
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+        info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        sleep $BLOCKD \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
+        ::: $(node_list "${nodelist}")
+        sleep $BOOT_DELAY
+        info_msg "You can monitor the booting with: snow console <compute-node-name>"
+        error_check 0 "Deployment started."
     fi
 }
 
