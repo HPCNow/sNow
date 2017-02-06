@@ -108,8 +108,8 @@ function shelp()
         * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
         * list nodes                                | list the available compute nodes and their status
-        * list templates                            | list the available templates
-        * list images                               | list the available images
+        * list templates                            | list the templates installed in the system
+        * list images                               | list the images generated or downloaded
         * boot <domain>                             | boot specific domain
         * boot <node> <image>                       | boot specific node with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
