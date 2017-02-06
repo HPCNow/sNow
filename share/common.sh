@@ -822,23 +822,23 @@ function remove_image()
 
 function remove_node()
 {
-    local node=$1
+    local nodelist=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
-    if [[ "${node_query}" == "null" ]]; then
-        error_msg "There is no node with this name ($node). Please, review the name with: snow list nodes."
-    else
-        warning_msg "Do you want to remove the node ${node}? [y/N] (20 seconds)"
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" == "null" ]]; then
+            error_msg "There is no node with this name ($node). Please, review the name with: snow list nodes."
+        else
+            nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
+        fi
+        warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
         read -t 20 -u 3 answer
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
-            #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
             info_msg "Well done. It's better to be sure."
         fi
-    fi
+    done
 } 1>>$LOGFILE 2>&1
 
 function add_node()
