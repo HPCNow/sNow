@@ -1083,25 +1083,63 @@ function node_rank()
 
 function boot_copy()
 {
-    local pxelinux_cfg=$1
-    local default_config=$2
-    local nodelist=$3
-    source ${default_config}
+    local nodelist=$1
+    local pxelinux_action=$2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
     for node in $(node_list "${nodelist}"); do
-        local node_hash=$(gethostip $node | gawk '{print $3}')
-        local console_options=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"console_options\"")
-        local install_repo=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"install_repo\"")
+        node_hash=$(gethostip $node | gawk '{print $3}')
+        console_options=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"console_options\"")
+        if [[ "${pxelinux_action}" == "deploy" ]]; then
+            template=$3
+            if [[ -z "${template}" ]]; then
+                template=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"template\"")
+                install_repo=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"install_repo\"")
+            fi
+            template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
+            template_config=${SNOW_CONF}/boot/templates/${template}/config
+            if ! [[ -f ${template_pxe} ]] ; then
+                error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
+            fi
+            if ! [[ -f ${template_pxe} ]] ; then
+                warning_message "The following file does not exist: ${template_config}"
+            else
+                source ${template_config}
+            fi
+            if [[ "${install_repo}" == "null" || -z "${install_repo}" ]]; then
+                install_repo=${INSTALL_REPO}
+            fi
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
+            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        fi
+        if [[ "${pxelinux_action}" == "boot" ]]; then
+            image=$3
+            if [[ -z "${image}" ]]; then
+                image=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"image\"")
+                if [[ "${image}" == "null" ]]; then
+                    image=${DEFAULT_BOOT}
+                fi
+            fi
+            image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+            image_config=${SNOW_CONF}/boot/images/${image}/config
+            if ! [[ -f ${image_pxe} ]] ; then
+                error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+            fi
+            if ! [[ -f ${image_pxe} ]] ; then
+                warning_message "The following file does not exist: ${image_config}"
+            else
+                source ${image_config}
+            fi
+            cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        fi
         if [[ "${console_options}" == "null" ]]; then
             console_options=${DEFAULT_CONSOLE_OPTIONS}
         fi
-        if [[ "${install_repo}" == "null" ]]; then
-            install_repo=${INSTALL_REPO}
-        fi
-        cp -p ${pxelinux_cfg} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
-        sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
     done
     unset node
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
 function list_templates()
@@ -1148,22 +1186,8 @@ function deploy()
                 error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
             fi
         fi
-        local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
-        local template_config=${SNOW_CONF}/boot/templates/${template}/config
-        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        local default_boot_config=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/config
-        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-        if ! [[ -f ${template_pxe} ]] ; then
-            error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
-        fi
-        for node in $(node_list "${nodelist}"); do
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
-        done
-        unset node
-        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         info_msg "Booting node range ${nodelist} for deployment... This will take a while, Please wait."
-        boot_copy ${template_pxe} ${template_config} "${nodelist}"
+        boot_copy "${nodelist}" deploy ${template}
         parallel -j $BLOCKN \
         echo "{}${NET_MGMT[4]}" \; \
         ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
@@ -1173,7 +1197,7 @@ function deploy()
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
         info_msg "You can monitor the deployment with: snow console <compute-node-name>"
-        boot_copy ${default_boot_pxe} ${default_boot_config} "${nodelist}"
+        boot_copy "${nodelist}" boot
         error_check 0 "Deployment started."
     fi
 }  1>>$LOGFILE 2>&1
@@ -1591,17 +1615,13 @@ function boot()
         fi
     else
         local image=$2
-        local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
-        local image_config=${SNOW_CONF}/boot/images/${image}/config
-        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        local default_boot_config=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/config
         local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
         local BLOCKN=${2:-$BLOCKN}
         local BLOCKD=${3:-$BLOCKD}
         if [ -z "$image" ]; then
-            boot_copy ${default_boot_pxe} ${default_boot_config} "${nodelist}"
+            boot_copy "${nodelist}" boot
         else
-            boot_copy ${image_pxe} ${image_config} "${nodelist}"
+            boot_copy "${nodelist}" boot ${image}
         fi
         if ! [[ -f ${image_pxe} ]] ; then
             error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
