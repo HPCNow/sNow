@@ -1107,7 +1107,7 @@ function boot_copy()
 function list_templates()
 {
     local templates_path=${SNOW_CONF}/boot/templates
-    local templates_avail=$(ls -1 ${templates_path}//*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
+    local templates_avail=$(ls -1 ${templates_path}/*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
     for template in ${templates_avail}; do
         local template_desc=${templates_path}/${template}/${template}.desc
         print_msg "$template"
