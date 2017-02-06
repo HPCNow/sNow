@@ -1562,9 +1562,10 @@ function avail_nodes()
 
 function check_host_status()
 {
-    ping -c 1 $1 &> /dev/null
+    local host=$1
+    ping -c 1 ${host} &> /dev/null
     if [[ "$?" != "0" ]]; then
-        error_exit "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
+        error_exit "The host ${host} is not responsive. Please check the host name, DNS server or /etc/hosts."
     fi
 }
 
@@ -1630,66 +1631,72 @@ function get_server_distribution()
 
 function boot_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
+    for domain in ${SELF_ACTIVE_DOMAINS}
     do
-        boot $i
+        boot $domain
     done
+    unset domain
 }
 
 function boot_cluster()
 {
-    if [ -z "$1" ]; then
+    local cluster=$1
+    if [ -z "${cluster}" ]; then
         error_exit "ERROR: No cluster to boot."
     fi
-    CLUSTERNAME=$1
     BLOCKN=${2:-$BLOCKN}
     BLOCKD=${3:-$BLOCKD}
     # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks
     # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
     # BlockD is the delay between one block and the following one (default 5 seconds)
     # GNU Parallel: Pass $BLOCKN + Sleep $BLOCKD
-    boot ${CLUSTERS[$1]}
+    boot ${CLUSTERS[${cluster}]}
 }
 
 function ncmd()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to execute command."
     fi
-    pdsh -w $1 $2 $3 $4
+    shift
+    pdsh -w $nodelist $@
 }
 
 function nreboot()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to reboot."
     fi
-    pdsh -w $1 reboot
+    pdsh -w ${nodelist} reboot
 }  &>/dev/null
 
 function nshutdown()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
-    pdsh -w $1 systemctl poweroff
+    pdsh -w ${nodelist} systemctl poweroff
 }  &>/dev/null
 
 function shutdown_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
+    for domain in ${SELF_ACTIVE_DOMAINS}
     do
-        nshutdown $i
+        nshutdown ${domain}
     done
+    unset domain
 }
 
 function shutdown_cluster()
 {
-    if [ -z "$1" ]; then
+    local cluster=$1
+    if [ -z "${cluster}" ]; then
         error_exit "ERROR: No cluster to shutdown."
     fi
-    CLUSTERNAME=$1
-    nshutdown ${CLUSTERS[$1]}
+    nshutdown ${CLUSTERS[${cluster}]}
 }  &>/dev/null
 
 function ndestroy()

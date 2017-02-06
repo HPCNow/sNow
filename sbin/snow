@@ -67,200 +67,204 @@ fi
 case $opt1 in
     init)
         init
-    ;;
+        ;;
     config)
         config
-    ;;
+        ;;
     update)
         case $opt2 in
             firewall)
                 update_firewall
-            ;;
+                ;;
             tools)
                 update_tools
-            ;;
+                ;;
             configspace)
                 update_configspace
-            ;;
+                ;;
             template)
                 update_xen_image && error_check 0 "sNow! image updated " || error_check 1 "sNow! image updated " &
                 spinner $!             "Updating sNow! image "
-            ;;
+                ;;
             *)
                 error_msg "Update available options: firewall, tools, configspace, template"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     remove)
         case $opt2 in
             domain)
                 remove_domain_xen $opt3
-            ;;
+                ;;
             node)
                 remove_node $opt3
-            ;;
+                ;;
             template)
                 remove_template $opt3
-            ;;
+                ;;
             image)
                 remove_image $opt3
-            ;;
+                ;;
             *)
                 error_msg "You can remove: domain, node, template, image"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     deploy)
         deploy $opt2 $opt3 $opt4 $opt5 & #&& error_check 0 "System deployed " || error_check 1 "System deployed " &
         spinner $!             "Deploying $opt2"
-    ;;
+        ;;
     clone)
         case $opt2 in
             domain)
                 clone_domain_xen $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
                 spinner $!             "Cloning $opt3"
-            ;;
+                ;;
             node)
                 clone_node $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
                 spinner $!             "Cloning $opt3"
-            ;;
+                ;;
             template)
                 clone_template $opt3 $opt4 "$opt5"
-            ;;
+                ;;
             image)
                 clone_image $opt3 $opt4 $opt5
-            ;;
+                ;;
             *)
                 error_msg "You can clone: domain, node, template, image"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     add)
         case $opt2 in
             domain)
                 add_domain_xen $opt3
-            ;;
+                ;;
             node)
                 shift 3
                 add_node $opt3 "$@"
-            ;;
+                ;;
             template)
                 add_template $opt3
-            ;;
+                ;;
             image)
                 add_image $opt3
-            ;;
+                ;;
             *)
                 error_msg "You can add: domain, node, template, image"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     set)
         case $opt2 in
             #domain)
             #    set_domain_xen $opt3
-            #;;
+            #    ;;
             node)
                 shift 3
                 set_node $opt3 "$@"
-            ;;
+                ;;
             #template)
             #    set_template $opt3
-            #;;
+            #    ;;
             #image)
             #    set_image $opt3
-            #;;
+            #    ;;
             *)
                 error_msg "You can set: domain, node, template, image"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     list)
         case $opt2 in
             domains)
                 avail_domains
-            ;;
+                ;;
             templates)
                 avail_templates
-            ;;
+                ;;
             images)
                 avail_images
-            ;;
+                ;;
             nodes)
                 avail_nodes
-            ;;
+                ;;
             *)
                 error_msg "Option not available: $opt2"
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     takeover)
         takeover $opt2
-    ;;
+        ;;
     boot)
         case $opt2 in
             domains)  
                 boot_domains $opt3 && error_check 0 "Domains are UP " || error_check 1 "Domains are UP " &
                 spinner $!             'Booting domains'
-            ;;
+                ;;
             cluster)
                 boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Cluster booted " || error_check 1 "Cluster booted " &
                 spinner $!             "Booting cluster "
-            ;;
+                ;;
             *)
                 boot $opt2 $opt3 $opt4 && error_check 0 "Node(s) booted " || error_check 1 "Node(s) booted " &
                 spinner $!             "Booting node(s) "
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     reboot)
         nreboot $opt2
-    ;;
+        ;;
     reset)
         case $opt2 in
             domains)  
                 nreset_domains 
-            ;;
+                ;;
             *)
                 nreset $opt2
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     poweroff)
         case $opt2 in
             domains)  
                 poweroff_domains 
-            ;;
+                ;;
             *)
                 npoweroff $opt2
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     shutdown)
         case $opt2 in
             domains)  
                 shutdown_domains 
-            ;;
+                ;;
             cluster)
                 shutdown_cluster $opt3 
-            ;;
+                ;;
             *)
                 nshutdown $opt2 
-            ;;
+                ;;
         esac
-    ;;
+        ;;
     destroy)
         ndestroy $opt2
-    ;;
+        ;;
     console)
         nconsole $opt2
-    ;;
+        ;;
+    cmd)
+        shift 2
+        ncmd $opt2 "$@"
+        ;;
     version|-V|-version|--version)
-      msg "sNow! version: ${SNOW_VERSION}"
-      ;;
+        msg "sNow! version: ${SNOW_VERSION}"
+        ;;
     help|-help|--help|\?|*)
-      shelp
-      ;;
+        shelp
+        ;;
   esac
 
 #
