@@ -736,7 +736,7 @@ function deploy_domain_xen()
             FORCE="--force"
         fi
     else
-        if (($IS_VM)) ; then
+        if ((${is_vm})) ; then
             info_msg "Deploying the domain ${domain}. It can take few minutes. Please wait!"
         else
             error_exit "The domain ${domain} is NOT available in the ${SNOW_DOMAINS}."
@@ -1160,7 +1160,7 @@ function deploy()
         error_exit "ERROR: No domain or node to deploy"
     fi
     get_server_distribution ${nodelist}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         deploy_domain_xen ${nodelist} $2
     else
         if [[ -z "$opt4" ]]; then
@@ -1186,7 +1186,7 @@ function deploy()
                 error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
             fi
         fi
-        info_msg "Booting node range ${nodelist} for deployment... This will take a while, Please wait."
+        info_msg "Booting node(s) ${nodelist} for deployment... This may take a while, Please wait."
         boot_copy "${nodelist}" deploy ${template}
         parallel -j $BLOCKN \
         echo "{}${NET_MGMT[4]}" \; \
@@ -1600,7 +1600,7 @@ function boot()
         error_exit "No domain or node to boot."
     fi
     get_server_distribution ${nodelist}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         local domain=${nodelist}
         if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg ]]; then
             local is_up=$(xl list ${domain})
@@ -1645,12 +1645,13 @@ function boot()
 
 function get_server_distribution()
 {
-    node_rank $1
+    local nodelist=$1
+    node_rank $nodelist
     if (( $NLENG > 0 )); then
         # VM ranks are not yet supported
-        IS_VM=0
+        is_vm=0
     else
-        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
+        is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
     fi
 }
 
@@ -1731,21 +1732,14 @@ function ndestroy()
         error_exit "ERROR: No domain(s) or node(s) to power down."
     fi
     get_server_distribution ${nodelist}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         xl destroy ${nodelist}
     else
-        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status ${nodelist}${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
-        fi
+        parallel -j $BLOCKN \
+        echo "${}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
@@ -1756,21 +1750,14 @@ function npoweroff()
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
     get_server_distribution ${nodelist}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         xl shutdown ${nodelist}
     else
-        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status ${nodelist}${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
-        fi
+        parallel -j $BLOCKN \
+        echo "${}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
@@ -1790,21 +1777,17 @@ function nreset()
         error_exit "ERROR: No domain(s) or node(s) to reset."
     fi
     get_server_distribution ${nodelist}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         xl reboot -F ${nodelist}
     else
-        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status ${nodelist}${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
-        fi
+        info_msg "Rebooting node(s) ${nodelist}... This maytake a while, Please wait."
+        parallel -j $BLOCKN \
+        echo "${}${NET_MGMT[4]}" \; \
+        sleep $BLOCKD \; \
+        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
@@ -1825,7 +1808,7 @@ function nconsole()
         error_exit "ERROR: please specify the domain(s) or node(s) to connect."
     fi
     get_server_distribution ${host}
-    if (($IS_VM)) ; then
+    if ((${is_vm})) ; then
         xl console ${host} 1>&3
     else
         check_host_status ${host}${NET_MGMT[4]}
