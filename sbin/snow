@@ -141,7 +141,7 @@ case $opt1 in
                 add_domain_xen $opt3
             ;;
             node)
-                add_node $opt3 $opt4
+                add_node $opt3 "$@"
             ;;
             template)
                 add_template $opt3

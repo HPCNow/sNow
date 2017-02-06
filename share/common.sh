@@ -98,8 +98,8 @@ function shelp()
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
-        * add node <node> <cluster>                 | adds a new node in the sNow! database
-        * set node <node> [--option value]          | sets parameters in the node description. Options available are: cluster, image, template, install_repo, console_options
+        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_repo, console_options
+        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
         * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
@@ -746,7 +746,7 @@ function deploy_domain_xen()
     if [[ -n "$IMG_DST" ]]; then
         IMG_DST_OPT="--${IMG_DST}"
     fi
-    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
+    cat ${SNOW_DOMAINS} | grep "${domain}" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
@@ -843,32 +843,103 @@ function remove_node()
 
 function add_node()
 {
-    local node=$1
-    local cluster=$2
+    local nodelist=$1
+    local cluster=""
+    local image=${DEFAULT_BOOT} 
+    local template=${DEFAULT_TEMPLATE}
+    local install_repo=${INSTALL_REPO}
+    local console_options=${DEFAULT_CONSOLE_OPTIONS}
+    local last_deploy=null
+    shift
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+    while test $# -gt 0; do
+        case "$1" in
+            -c|--cluster)
+                if [ -n "$2" ]; then
+                    cluster="$2"
+                    shift
+                else
+                    error_exit "Option cluster missing"
+                fi
+                ;;
+            -i|--image)
+                if [ -n "$2" ]; then
+                    image="$2"
+                    shift
+                else
+                    error_exit "Option image missing"
+                fi
+                ;;
+            -t|--template)
+                if [ -n "$2" ]; then
+                    template="$2"
+                    shift
+                else
+                    error_exit "Option template missing"
+                fi
+                ;;
+            -r|--install_repo)
+                if [ -n "$2" ]; then
+                    install_repo="$2"
+                    shift
+                else
+                    error_exit "Option install_repo missing"
+                fi
+                ;;
+            -C|--console_options)
+                if [ -n "$2" ]; then
+                    console_options="$2"
+                    shift
+                else
+                    error_exit "Option console_options missing"
+                fi
+                ;;
+            -?|-h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
     if [[ -z "$cluster" ]]; then
         error_exit "The cluster name is not provided"
     fi
-    if [[ "${node_query}" != "null" ]]; then
-        error_msg "There node $node already exist in the database."
-    else
-        warning_msg "Do you want to add the node ${node}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${INSTALL_REPO}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${DEFAULT_CONSOLE_OPTIONS}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
-            #done
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" != "null" ]]; then
+            error_msg "There node $node already exist in the database."
         else
-            info_msg "Well done. It's better to be sure."
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
+            # setup the defaults
+            if [[ -n "$cluster" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
+            fi
+            if [[ -n "$image" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+            fi
+            if [[ -n "$template" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
+            fi
+            if [[ -n "$install_repo" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
+            fi
+            if [[ -n "$console_options" ]]; then
+                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${console_options}\"")
+            fi
         fi
+    done
+    unset node
+    warning_msg "Do you want to add the node(s) ${nodelist}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    else
+        info_msg "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
 
