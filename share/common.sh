@@ -1701,14 +1701,15 @@ function shutdown_cluster()
 
 function ndestroy()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to power down."
     fi
-    get_server_distribution $1
+    get_server_distribution ${nodelist}
     if (($IS_VM)) ; then
-        xl destroy $1
+        xl destroy ${nodelist}
     else
-        node_rank $1
+        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 0 )); then
@@ -1717,22 +1718,23 @@ function ndestroy()
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
+            check_host_status ${nodelist}${NET_MGMT[4]}
+            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
         fi
     fi
 }
 
 function npoweroff()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
-    get_server_distribution $1
+    get_server_distribution ${nodelist}
     if (($IS_VM)) ; then
-        xl shutdown $1
+        xl shutdown ${nodelist}
     else
-        node_rank $1
+        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 0 )); then
@@ -1741,30 +1743,32 @@ function npoweroff()
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
+            check_host_status ${nodelist}${NET_MGMT[4]}
+            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
         fi
     fi
 }
 
 function poweroff_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
+    for domain in ${SELF_ACTIVE_DOMAINS}
     do
-        npoweroff $i
+        npoweroff ${domain}
     done
+    unset domain
 }
 
 function nreset()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to reset."
     fi
-    get_server_distribution $1
+    get_server_distribution ${nodelist}
     if (($IS_VM)) ; then
-        xl reboot -F $1
+        xl reboot -F ${nodelist}
     else
-        node_rank $1
+        node_rank ${nodelist}
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
         if (( $NLENG > 0 )); then
@@ -1773,8 +1777,8 @@ function nreset()
             ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
             ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
         else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
+            check_host_status ${nodelist}${NET_MGMT[4]}
+            ipmitool -I $IPMI_TYPE -H ${nodelist}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
         fi
     fi
 }
@@ -1782,34 +1786,37 @@ function nreset()
 
 function reset_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
+    for domain in ${SELF_ACTIVE_DOMAINS}
     do
-        nreset $i
+        nreset ${domain}
     done
+    unset domain
 }
 
 function nconsole()
 {
-    if [ -z "$1" ]; then
+    local host=$1
+    if [ -z "${host}" ]; then
         error_exit "ERROR: please specify the domain(s) or node(s) to connect."
     fi
-    get_server_distribution $1
+    get_server_distribution ${host}
     if (($IS_VM)) ; then
-        xl console $1 1>&3
+        xl console ${host} 1>&3
     else
-        check_host_status $1${NET_MGMT[4]}
-        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
+        check_host_status ${host}${NET_MGMT[4]}
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
         sleep 1
-        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
     fi
 }
 
 function nuptime()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: please, specify the domain(s) or node(s) to check the uptime."
     fi
-    pdsh -w $1 uptime
+    pdsh -w ${nodelist} uptime
 }
 
 # End common functions
