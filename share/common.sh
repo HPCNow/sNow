@@ -1086,6 +1086,9 @@ function set_snow_json()
     if [[ -n "${disk_size}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"disk_size\" = \"${disk_size}\"")
     fi
+    if [[ -n "${last_deploy}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"last_deploy\" = \"${last_deploy}\"")
+    fi
     if [[ ${#ip[@]} > 0 ]]; then
         for nic in ${!ip[@]}; do
             ip_address=${ip[${nic}]}
