@@ -1085,6 +1085,46 @@ function set_node()
     fi
 } 1>>$LOGFILE 2>&1
 
+function set_snow_json()
+{
+    node_type_query=$(echo ${nodes_json} | jq -r ".\"${node_type}\"")
+    if [[ "${node_type_query}" == "null" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\" = {} ")
+    fi
+    # setup the defaults
+    if [[ -n "$cluster" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"$cluster\"")
+    fi
+    if [[ -n "$image" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image\" = \"${image}\"")
+    fi
+    if [[ -n "$template" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"template\" = \"${template}\"")
+    fi
+    if [[ -n "${install_repo}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
+    fi
+    if [[ -n "${console_options}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"console_options\" = \"${console_options}\"")
+    fi
+    if [[ ${#ip[@]} > 0 ]]; then
+        for nic in ${!ip[@]}; do
+            ip_address=${ip[${nic}]}
+            nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"ip\" = \"${ip_address}\"")
+        done
+        unset nic
+        unset ip_address
+    fi
+    if [[ ${#mac[@]} > 0 ]]; then
+        for nic in ${!mac[@]}; do
+            mac_address=${mac[${nic}]}
+            nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"mac\" = \"${mac_address}\"")
+        done
+        unset nic
+        unset mac_address
+    fi
+}
+
 function expand_range()
 {
     IFS=" "
