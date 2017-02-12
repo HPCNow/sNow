@@ -1077,6 +1077,15 @@ function set_snow_json()
     if [[ -n "${console_options}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"console_options\" = \"${console_options}\"")
     fi
+    if [[ -n "$memory" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"memory\" = \"${memory}\"")
+    fi
+    if [[ -n "$cpus" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cpus\" = \"${cpus}\"")
+    fi
+    if [[ -n "${disk_size}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"disk_size\" = \"${disk_size}\"")
+    fi
     if [[ ${#ip[@]} > 0 ]]; then
         for nic in ${!ip[@]}; do
             ip_address=${ip[${nic}]}
