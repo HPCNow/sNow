@@ -946,6 +946,7 @@ function add_node()
 function set_node()
 {
     local nodelist=$1
+    local node_type=compute
     shift
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
     local declare -A mac
@@ -1041,38 +1042,7 @@ function set_node()
         if [[ "${node_query}" == "null" ]]; then
             error_msg "There node $node does not exist in the database."
         else
-            # setup the defaults
-            if [[ -n "$cluster" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
-            fi
-            if [[ -n "$image" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
-            fi
-            if [[ -n "$template" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-            fi
-            if [[ -n "${install_repo}" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
-            fi
-            if [[ -n "${console_options}" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${console_options}\"")
-            fi
-            if [[ ${#ip[@]} > 0 ]]; then
-                for nic in ${!ip[@]}; do
-                    ip_address=${ip[${nic}]}
-                    nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"nic\".\"${nic}\".\"ip\" = \"${ip_address}\"")
-                done
-                unset nic
-                unset ip_address
-            fi
-            if [[ ${#mac[@]} > 0 ]]; then
-                for nic in ${!mac[@]}; do
-                    mac_address=${mac[${nic}]}
-                    nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"nic\".\"${nic}\".\"mac\" = \"${mac_address}\"")
-                done
-                unset nic
-                unset mac_address
-            fi
+            set_snow_json
         fi
     done
     unset node
