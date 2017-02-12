@@ -164,6 +164,7 @@ else
     cat ${SNOW_PATH}/snow-tools/etc/snow.conf 1>&3
     echo "==== Active Domains ====" 1>&3
     cat ${SNOW_PATH}/snow-tools/etc/active-domains.conf | grep -v "^#" |  gawk '{print $0}' 1>&3
+    cat ${SNOW_PATH}/snow-tools/etc/nodes.json | jq '.' 1>&3
 fi
 }
 
@@ -419,8 +420,7 @@ function generate_hostlist()
     if (( "${#host[@]}" > "${#hostip[@]}" )); then
         error_exit "The /etc/hosts can NOT be generated because the IP rank is too short! ($ip/$cidr)"
     fi
-    for (( i=0; i<${#host[@]}; i++ ));
-    do
+    for (( i=0; i<${#host[@]}; i++ )); do
         printf "%-16s    %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
@@ -915,22 +915,7 @@ function add_node()
             error_msg "There node $node already exist in the database."
         else
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
-            # setup the defaults
-            if [[ -n "$cluster" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
-            fi
-            if [[ -n "$image" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
-            fi
-            if [[ -n "$template" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-            fi
-            if [[ -n "$install_repo" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
-            fi
-            if [[ -n "$console_options" ]]; then
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${console_options}\"")
-            fi
+            set_snow_json
         fi
     done
     unset node
@@ -949,8 +934,8 @@ function set_node()
     local node_type=compute
     shift
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local declare -A mac
-    local declare -A ip
+    declare -A mac
+    declare -A ip
     while test $# -gt 0; do
         case "$1" in
             -c|--cluster)
@@ -993,7 +978,7 @@ function set_node()
                     error_exit "Option console_options missing"
                 fi
                 ;;
-            -i|--ip)
+            -I|--ip)
                 if [ -n "$2" ]; then
                     nic=$2
                 else
@@ -1009,7 +994,7 @@ function set_node()
                 unset nic
                 unset ip_address
                 ;;
-            -m|--mac)
+            -M|--mac)
                 if [ -n "$2" ]; then
                     nic=$2
                 else
@@ -1180,8 +1165,6 @@ function boot_copy()
             if [[ "${install_repo}" == "null" || -z "${install_repo}" ]]; then
                 install_repo=${INSTALL_REPO}
             fi
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
             sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         fi
@@ -1209,6 +1192,10 @@ function boot_copy()
             console_options=${DEFAULT_CONSOLE_OPTIONS}
         fi
         sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        last_deploy="$(date)"
+        set_snow_json
+        unset install_repo
+        unset console_options
     done
     unset node
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
