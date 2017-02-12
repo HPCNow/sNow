@@ -579,11 +579,11 @@ function update_tools()
     if [[ ! -d ${SNOW_TOOL} ]]; then
         mkdir -p ${SNOW_TOOL}
         cd ${SNOW_TOOL}
-        git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+        git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review the communication to the Internet."
         cd -
     else
         cd ${SNOW_TOOL}
-        git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+        git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review if you have not commited some local changes in the repository."
         cd -
     fi
 } 1>>$LOGFILE 2>&1
@@ -948,6 +948,8 @@ function set_node()
     local nodelist=$1
     shift
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local declare -A mac
+    local declare -A ip
     while test $# -gt 0; do
         case "$1" in
             -c|--cluster)
@@ -990,6 +992,38 @@ function set_node()
                     error_exit "Option console_options missing"
                 fi
                 ;;
+            -i|--ip)
+                if [ -n "$2" ]; then
+                    nic=$2
+                else
+                    error_exit "IP address option missing"
+                fi
+                if [ -n "$3" ]; then
+                    ip_address="$3"
+                else
+                    error_exit "IP address not defined"
+                fi
+                ip[${nic}]=${ip_address}
+                shift 2
+                unset nic
+                unset ip_address
+                ;;
+            -m|--mac)
+                if [ -n "$2" ]; then
+                    nic=$2
+                else
+                    error_exit "Mac address option missing"
+                fi
+                if [ -n "$3" ]; then
+                    mac_address="$3"
+                else
+                    error_exit "Mac address not defined"
+                fi
+                mac[${nic}]=${mac_address}
+                shift 2
+                unset nic
+                unset mac_address
+                ;;
             -?|-h|--help)
                 shelp
                 exit
@@ -1017,11 +1051,27 @@ function set_node()
             if [[ -n "$template" ]]; then
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
             fi
-            if [[ -n "$install_repo" ]]; then
+            if [[ -n "${install_repo}" ]]; then
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
             fi
-            if [[ -n "$console_options" ]]; then
+            if [[ -n "${console_options}" ]]; then
                 nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${console_options}\"")
+            fi
+            if [[ ${#ip[@]} > 0 ]]; then
+                for nic in ${!ip[@]}; do
+                    ip_address=${ip[${nic}]}
+                    nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"nic\".\"${nic}\".\"ip\" = \"${ip_address}\"")
+                done
+                unset nic
+                unset ip_address
+            fi
+            if [[ ${#mac[@]} > 0 ]]; then
+                for nic in ${!mac[@]}; do
+                    mac_address=${mac[${nic}]}
+                    nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"nic\".\"${nic}\".\"mac\" = \"${mac_address}\"")
+                done
+                unset nic
+                unset mac_address
             fi
         fi
     done
