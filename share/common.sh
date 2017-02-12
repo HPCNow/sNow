@@ -1737,8 +1737,8 @@ function ndestroy()
     else
         BLOCKN=${2:-$BLOCKN}
         parallel -j $BLOCKN \
-        echo "${}${NET_MGMT[4]}" \; \
-        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
+        echo "{}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
         ::: $(node_list "${nodelist}")
     fi
 }
@@ -1755,8 +1755,8 @@ function npoweroff()
     else
         BLOCKN=${2:-$BLOCKN}
         parallel -j $BLOCKN \
-        echo "${}${NET_MGMT[4]}" \; \
-        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
+        echo "{}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
         ::: $(node_list "${nodelist}")
     fi
 }
@@ -1784,9 +1784,9 @@ function nreset()
         BLOCKD=${3:-$BLOCKD}
         info_msg "Rebooting node(s) ${nodelist}... This maytake a while, Please wait."
         parallel -j $BLOCKN \
-        echo "${}${NET_MGMT[4]}" \; \
+        echo "{}${NET_MGMT[4]}" \; \
         sleep $BLOCKD \; \
-        ipmitool -I $IPMI_TYPE -H "${}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
         ::: $(node_list "${nodelist}")
     fi
 }
