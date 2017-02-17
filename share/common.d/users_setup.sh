@@ -3,6 +3,11 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+
+function setup_root_user()
+{
+    echo "root:${MASTER_PASSWORD}" | chpasswd
+}
 function setup_snow_user()
 {
     # Check UIDs and GIDs
@@ -39,6 +44,7 @@ function setup_hpcnow_user()
 
 function setup_ssh()
 {
+    setup_root_user
     setup_snow_user
     if [[ "$HPCNow_Support" != "none" ]]; then
         setup_hpcnow_user

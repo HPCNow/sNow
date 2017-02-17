@@ -1,7 +1,7 @@
 #!/bin/bash
-# These are the common functions which may be used by sNow! Command Line Interface 
+# These are the common functions which may be used by sNow! Command Line Interface
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-# For more information, visit the official website : www.hpcnow.com/snow
+# For more information, visit the official website: www.hpcnow.com/snow
 #
 
 function error_exit()
@@ -44,7 +44,7 @@ function print_msg()
 
 function logsetup()
 {
-    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
+    local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
@@ -52,7 +52,7 @@ function logsetup()
 
 function log()
 {
-    echo "[$(date)]: $*" 
+    echo "[$(date)]: $*"
 }
 
 function spinner()
@@ -63,7 +63,7 @@ function spinner()
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
         if [[ "$sig" != "1" ]]; then
-            printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3 
+            printf "\r\e[0K[\e[0;32m%c\e[m] %s" "$spinstr" "${2}" 1>&3
         fi
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
@@ -82,10 +82,10 @@ function error_check()
 
 function shelp()
 {
-    echo " 
+    echo "
     This is the sNow! Command Line Interface
     Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-    For more information, visit the official website : www.hpcnow.com
+    For more information, visit the official website: www.hpcnow.com
 
     Usage: snow [function] <option|domain|server>
 
@@ -93,29 +93,34 @@ function shelp()
 
         * init                                      | setup the system according to the parameters defined in snow.conf and active-domains.conf
         * config                                    | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-        * update tools                              | updates the sNow! Tools 
-        * update configspace                        | updates configuration files from private git 
+        * update tools                              | updates the sNow! Tools
+        * update configspace                        | updates configuration files from private git
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
-        * deploy <domain|server> <template> <force> | deploy specific domain/server (optional: with specific template or force to deploy existing domain/server) 
-        * add node <node> <cluster>                 | adds a new node in the sNow! database
+        * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
+        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_repo, console_options
+        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
+        * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
+        * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
-        * list templates                            | list the available templates
         * list nodes                                | list the available compute nodes and their status
-        * boot <domain|server>                      | boot specific domain or server
+        * list templates                            | list the templates installed in the system
+        * list images                               | list the images generated or downloaded
+        * boot <domain>                             | boot specific domain
+        * boot <node> <image>                       | boot specific node with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-        * reboot <domain|server>                    | reboot specific domain or server
-        * shutdown <domain|server>                  | shutdown specific domain or server
+        * reboot <domain|node>                      | reboot specific domain or node
+        * shutdown <domain|node>                    | shutdown specific domain or node
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|server>                   | force to stop specific domain or server
-        * reset <domain|server>                     | force to reboot specific domain or server
-        * poweroff <domain|server>                  | force to shutdown specific domain or server simulating a power button press
-        * console <domain|server>                   | console access to specific domain or server
+        * destroy <domain|node>                     | force to stop specific domain or node
+        * reset <domain|node>                       | force to reboot specific domain or node
+        * poweroff <domain|node>                    | force to shutdown specific domain or node simulating a power button press
+        * console <domain|node>                     | console access to specific domain or node
         * version                                   | shows the version of sNow!
         * help                                      | prints this message
 
@@ -125,15 +130,11 @@ function shelp()
         snow deploy ldap01
     " 1>&3
 }
-#        * clone <server> <image>            | creates a PXE image to boot the compute nodes diskless
-#        * remove image <image>                      | removes an existing image
-#        * list images                               | list the available images
-#        * boot <domain|server> <image>              | boot specific domain or server with optional image
 #        * boot cluster <cluster> <image>            | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
 
 function end_msg()
 {
-    echo " 
+    echo "
     --------------------------------------------------------------------------
 
     ███████╗███╗   ██╗ ██████╗ ██╗    ██╗██╗
@@ -145,11 +146,11 @@ function end_msg()
     Developed by HPCNow! www.hpcnow.com/snow
 
     Get enterprise features and end user enterprise support from HPCNow!
-    Please help us to improve this project, report bugs and issues to : 
+    Please help us to improve this project, report bugs and issues to:
     sNow! Development <dev@hpcnow.com>
-    If you found some error during the installation, please review the 
-    log file : $LOGFILE
-    Some changes may require to reboot the system. Please, consider to do it 
+    If you found some error during the installation, please review the
+    log file: $LOGFILE
+    Some changes may require to reboot the system. Please, consider to do it
     before to move it into production.
     --------------------------------------------------------------------------
     " 1>&3
@@ -163,16 +164,17 @@ else
     cat ${SNOW_PATH}/snow-tools/etc/snow.conf 1>&3
     echo "==== Active Domains ====" 1>&3
     cat ${SNOW_PATH}/snow-tools/etc/active-domains.conf | grep -v "^#" |  gawk '{print $0}' 1>&3
+    cat ${SNOW_PATH}/snow-tools/etc/nodes.json | jq '.' 1>&3
 fi
 }
 
-function download() 
+function download()
 {
-    download_url=$1
-    download_path=$2
+    local download_url=$1
+    local download_path=$2
     case $DOWNLD in
         axel)
-            axel -q -n 10 ${download_url} -o ${download_path} 
+            axel -q -n 10 ${download_url} -o ${download_path}
         ;;
         curl)
             f=$(gawk -F'/' '{print $NF}' <<< ${download_url})
@@ -181,7 +183,7 @@ function download()
         wget)
             wget -q -NS --content-disposition -P ${download_path} ${download_url}
         ;;
-        *) 
+        *)
             error_exit "Error: $DOWNLD is not supported"
         ;;
     esac
@@ -191,7 +193,7 @@ function bkp()
 {
     local bkpfile=$1
     local next=$(date +%Y%m%d%H%M)
-    if [[ -e $bkpfile ]]; then 
+    if [[ -e $bkpfile ]]; then
         cp -pr $bkpfile $bkpfile.$next-snowbkp
     fi
 }
@@ -202,7 +204,7 @@ function hex()
     printf "0x%X\n" $1;
 }
 
-function architecture_identification() 
+function architecture_identification()
 {
     local cpudec=$(lscpu | grep "Model:" | gawk '{print $2}')
     local cpuhex=$(hex $cpudec)
@@ -219,8 +221,8 @@ function is_golden_node()
 {
     # Returns 0 if this node is a golden node
     local gn=1
-    for i in "${GOLDEN_NODES[@]}"; do 
-        if [[ "$(hostname -s)" == "$i" ]]; then 
+    for i in "${GOLDEN_NODES[@]}"; do
+        if [[ "$(hostname -s)" == "$i" ]]; then
             local gn=0
         fi
     done
@@ -229,14 +231,14 @@ function is_golden_node()
 
 function get_os_distro()
 {
-    # OS release and Service pack discovery 
+    # OS release and Service pack discovery
     local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
     local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
     # Special case redhatenterpriseserver
-    if [ "${lsb_dist}" = "redhatenterpriseserver" ]; then
+    if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
         lsb_dist='redhat'
     fi
-    if [ "${lsb_dist}" = "suselinux" ]; then
+    if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
         lsb_dist='suse'
     fi
     if [[ -z "${lsb_dist}" ]]; then
@@ -259,6 +261,7 @@ function add_repo()
         ;;
         suse|sle[sd]|opensuse)
             zypper --gpg-auto-import-keys ar $repo
+            zypper --gpg-auto-import-keys refresh
         ;;
    esac
 } 1>>$LOGFILE 2>&1
@@ -268,7 +271,7 @@ function add_repo_key()
     local repo_key=$1
     case $OS in
         debian|ubuntu)
-            curl -sSL $repo_key | apt-key add - 
+            curl -sSL $repo_key | apt-key add -
         ;;
         rhel|redhat|centos)
             rpm --import $repo_key
@@ -310,11 +313,11 @@ function install_software()
            error_exit "This distribution is not supported."
         ;;
    esac
-   $INSTALLER $pkgs 
+   $INSTALLER $pkgs
 } 1>>$LOGFILE 2>&1
 
 
-function prefix_to_bit_netmask() 
+function prefix_to_bit_netmask()
 {
     local prefix=$1;
     local shift=$(( 32 - prefix ));
@@ -385,7 +388,7 @@ function last_ip_in_range()
         fi
         str="${str} $range"
     done
-    local ips=$(echo $str | sed "s, ,\\.,g"); 
+    local ips=$(echo $str | sed "s, ,\\.,g");
     local hostip=( $(eval echo $ips | tr ' ' '\n') )
     echo ${hostip[-2]}
 }
@@ -412,13 +415,12 @@ function generate_hostlist()
         fi
         str="${str} $range"
     done
-    local ips=$(echo $str | sed "s, ,\\.,g"); 
+    local ips=$(echo $str | sed "s, ,\\.,g");
     local hostip=( $(eval echo $ips | tr ' ' '\n') )
     if (( "${#host[@]}" > "${#hostip[@]}" )); then
         error_exit "The /etc/hosts can NOT be generated because the IP rank is too short! ($ip/$cidr)"
     fi
-    for (( i=0; i<${#host[@]}; i++ ));
-    do 
+    for (( i=0; i<${#host[@]}; i++ )); do
         printf "%-16s    %s\n" "${hostip[$i]}" "${host[$i]}$host_extension"
     done
 }
@@ -437,8 +439,11 @@ function generate_nodes_json()
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"install_repo\" = \"${INSTALL_REPO}\"")
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"console_options\" = \"${DEFAULT_CONSOLE_OPTIONS}\"")
         nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
     done
+    unset node
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
@@ -453,7 +458,7 @@ function init()
     else
         error_exit "The snow.conf is not yet available."
     fi
-    # Check for active-domains.conf 
+    # Check for active-domains.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
     elif [[ -f ${SNOW_TOOL}/etc/active-domains.conf ]]; then
@@ -463,6 +468,8 @@ function init()
         error_exit "The active-domains.conf is not yet available."
     fi
 
+    # If the system uses shared (and external) NFS to enable HA, then the following block will help to setup the required configuration in the
+    # NFS server.
     if (! ${HA_NFSROOT}) ; then
         # NFS_ROOT Exports
         if [[ ! -d /etc/exports.d ]]; then
@@ -472,25 +479,25 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
+            local snow_servers_exports=$(echo "${SNOW_NODES[*]}(rw,sync,no_subtree_check,no_root_squash)" | sed 's/ /(rw,sync,no_subtree_check,no_root_squash) /g')
             gawk -v snow_servers_exports=$snow_servers_exports '{
                 if ($1 !~ /^#|snow/){
-                    print "/sNow/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
+                    print "/sNow/domains/"$1"\t "snow_servers_exports" "$1"(rw,sync,no_subtree_check,no_root_squash)"
                 }
             }' ${SNOW_ACTIVE_DOMAINS} > ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports
             ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
-            warning_msg "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
+            warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
             warning_msg "Once you are done, execute exportfs -u"
         fi
     fi
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
     if [[ "$(uname -n)" == "${NFS_SERVER}" ]]; then
-        if [[ ! -f ${SNOW_CONF}/system_files/etc/exports.d/snow.exports ]]; then 
+        if [[ ! -f ${SNOW_CONF}/system_files/etc/exports.d/snow.exports ]]; then
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
             echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
-            warning_msg "Review the following exports file : ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
+            warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute exportfs -rv"
         fi
         if [[ ! -d /etc/exports.d ]]; then
@@ -505,31 +512,35 @@ function init()
     if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
-            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+            local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
+            local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
+            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} -v macdmz=${macdmz} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
-                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz  
+                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netdmz""i, brdmz, i, "02", maskdmz, gwdmz
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         else
-            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} \
+            local macpub=$(ip -f link addr show ${NET_PUB[0]} | grep ether | gawk '{print $2}')
+            local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
+            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} -v macpub=${macpub} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
-                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub, brpub, i, "02", maskpub, gwpub  
+                        printf "%12s\t %20s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s %6s %16s %9s 76:fd:31:9e:%02i:%2s %16s %16s \n", $1, $2, "eth0", netsnow""i, brsnow, i, "01", masksnow, gwsnow, "eth1", netpub, brpub, i, "02", maskpub, gwpub
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_CONF}/system_files/etc/domains.conf
         fi
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
-        warning_msg "Review the domains config file : ${SNOW_TOOL}/etc/domains.conf"
+        warning_msg "Review the domains config file: ${SNOW_TOOL}/etc/domains.conf"
     fi
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
     for i in ${!CLUSTERS[@]}
-    do 
+    do
         node_rank ${CLUSTERS[$i]}
         host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
         generate_nodes_json "$i" "$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
@@ -565,38 +576,40 @@ function init()
 
 function update_tools()
 {
-if [[ ! -d ${SNOW_TOOL} ]]; then
-    mkdir -p ${SNOW_TOOL}
-    cd ${SNOW_TOOL}
-    git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-    cd -
-else
-    cd ${SNOW_TOOL}
-    git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-fi 
+    if [[ ! -d ${SNOW_TOOL} ]]; then
+        mkdir -p ${SNOW_TOOL}
+        cd ${SNOW_TOOL}
+        git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review the communication to the Internet."
+        cd -
+    else
+        cd ${SNOW_TOOL}
+        git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review if you have not commited some local changes in the repository."
+        cd -
+    fi
 } 1>>$LOGFILE 2>&1
 
 function update_configspace()
 {
-if [[ ! -d ${SNOW_CONF}  ]]; then
-    mkdir -p ${SNOW_CONF}
-    cd ${SNOW_CONF}
-    git clone http://bitbucket.org/hpcnow/snow-configspace.git || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-    cd -
-else
     if [[ -z "$PRIVATE_GIT_TOKEN" || -z "$PRIVATE_GIT_REPO" ]]; then
         error_exit "ERROR: your private git repo and token are not defined. sNow! is not able to update without these two parameters."
-        exit 1
+    else
+        if [[ ! -d ${SNOW_CONF}  ]]; then
+            mkdir -p ${SNOW_CONF}
+            cd ${SNOW_CONF}
+            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            cd -
+        else
+            cd ${SNOW_CONF}
+            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            cd -
+        fi
     fi
-    cd ${SNOW_CONF}
-    git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
-fi
 } 1>>$LOGFILE 2>&1
 
 function update_firewall()
 {
-    pub_nic=${NET_PUB[0]}
-    pub_mac=$(ip -f link addr show ${pub_nic} | gawk '{if($0 ~ /ether/){print $2}}')
+    local pub_nic=${NET_PUB[0]}
+    local pub_mac=$(ip -f link addr show ${pub_nic} | gawk '{if($0 ~ /ether/){print $2}}')
     if [[ -z $pub_mac ]]; then
         error_exit "Your system do not have public network, so the firewall can not be setup"
     else
@@ -695,10 +708,10 @@ if [[ ! -d ${SNOW_PATH}/domains/template ]]; then
     wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
     if [[ -f ${SNOW_PATH}/domains/template/snow-template.tar.bz2 ]]; then
-        MD5LOCAL=$(md5sum ${SNOW_PATH}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
+        local md5local=$(md5sum ${SNOW_PATH}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
         wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-        MD5HPCNOW=$(cat ${SNOW_PATH}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
-        if [[ "$MD5LOCAL" != "$MD5HPCNOW" ]]; then
+        local md5hpcnow=$(cat ${SNOW_PATH}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
+        if [[ "$md5local" != "$md5hpcnow" ]]; then
             info_msg "Downloading most recent sNow! domain template"
             wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
@@ -707,62 +720,71 @@ else
     else
         wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_PATH}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
-fi 
+fi
 } 1>>$LOGFILE 2>&1
 
 function deploy_domain_xen()
 {
-    get_server_distribution $1 
-    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+    local domain=$1
+    get_server_distribution ${domain}
+    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
-            error_exit "The domain $1 already exist, please use 'force' option to overwrite the domain or remove it first with : snow remove $1."
+            error_exit "The domain ${domain} already exist, please use 'force' option to overwrite the domain or remove it first with: snow remove ${domain}."
         else
-            warning_msg "The domain $1 will be installed and all the data contained in this domain will be removed."
-            remove_domain_xen $1
+            warning_msg "The domain ${domain} will be installed and all the data contained in this domain will be removed."
+            remove_domain_xen ${domain}
             FORCE="--force"
         fi
     else
-        if (($IS_VM)) ; then
-            info_msg "Deploying the domain $1. It can take few minutes. Please wait!"
+        if ((${is_vm})) ; then
+            info_msg "Deploying the domain ${domain}. It can take few minutes. Please wait!"
         else
-            error_exit "The domain $1 is NOT available in the ${SNOW_DOMAINS}."
+            error_exit "The domain ${domain} is NOT available in the ${SNOW_DOMAINS}."
         fi
     fi
 
     if [[ -n "$IMG_DST" ]]; then
         IMG_DST_OPT="--${IMG_DST}"
-    fi 
-    cat ${SNOW_DOMAINS} | grep "$opt2" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
+    fi
+    cat ${SNOW_DOMAINS} | grep "${domain}" | gawk -v force="$FORCE" -v img_dst="$IMG_DST_OPT" -v pwd="$MASTER_PASSWORD" '{
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
         system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
-        }' 
-    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+        }'
+    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"
-        error_check 1 "Deployment of $1 Failed."
+        error_check 1 "Deployment of ${domain} Failed."
     else
-        second_nic=$(gawk -v guest=$opt2 '{if($1 == guest){print $10}}' ${SNOW_DOMAINS}) 
-        if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/$opt2.cfg ]]; then 
-            guest_network=$(gawk -v guest=$opt2 '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
-            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/$opt2.cfg > ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended
-            mv ${SNOW_TOOL}/etc/domains/$opt2.cfg.extended ${SNOW_TOOL}/etc/domains/$opt2.cfg
+        second_nic=$(gawk -v guest=${domain} '{if($1 == guest){print $10}}' ${SNOW_DOMAINS})
+        if [[ "$second_nic" != "none" && -e ${SNOW_TOOL}/etc/domains/${domain}.cfg ]]; then
+            guest_network=$(gawk -v guest=${domain} '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
+            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_TOOL}/etc/domains/${domain}.cfg > ${SNOW_TOOL}/etc/domains/${domain}.cfg.extended
+            mv ${SNOW_TOOL}/etc/domains/${domain}.cfg.extended ${SNOW_TOOL}/etc/domains/${domain}.cfg
         fi
-        error_check 0 "Deployment of $1 completed."
+        error_check 0 "Deployment of ${domain} completed."
     fi
 } 1>>$LOGFILE 2>&1
 
 function remove_domain_xen()
 {
-    get_server_distribution $1 
-    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg ]]; then
+    local domain=$1
+    get_server_distribution $domain
+    if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/$domain.cfg ]]; then
         error_msg "There is no domain with this name. Please, review the name of the domain to be removed."
     else
         if [[ -n "$IMG_DST" ]]; then
             IMG_DST_OPT="--${IMG_DST}"
-        fi 
-        xen-delete-image $IMG_DST_OPT --hostname=$1
-        rm -f ${SNOW_PATH}/snow-tools/etc/domains/$1.cfg
+        fi
+        warning_msg "Do you want to remove the domain ${domain}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            xl destroy ${domain}
+            xen-delete-image $IMG_DST_OPT --hostname=${domain}
+            rm -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg
+        else
+            info_msg "Well done. It's better to be sure."
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -770,14 +792,14 @@ function remove_template()
 {
     local template=$1
     if [[ ! -f ${SNOW_CONF}/boot/templates/${template}/${template}.pxe ]]; then
-        error_msg "There is no template with this name. Please, review the name with : snow list templates."
+        error_msg "There is no template with this name. Please, review the name with: snow list templates."
     else
         warning_msg "Do you want to remove the template ${template}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer 
+        read -t 20 -u 3 answer
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             rm -fr ${SNOW_CONF}/boot/templates/${template}/
         else
-            info_msg "Well done. It's better to be sure." 
+            info_msg "Well done. It's better to be sure."
         fi
     fi
 } 1>>$LOGFILE 2>&1
@@ -786,67 +808,324 @@ function remove_image()
 {
     local image=$1
     if [[ ! -f ${SNOW_CONF}/boot/images/${image}/${image}.pxe ]]; then
-        error_msg "There is no image with this name. Please, review the name with : snow list images."
+        error_msg "There is no image with this name. Please, review the name with: snow list images."
     else
         warning_msg "Do you want to remove the image ${image}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer 
+        read -t 20 -u 3 answer
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             rm -fr ${SNOW_CONF}/boot/images/${image}/
         else
-            info_msg "Well done. It's better to be sure." 
+            info_msg "Well done. It's better to be sure."
         fi
     fi
 } 1>>$LOGFILE 2>&1
 
 function remove_node()
 {
-    local node=$1
+    local nodelist=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
-    if [[ "${node_query}" == "null" ]]; then
-        error_msg "There is no node with this name ($node). Please, review the name with : snow list nodes."
-    else
-        warning_msg "Do you want to remove the node ${node}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer 
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" == "null" ]]; then
+            error_msg "There is no node with this name ($node). Please, review the name with: snow list nodes."
+        else
+            nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
+        fi
+        warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
+        read -t 20 -u 3 answer
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
-            #done
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
-            info_msg "Well done. It's better to be sure." 
+            info_msg "Well done. It's better to be sure."
         fi
-    fi
+    done
 } 1>>$LOGFILE 2>&1
 
 function add_node()
 {
-    local node=$1
-    local cluster=$2
+    local nodelist=$1
+    local cluster=""
+    local image=${DEFAULT_BOOT} 
+    local template=${DEFAULT_TEMPLATE}
+    local install_repo=${INSTALL_REPO}
+    local console_options=${DEFAULT_CONSOLE_OPTIONS}
+    local last_deploy=null
+    shift
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    local node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+    while test $# -gt 0; do
+        case "$1" in
+            -c|--cluster)
+                if [ -n "$2" ]; then
+                    cluster="$2"
+                    shift
+                else
+                    error_exit "Option cluster missing"
+                fi
+                ;;
+            -i|--image)
+                if [ -n "$2" ]; then
+                    image="$2"
+                    shift
+                else
+                    error_exit "Option image missing"
+                fi
+                ;;
+            -t|--template)
+                if [ -n "$2" ]; then
+                    template="$2"
+                    shift
+                else
+                    error_exit "Option template missing"
+                fi
+                ;;
+            -r|--install_repo)
+                if [ -n "$2" ]; then
+                    install_repo="$2"
+                    shift
+                else
+                    error_exit "Option install_repo missing"
+                fi
+                ;;
+            -C|--console_options)
+                if [ -n "$2" ]; then
+                    console_options="$2"
+                    shift
+                else
+                    error_exit "Option console_options missing"
+                fi
+                ;;
+            -?|-h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
     if [[ -z "$cluster" ]]; then
         error_exit "The cluster name is not provided"
     fi
-    if [[ "${node_query}" != "null" ]]; then
-        error_msg "There node $node already exist in the database."
-    else
-        warning_msg "Do you want to add the node ${node}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer 
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            #for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"cluster\" = \"$cluster\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${DEFAULT_BOOT}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${DEFAULT_TEMPLATE}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"null\"")
-            #done
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" != "null" ]]; then
+            error_msg "There node $node already exist in the database."
         else
-            info_msg "Well done. It's better to be sure." 
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
+            set_snow_json
         fi
+    done
+    unset node
+    warning_msg "Do you want to add the node(s) ${nodelist}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    else
+        info_msg "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
+
+function set_node()
+{
+    local nodelist=$1
+    local node_type=compute
+    shift
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    declare -A mac
+    declare -A ip
+    while test $# -gt 0; do
+        case "$1" in
+            -c|--cluster)
+                if [ -n "$2" ]; then
+                    local cluster="$2"
+                    shift
+                else
+                    error_exit "Option cluster missing"
+                fi
+                ;;
+            -i|--image)
+                if [ -n "$2" ]; then
+                    local image="$2"
+                    shift
+                else
+                    error_exit "Option image missing"
+                fi
+                ;;
+            -t|--template)
+                if [ -n "$2" ]; then
+                    local template="$2"
+                    shift
+                else
+                    error_exit "Option template missing"
+                fi
+                ;;
+            -r|--install_repo)
+                if [ -n "$2" ]; then
+                    local install_repo="$2"
+                    shift
+                else
+                    error_exit "Option install_repo missing"
+                fi
+                ;;
+            -C|--console_options)
+                if [ -n "$2" ]; then
+                    local console_options="$2"
+                    shift
+                else
+                    error_exit "Option console_options missing"
+                fi
+                ;;
+            -I|--ip)
+                if [ -n "$2" ]; then
+                    nic=$2
+                else
+                    error_exit "IP address option missing"
+                fi
+                if [ -n "$3" ]; then
+                    ip_address="$3"
+                else
+                    error_exit "IP address not defined"
+                fi
+                ip[${nic}]=${ip_address}
+                shift 2
+                unset nic
+                unset ip_address
+                ;;
+            -M|--mac)
+                if [ -n "$2" ]; then
+                    nic=$2
+                else
+                    error_exit "Mac address option missing"
+                fi
+                if [ -n "$3" ]; then
+                    mac_address="$3"
+                else
+                    error_exit "Mac address not defined"
+                fi
+                mac[${nic}]=${mac_address}
+                shift 2
+                unset nic
+                unset mac_address
+                ;;
+            -?|-h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" == "null" ]]; then
+            error_msg "There node $node does not exist in the database."
+        else
+            set_snow_json
+        fi
+    done
+    unset node
+    warning_msg "Do you want to apply the changes in the node(s) ${nodelist}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    else
+        info_msg "Well done. It's better to be sure."
+    fi
+} 1>>$LOGFILE 2>&1
+
+function set_snow_json()
+{
+    node_type_query=$(echo ${nodes_json} | jq -r ".\"${node_type}\"")
+    if [[ "${node_type_query}" == "null" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\" = {} ")
+    fi
+    # setup the defaults
+    if [[ -n "$cluster" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"$cluster\"")
+    fi
+    if [[ -n "$image" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image\" = \"${image}\"")
+    fi
+    if [[ -n "$template" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"template\" = \"${template}\"")
+    fi
+    if [[ -n "${install_repo}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
+    fi
+    if [[ -n "${console_options}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"console_options\" = \"${console_options}\"")
+    fi
+    if [[ -n "$memory" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"memory\" = \"${memory}\"")
+    fi
+    if [[ -n "$cpus" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cpus\" = \"${cpus}\"")
+    fi
+    if [[ -n "${disk_size}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"disk_size\" = \"${disk_size}\"")
+    fi
+    if [[ -n "${last_deploy}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"last_deploy\" = \"${last_deploy}\"")
+    fi
+    if [[ ${#ip[@]} > 0 ]]; then
+        for nic in ${!ip[@]}; do
+            ip_address=${ip[${nic}]}
+            nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"ip\" = \"${ip_address}\"")
+        done
+        unset nic
+        unset ip_address
+    fi
+    if [[ ${#mac[@]} > 0 ]]; then
+        for nic in ${!mac[@]}; do
+            mac_address=${mac[${nic}]}
+            nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"mac\" = \"${mac_address}\"")
+        done
+        unset nic
+        unset mac_address
+    fi
+}
+
+function expand_range()
+{
+    IFS=" "
+    local nprefix=$1
+    local node_range=$2
+    if [[ -n "$(echo ${node_range} | grep -o '[0-9]\+\-[0-9]\+')" ]]; then
+        local range=($(echo ${node_range} | sed -e 's/-/ /'))
+        echo $(eval echo "${nprefix}{${range[0]}..${range[1]}}")
+    else
+        echo ${nprefix}${node_range}
+    fi
+}
+
+function node_list()
+{
+    OFIS="${IFS}"
+    local node_range=$1
+    local nodes=()
+    if [[ "${node_range}" =~ \] ]]; then
+        local nprefix=$(echo ${node_range} | cut -d"[" -f1)
+        local nrange=$(echo ${node_range} | cut -d"[" -f2| cut -d"]" -f1)
+        IFS=","
+        for range in ${nrange}; do
+            nodes+="$(expand_range ${nprefix} ${range}) "
+        done
+        local nleng=${#nodes[@]}
+    else
+        local nleng=0
+        nodes=${node_range}
+    fi
+    IFS="${OIFS}"
+    echo ${nodes}
+}
+
 
 function node_rank()
 {
@@ -854,24 +1133,78 @@ function node_rank()
         NPREFIX=$(echo $1 | cut -d[ -f1)
         NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
         NLENG=$(echo ${NRANK[1]}-${NRANK[0]} | bc -l)
-    else 
+    else
         NLENG=0
     fi
 }
 
 function boot_copy()
 {
-    local pxelinux_cfg=$1
-    for i in $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-    do 
-        cp -p ${pxelinux_cfg} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $NPREFIX$i | gawk '{print $3}')
+    local nodelist=$1
+    local pxelinux_action=$2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    for node in $(node_list "${nodelist}"); do
+        node_hash=$(gethostip $node | gawk '{print $3}')
+        console_options=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"console_options\"")
+        if [[ "${pxelinux_action}" == "deploy" ]]; then
+            template=$3
+            if [[ -z "${template}" ]]; then
+                template=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"template\"")
+                install_repo=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"install_repo\"")
+            fi
+            template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
+            template_config=${SNOW_CONF}/boot/templates/${template}/config
+            if ! [[ -f ${template_pxe} ]] ; then
+                error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
+            fi
+            if ! [[ -f ${template_pxe} ]] ; then
+                warning_message "The following file does not exist: ${template_config}"
+            else
+                source ${template_config}
+            fi
+            if [[ "${install_repo}" == "null" || -z "${install_repo}" ]]; then
+                install_repo=${INSTALL_REPO}
+            fi
+            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        fi
+        if [[ "${pxelinux_action}" == "boot" ]]; then
+            image=$3
+            if [[ -z "${image}" ]]; then
+                image=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"image\"")
+                if [[ "${image}" == "null" ]]; then
+                    image=${DEFAULT_BOOT}
+                fi
+            fi
+            image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+            image_config=${SNOW_CONF}/boot/images/${image}/config
+            if ! [[ -f ${image_pxe} ]] ; then
+                error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+            fi
+            if ! [[ -f ${image_pxe} ]] ; then
+                warning_message "The following file does not exist: ${image_config}"
+            else
+                source ${image_config}
+            fi
+            cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        fi
+        if [[ "${console_options}" == "null" ]]; then
+            console_options=${DEFAULT_CONSOLE_OPTIONS}
+        fi
+        sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+        last_deploy="$(date)"
+        set_snow_json
+        unset install_repo
+        unset console_options
     done
+    unset node
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
 function list_templates()
 {
     local templates_path=${SNOW_CONF}/boot/templates
-    local templates_avail=$(ls -1 ${templates_path}//*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
+    local templates_avail=$(ls -1 ${templates_path}/*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
     for template in ${templates_avail}; do
         local template_desc=${templates_path}/${template}/${template}.desc
         print_msg "$template"
@@ -881,86 +1214,50 @@ function list_templates()
 
 function deploy()
 {
-    if [[ -z "$1" ]]; then
+    local nodelist=$opt2
+    if [[ -z "${nodelist}" ]]; then
         error_exit "ERROR: No domain or node to deploy"
     fi
-    get_server_distribution $1
-    if (($IS_VM)) ; then
-        deploy_domain_xen $1 $2
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        deploy_domain_xen ${nodelist} $2
     else
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
                 local template=${DEFAULT_TEMPLATE}
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
                 info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
                 local template=${DEFAULT_TEMPLATE}
-                warning_msg "The node(s) $1 will be installed and all the data located in the local file system will be removed."
-            #elif [[ "$opt3" != "force"  ]]; then
+                warning_msg "The node(s) ${nodelist} will be deployed with $template template. All the data located in the local file system will be removed."
             else
                 local template=$opt3
-                warning_msg "sNow! will start to deploy the following node(s) $1 in 10 seconds, unless you interrupt that with 'Ctrl+C'."
+                warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
                 info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             fi
         else
             if [[ "$opt4" == "force" ]]; then
                 local template=$opt3
-                warning_msg "The node(s) $1 will be deployed with $template template. All the data located in the local file system will be removed."
+                warning_msg "The node(s) ${nodelist} will be deployed with $template template. All the data located in the local file system will be removed."
             else
                 error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
             fi
         fi
-        node_rank $1
-        #BLOCKN=${2:-$BLOCKN}
-        #BLOCKD=${3:-$BLOCKD}
-        #local template=${2:-$DEFAULT_TEMPLATE}
-        local template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
-        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-        if ! [[ -f ${template_pxe} ]] ; then
-            error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
-        fi
-        if (( $NLENG > 0 )); then
-            local nodes="$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
-            for node in $nodes; do
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-                nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
-            done
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-            info_msg "Booting node range $1 for deployment... This will take a while, Please wait."
-            #parallel -j $BLOCKN snow check_host_status "$NPREFIX{}${NET_MGMT[4]}" ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-            boot_copy ${template_pxe}
-            parallel -j $BLOCKN \
-            info_msg "Booting node : $NPREFIX{} ... Please wait" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
-            sleep 5 \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
-            sleep $BLOCKD \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-            sleep $BOOT_DELAY
-            info_msg "You can monitor the deployment with : snow console <compute-node-name>"
-            #info_msg "Setting up default boot device... Please wait"
-            boot_copy ${default_boot_pxe}
-            error_check 0 "Deployment started."
-        else
-            local node=$1
-            check_host_status $node${NET_MGMT[4]}
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"template\" = \"${template}\"")
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"last_deploy\" = \"$(date)\"")
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-            info_msg "Booting node range $node for deployment... This will take a while, Please wait."
-            cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
-            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
-            sleep 5
-            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
-            info_msg "Deploying node : $node ... Please wait"
-            sleep $BOOT_DELAY
-            info_msg "You can monitor the deployment with : snow console $node"
-            cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
-            error_check 0 "Deployment started."
-        fi
+        info_msg "Booting node(s) ${nodelist} for deployment... This may take a while, Please wait."
+        boot_copy "${nodelist}" deploy ${template}
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
+        sleep 5 \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
+        sleep $BLOCKD \
+        ::: $(node_list "${nodelist}")
+        sleep $BOOT_DELAY
+        info_msg "You can monitor the deployment with: snow console <compute-node-name>"
+        boot_copy "${nodelist}" boot
+        error_check 0 "Deployment started."
     fi
 }  1>>$LOGFILE 2>&1
 
@@ -991,12 +1288,10 @@ function generate_pxe_image()
         debian|ubuntu)
             cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
-            generate_rootfs $image
         ;;
         rhel|redhat|centos)
-            dracut -a "nfs network base" --host-only -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r) 
+            dracut --nomdadmconf --nolvmconf --xz --no-early-microcode --add "nfs network base ssh-client lvm dm dmraid mdraid multipath iscsi rdma" --add-drivers "nfs nfsv4 squashfs" root=dhcp --host-only -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
-            generate_rootfs $image
        ;;
        suse|sle[sd]|opensuse)
            kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$image
@@ -1015,14 +1310,14 @@ function hooks()
         for hook in $hooks
         do
             if [[ -x "$hook" ]]; then
-                $hook && error_check 0 "Running hook : $hook " || error_check 1 "Running hook error : $hook " &
-                spinner $!             "Running hook : $hook "
+                $hook && error_check 0 "Running hook: $hook " || error_check 1 "Running hook error: $hook " &
+                spinner $!             "Running hook: $hook "
             else
-                warning_msg "File '$hook' is not executable. If you want to run it, do : chmod 750 $hook"
+                warning_msg "File '$hook' is not executable. If you want to run it, do: chmod 750 $hook"
             fi
         done
     fi
-} 
+}
 
 function first_boot_hooks()
 {
@@ -1036,65 +1331,131 @@ function first_boot_hooks()
 function generate_rootfs()
 {
     local image=$1
-    # path to the PXE config file
-    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
-    # rootfs size in megabytes
-    local rootfs_size="4096"
     # set mount point for the rootfs
-    local mount_point="rootfs-loop"
-    # create a rootfs file
-    dd if=/dev/zero of=rootfs bs=1k count=$(($rootfs_size * 1024))
-    # create an ext3 file system
-    mkfs.ext3 -m0 -F -L root rootfs
+    local mount_point="/root/rootfs"
     # create a mount point
     mkdir -p ${mount_point}
-    # mount the newly created file system
-    mount -t ext3 -o loop rootfs ${mount_point}
+    # Transfer required files
+    rsync -av --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/* / ${mount_point}/
     # Create required directory structure
     mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,log,run,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
-    # Transfer required files
-    cd ${mount_point} 
-    cp -ap /etc .
-    cp -ap /dev .
-    cp -ap /bin .
-    cp -ap /sbin .
-    cp -ap /lib .
-    cp -ap /lib64 .
-    cp -ap /var/lib/nfs var/lib
-    cp -ap /usr .
-    cp -ap /root/.bashrc root/
-    cp -ap /root/.bash_profile root/
-    cp -ap /root/.bash_logout root/
-    cp -ap /root/.ssh root/
     # set required permissions
-    chown root:lock var/lock
-    # cd out of the mount point
-    cd ..
+    chown root:lock ${mount_point}var/lock
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    # Patch the network
+    patch_network_configuration
+    # Create the tarball
+    tar -cf /root/rootfs.tar --acls -C ${mount_point}/ .
+    # Compress the tarball in parallel
+    pigz -9 /root/rootfs.tar
+    # Transfer the rootfs to the shared file system
+    cp -p /root/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
+}
+
+function generate_rootfs_nfs()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    tar -C ${mount_point} -zxf ${image_rootfs}
     # Update fstab
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
-    gawk '{
-        if($2 == "/"){
-            print "/dev/ram0               /              ext3    defaults        0 0"
-        }
-        else{
-            print $0
-        }
-    }' ${mount_point}/etc/fstab.orig > ${mount_point}/etc/fstab
-    rm ${mount_point}/etc/fstab.orig
-    # hooks: 
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "/dev/nfs    /           nfs     tcp,nolock  0 0" >> ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    # Run hooks:
     hooks ${SNOW_CONF}/boot/images/$image
+    # Setup the first boot hooks
     first_boot_hooks ${SNOW_CONF}/boot/images/$image
-    # * if local scratch disk /tmp
-    patch_network_configuration
+    # Setup NFSROOT support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/nfsroot ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+}
 
+function generate_rootfs_squashfs()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the squashfs rootfs working dir
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the squashfs working dir
+    tar -C ${mount_point} -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    # Run hooks:
+    hooks ${SNOW_CONF}/boot/images/$image
+    # Setup the first boot hooks
+    first_boot_hooks ${SNOW_CONF}/boot/images/$image
+    # Generate the squasfs image
+    mksquashfs ${mount_point} rootfs -e boot
+    # Setup squashfs support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+}
+
+function generate_rootfs_stateless()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    tar -C ${mount_point} -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "/dev/ram0   /           ramfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    # Run hooks:
+    hooks ${SNOW_CONF}/boot/images/$image
+    # Setup the first boot hooks
+    first_boot_hooks ${SNOW_CONF}/boot/images/$image
+    # Generate the ramfs image
     cd ${mount_point}
-    find . -print0 | sudo cpio --null -ov --format=newc | gzip -9 > ${SNOW_CONF}/boot/images/$image/rootfs.gz
-    umount ${mount_point}
-    #gzip -c rootfs | dd of=${SNOW_CONF}/boot/images/$image/rootfs.gz
-    # create PXE boot configuration
-    #sed -e "s|__IMAGE__|$image|" ${SNOW_TOOL}/etc/config_template.d/boot/pxelinux.cfg/diskless > ${image_pxe}
-    sed -e "s|__IMAGE__|$image|" ${SNOW_CONF}/boot/pxelinux.cfg/diskless > ${image_pxe}
+    ln -s ./sbin/init ./init
+    find . -print0 | sudo cpio --null -ov --format=newc | pigz -9 > ${SNOW_CONF}/boot/images/$image/rootfs.gz
+    cd ..
+    # Setup squashfs support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/diskless ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
 }
 
 function clone_template()
@@ -1109,14 +1470,14 @@ function clone_template()
         error_exit "ERROR: no name is provided for the new template"
     fi
     if [[ ! -f ${SNOW_CONF}/boot/templates/${old_template}/${old_template}.pxe ]]; then
-        error_msg "There is no template with this name (${old_template}). Please, review the name with : snow list templates."
+        error_msg "There is no template with this name (${old_template}). Please, review the name with: snow list templates."
     else
         if [[ -f ${SNOW_CONF}/boot/templates/${new_template}/${new_template}.pxe ]]; then
             error_msg "The template ${new_template} already exist. Please remove it before to create a new one."
         fi
         cp -pr ${SNOW_CONF}/boot/templates/${old_template} ${SNOW_CONF}/boot/templates/${new_template}
         grep -rl "${old_template}" ${SNOW_CONF}/boot/templates/${new_template}/* | xargs sed -i "s|${old_template}|${new_template}|g"
-        for extension in cfg pxe; do 
+        for extension in cfg pxe; do
             mv ${SNOW_CONF}/boot/templates/${new_template}/${old_template}.$extension ${SNOW_CONF}/boot/templates/${new_template}/${new_template}.$extension
         done
         if [[ ! -z "${new_description}" ]]; then
@@ -1129,11 +1490,15 @@ function clone_node()
 {
     local node=$1
     local image=$2
+    local image_type=$3
     if [[ -z "$node" ]]; then
         error_exit "ERROR: no node name to clone is provided"
     fi
     if [[ -z "$image" ]]; then
         error_exit "ERROR: no name is provided for the image"
+    fi
+    if [[ -z "${image_type}" ]]; then
+        error_exit "ERROR: no type of image is provided"
     fi
     # Check if snow CLI is executed in the same golden node or from the snow server
     if [[ "$(uname -n)" == "$node" ]]; then
@@ -1143,7 +1508,23 @@ function clone_node()
             warning_msg "This will clone $node and generate the image $image."
         fi
         get_server_distribution $node
-        generate_pxe_image $image
+        case ${image_type} in
+            nfsroot)
+                generate_pxe_image $image
+                generate_rootfs $image
+                #generate_rootfs_nfs $image
+            ;;
+            stateless)
+                generate_rootfs_squashfs $image
+            ;;
+            statelite)
+                generate_rootfs_lite $image
+                generate_rootfs_unionfs $image
+            ;;
+            *)
+                error_exit "Error: ${image_type} is not supported"
+            ;;
+        esac
     else
         check_host_status ${node}${NET_MGMT[4]}
         ssh $node $0 clone $@
@@ -1154,10 +1535,11 @@ function avail_domains()
 {
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s\n" "Domain" "HW status" "OS status" "Roles" 1>&3
-    #for domain in ${SELF_ACTIVE_DOMAINS}; do
+    printf "%-20s  %-10s  %-40s  %-20s\n" "------" "---------" "---------" "-----" 1>&3
+    #for snow_node in ${SNOW_NODES[@]}; do
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
-        if [[ ! -z $domain ]]; then 
+        if [[ ! -z $domain ]]; then
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
             if [[ "$hw_status" == "on" ]]; then
                 os_status="$(ssh ${domain} uptime -p || echo 'down')"
@@ -1183,7 +1565,7 @@ function avail_templates()
                 desc=""
             fi
             printf "%-30s    %-80s\n" "$tmpl" "$desc" 1>&3
-            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/templates/${tmpl}" 1>&3
+            printf "%-30s    %-80s\n" "" "path: ${SNOW_CONF}/boot/templates/${tmpl}" 1>&3
             hooks=$(ls -1 ${SNOW_CONF}/boot/templates/${tmpl}/??-*.sh)
             if [[ ! -z $hooks ]]; then
                 printf "%-30s    %-80s\n" "" "hooks:" 1>&3
@@ -1193,7 +1575,7 @@ function avail_templates()
                         printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
                     fi
                 done
-            fi 
+            fi
         fi
     done
 }
@@ -1211,7 +1593,7 @@ function avail_images()
                 desc=""
             fi
             printf "%-30s    %-80s\n" "$img" "$desc" 1>&3
-            printf "%-30s    %-80s\n" "" "path : ${SNOW_CONF}/boot/images/${img}" 1>&3
+            printf "%-30s    %-80s\n" "" "path: ${SNOW_CONF}/boot/images/${img}" 1>&3
             hooks=$(ls -1 ${SNOW_CONF}/boot/images/${img}/??-*.sh)
             if [[ ! -z $hooks ]]; then
                 printf "%-30s    %-80s\n" "" "hooks:" 1>&3
@@ -1221,14 +1603,14 @@ function avail_images()
                         printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
                     fi
                 done
-            fi 
+            fi
         fi
     done
 }
 
 function avail_nodes()
 {
-    if [[ -z $1 ]]; then 
+    if [[ -z $1 ]]; then
         for i in "${!CLUSTERS[@]}"; do
             node_rank ${CLUSTERS[$i]}
             nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
@@ -1237,271 +1619,271 @@ function avail_nodes()
         node_rank $1
         nodes=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
     fi
-    printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
-    for node in ${nodes[@]}; do 
+    printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
+    printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "----" "-------" "---------" "---------" "-----" "--------" "-----------" 1>&3
+    for node in ${nodes[@]}; do
         ping -c 1 -W 1 ${node}${NET_MGMT[4]} &> /dev/null
         if [[ "$?" != "0" ]]; then
             hw_status="IPMI down"
         else
             hw_status="$(ipmitool -I $IPMI_TYPE -H ${node}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power status | gawk '{print $4}' || echo 'IPMI down')"
-        fi 
+        fi
         ping -c 1 -W 1 ${node} &> /dev/null
         if [[ "$?" != "0" ]]; then
             os_status="down"
         else
             os_status="$(ssh ${node} uptime -p || echo 'down')"
-        fi 
+        fi
         cluster=$(jq ".\"compute\".\"${node}\".\"cluster\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         current_image=$(jq ".\"compute\".\"${node}\".\"image\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         current_template=$(jq ".\"compute\".\"${node}\".\"template\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
         last_deploy=$(jq ".\"compute\".\"${node}\".\"last_deploy\"" ${SNOW_TOOL}/etc/nodes.json | sed -e 's|"||g')
-        printf "%-20s  %-10s  %-10s  %-40s  %-20s  %-20s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
+        printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "${node}" "${cluster}" "${hw_status}" "${os_status}" "${current_image}" "${current_template}" "${last_deploy}" 1>&3
     done
+    unset node
 }
 
 function check_host_status()
 {
-    ping -c 1 $1 &> /dev/null
+    local host=$1
+    ping -c 1 ${host} &> /dev/null
     if [[ "$?" != "0" ]]; then
-        error_exit "The host $1 is not responsive. Please check the host name, DNS server or /etc/hosts."
-    fi 
+        error_exit "The host ${host} is not responsive. Please check the host name, DNS server or /etc/hosts."
+    fi
 }
 
 function boot()
 {
-    local node=$1
-    if [ -z "$node" ]; then
-        error_exit "ERROR: No domain or node to boot."
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
+        error_exit "No domain or node to boot."
     fi
-    get_server_distribution $node
-    if (($IS_VM)) ; then
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg ]]; then 
-            IS_UP=$(xl list $node)
-            if [[ "$IS_UP" == "" ]]; then 
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        local domain=${nodelist}
+        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg ]]; then
+            local is_up=$(xl list ${domain})
+            if [[ "${is_up}" == "" ]]; then
                 sleep 1
-                xl create ${SNOW_PATH}/snow-tools/etc/domains/${node}${DOM_EXT}.cfg
+                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg
             else
-                warning_msg "The domain $node is already runnning"
+                warning_msg "The domain ${domain} is already runnning"
             fi
         else
-            error_exit "The domain $node needs to be deployed first: Execute : snow deploy $node"
+            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
         local image=$2
-        local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
-        local default_boot_pxe=${SNOW_CONF}/boot/images/${DEFAULT_BOOT}/${DEFAULT_BOOT}.pxe
-        node_rank $node
-        BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            if [ -z "$image" ]; then
-                boot_copy ${default_boot_pxe}
-            else
-                boot_copy ${image_pxe}
-            fi
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            sleep $BLOCKD \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else 
-            if [ -z "$image" ]; then
-                cp -p ${default_boot_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}') 
-            else
-                cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/$(gethostip $node | gawk '{print $3}')
-            fi
-            check_host_status $node${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $node${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power on
+        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+        local BLOCKN=${2:-$BLOCKN}
+        local BLOCKD=${3:-$BLOCKD}
+        if [ -z "$image" ]; then
+            boot_copy "${nodelist}" boot
+        else
+            boot_copy "${nodelist}" boot ${image}
         fi
+        if ! [[ -f ${image_pxe} ]] ; then
+            error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+        fi
+        for node in $(node_list "${nodelist}"); do
+            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+        done
+        unset node
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+        info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        sleep $BLOCKD \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
+        ::: $(node_list "${nodelist}")
+        sleep $BOOT_DELAY
+        info_msg "You can monitor the booting with: snow console <compute-node-name>"
+        error_check 0 "Deployment started."
     fi
 }
 
 function get_server_distribution()
 {
-    node_rank $1
+    local nodelist=$1
+    node_rank $nodelist
     if (( $NLENG > 0 )); then
         # VM ranks are not yet supported
-        IS_VM=0
+        is_vm=0
     else
-        IS_VM=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
+        is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
     fi
 }
 
 function boot_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
-    do 
-        boot $i
+    for domain in ${SELF_ACTIVE_DOMAINS}
+    do
+        boot $domain
     done
+    unset domain
 }
 
 function boot_cluster()
 {
-    if [ -z "$1" ]; then
+    local cluster=$1
+    if [ -z "${cluster}" ]; then
         error_exit "ERROR: No cluster to boot."
     fi
-    CLUSTERNAME=$1
     BLOCKN=${2:-$BLOCKN}
     BLOCKD=${3:-$BLOCKD}
-    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks 
+    # In order to avoid power consumption peaks, the nodes needs to be booted in a blocks of few nodes with a delayed (5 seconds) timing between blocks
     # BlockN is the number of nodes to be iniciated at the same time (default should be 5)
     # BlockD is the delay between one block and the following one (default 5 seconds)
-    # GNU Parallel : Pass $BLOCKN + Sleep $BLOCKD
-    boot ${CLUSTERS[$1]} 
+    # GNU Parallel: Pass $BLOCKN + Sleep $BLOCKD
+    boot ${CLUSTERS[${cluster}]}
 }
 
 function ncmd()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to execute command."
     fi
-    pdsh -w $1 $2 $3 $4
+    shift
+    pdsh -w $nodelist $@
 }
 
 function nreboot()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to reboot."
     fi
-    pdsh -w $1 reboot
+    pdsh -w ${nodelist} reboot
 }  &>/dev/null
 
 function nshutdown()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
-    pdsh -w $1 systemctl poweroff
+    pdsh -w ${nodelist} systemctl poweroff
 }  &>/dev/null
 
 function shutdown_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
-    do 
-        nshutdown $i
+    for domain in ${SELF_ACTIVE_DOMAINS}
+    do
+        nshutdown ${domain}
     done
+    unset domain
 }
 
 function shutdown_cluster()
 {
-    if [ -z "$1" ]; then
+    local cluster=$1
+    if [ -z "${cluster}" ]; then
         error_exit "ERROR: No cluster to shutdown."
     fi
-    CLUSTERNAME=$1
-    nshutdown ${CLUSTERS[$1]} 
+    nshutdown ${CLUSTERS[${cluster}]}
 }  &>/dev/null
 
 function ndestroy()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to power down."
     fi
-    get_server_distribution $1
-    if (($IS_VM)) ; then
-        xl destroy $1
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        xl destroy ${nodelist}
     else
-        node_rank $1
         BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power off
-        fi
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
 function npoweroff()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
-    get_server_distribution $1
-    if (($IS_VM)) ; then
-        xl shutdown $1
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        xl shutdown ${nodelist}
     else
-        node_rank $1
         BLOCKN=${2:-$BLOCKN}
-        BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power soft
-        fi
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
 function poweroff_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
-    do 
-        npoweroff $i
+    for domain in ${SELF_ACTIVE_DOMAINS}
+    do
+        npoweroff ${domain}
     done
+    unset domain
 }
 
 function nreset()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to reset."
     fi
-    get_server_distribution $1
-    if (($IS_VM)) ; then
-        xl reboot -F $1
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        xl reboot -F ${nodelist}
     else
-        node_rank $1
         BLOCKN=${2:-$BLOCKN}
         BLOCKD=${3:-$BLOCKD}
-        if (( $NLENG > 0 )); then
-            parallel -j $BLOCKN \
-            echo "$NPREFIX{}${NET_MGMT[4]}" \; \
-            ipmitool -I $IPMI_TYPE -H "$NPREFIX{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
-            ::: $(eval echo "{${NRANK[0]}..${NRANK[1]}}")
-        else
-            check_host_status $1${NET_MGMT[4]}
-            ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power reset
-        fi
+        info_msg "Rebooting node(s) ${nodelist}... This maytake a while, Please wait."
+        parallel -j $BLOCKN \
+        echo "{}${NET_MGMT[4]}" \; \
+        sleep $BLOCKD \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
+        ::: $(node_list "${nodelist}")
     fi
 }
 
 
 function reset_domains()
 {
-    for i in ${SELF_ACTIVE_DOMAINS}
-    do 
-        nreset $i
+    for domain in ${SELF_ACTIVE_DOMAINS}
+    do
+        nreset ${domain}
     done
+    unset domain
 }
 
 function nconsole()
 {
-    if [ -z "$1" ]; then
+    local host=$1
+    if [ -z "${host}" ]; then
         error_exit "ERROR: please specify the domain(s) or node(s) to connect."
     fi
-    get_server_distribution $1
-    if (($IS_VM)) ; then
-        xl console $1 1>&3
+    get_server_distribution ${host}
+    if ((${is_vm})) ; then
+        xl console ${host} 1>&3
     else
-        check_host_status $1${NET_MGMT[4]}
-        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
+        check_host_status ${host}${NET_MGMT[4]}
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
         sleep 1
-        ipmitool -I $IPMI_TYPE -H $1${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
     fi
 }
 
 function nuptime()
 {
-    if [ -z "$1" ]; then
+    local nodelist=$1
+    if [ -z "${nodelist}" ]; then
         error_exit "ERROR: please, specify the domain(s) or node(s) to check the uptime."
     fi
-    pdsh -w $1 uptime 
+    pdsh -w ${nodelist} uptime
 }
 
 # End common functions
