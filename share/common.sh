@@ -1536,7 +1536,7 @@ function avail_domains()
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s\n" "Domain" "HW status" "OS status" "Roles" 1>&3
     printf "%-20s  %-10s  %-40s  %-20s\n" "------" "---------" "---------" "-----" 1>&3
-    #for domain in ${SELF_ACTIVE_DOMAINS}; do
+    #for snow_node in ${SNOW_NODES[@]}; do
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then
