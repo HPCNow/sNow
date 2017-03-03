@@ -96,6 +96,8 @@ MOUNT_NFS[2]="$NFS_SERVER:/home        /home   nfs    defaults 0 0"
 # GPFS Clients
 #GPFS_PRIMARY_SERVER=192.168.3.146
 #GPFS_VERSION=4.2.0
+# Torque Configuration
+#TORQUE_VERSION=6.1.0
 # Slurm Configuration
 # Slurm Database
 SLURMDBD_USER=slurm
