@@ -24,7 +24,7 @@ fi
 # Slurmctld Server Setup
 SNOW_SLURMCTLD_MASTER=$(gawk '{if($2 ~ /slurmctld-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then 
-    installDebianPackage ${prefix} curl pbzip2
+    installDebianPackage ${prefix} curl pbzip2 bsd-mailx
     chroot ${prefix} /usr/bin/apt-get update -q 
     installDebianPackage ${prefix} slurm-wlm slurm-client 
     chroot ${prefix} /bin/systemctl enable munge.service
@@ -72,7 +72,9 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         if [[ -n "$BACKUP_CONTROLLER" ]]; then
             sed -i "s|#BackupController=__BACKUP_CONTROLLER__|BackupController=$BACKUP_CONTROLLER|g" ${prefix}/etc/slurm/slurm.conf
         fi 
-        sed -i "s|#Licenses=__LICENSES__|Licenses=$LICENSES|g" ${prefix}/etc/slurm/slurm.conf
+        if [[ -n "$LICENSES" ]]; then
+            sed -i "s|#Licenses=__LICENSES__|Licenses=$LICENSES|g" ${prefix}/etc/slurm/slurm.conf
+        fi 
         SLURM_COMP=$(gawk 'BEGIN{comp="FALSE"}{if($1 ~ /^SLURM_NODES/){comp="TRUE"}}END{print comp}' $SNOW_TOOL/etc/snow.conf)
         if [[ "$SLURM_COMP" == "TRUE" ]]; then
             sed -i "s|#__INCLUDE_NODES__|include /etc/slurm/nodes.conf|g" ${prefix}/etc/slurm/slurm.conf
