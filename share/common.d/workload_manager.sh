@@ -36,6 +36,7 @@ function install_slurm_client()
     chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     systemctl enable slurmd.service
     systemctl start slurmd.service
+    systemctl disable slurm.service
 } 1>>$LOGFILE 2>&1
 
 function setup_workload_client()
