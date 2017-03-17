@@ -496,7 +496,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "/sNow            ${NET_SNOW[2]}0/${NET_SNOW[3]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "/sNow            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute exportfs -rv"
         fi
@@ -514,8 +514,8 @@ function init()
         if [[ ! -z ${NET_DMZ[0]} ]]; then
             local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
             local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
-            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[2]} -v maskdmz=${NET_DMZ[3]} -v macdmz=${macdmz} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
+            gawk -v brdmz=${NET_DMZ[0]} -v gwdmz=${NET_DMZ[1]} -v netdmz=${NET_DMZ[3]} -v maskdmz=${NET_DMZ[4]} -v macdmz=${macdmz} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[3]} -v masksnow=${NET_SNOW[4]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
@@ -525,8 +525,8 @@ function init()
         else
             local macpub=$(ip -f link addr show ${NET_PUB[0]} | grep ether | gawk '{print $2}')
             local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
-            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[3]} -v macpub=${macpub} \
-                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[2]} -v masksnow=${NET_SNOW[3]} -v macsnow=${macsnow} \
+            gawk -v brpub=${NET_PUB[0]} -v gwpub=${NET_PUB[1]} -v netpub=none -v maskpub=${NET_PUB[4]} -v macpub=${macpub} \
+                 -v brsnow=${NET_SNOW[0]} -v gwsnow=${NET_SNOW[1]} -v netsnow=${NET_SNOW[3]} -v masksnow=${NET_SNOW[4]} -v macsnow=${macsnow} \
                 'BEGIN{i=0}{
                     if ($1 !~ /^#/){
                         i=i+1
@@ -541,18 +541,18 @@ function init()
     host=( )
     for i in ${!CLUSTERS[@]}
     do
-        node_rank ${CLUSTERS[$i]}
-        host+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
-        generate_nodes_json "$i" "$(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}")"
+        nodelist=${CLUSTERS[$i]}
+        host+=( $(node_list ${nodelist}) )
+        generate_nodes_json "$i" "$(node_list ${nodelist})"
     done
     if [[ ! -e /etc/hosts.base ]]; then
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
     gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_SNOW[2]}100/${NET_SNOW[3]} "${NET_SNOW[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_MGMT[2]}100/${NET_MGMT[3]} "${NET_MGMT[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_LLF[2]}100/${NET_LLF[3]} "${NET_LLF[4]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
 
     # Generate /etc/ssh/ssh_known_hosts
@@ -657,8 +657,8 @@ function update_firewall()
         }' $SNOW_TOOL/etc/domains.conf $SNOW_TOOL/etc/dmz_portmap.conf >> /etc/ufw/before.rules
 
         # Add gateway rules
-        echo "-A POSTROUTING -s ${NET_SNOW[2]}/${NET_SNOW[3]} -d ${NET_SNOW[2]}/${NET_SNOW[3]} -j ACCEPT" >> /etc/ufw/before.rules
-        echo "-A POSTROUTING -s ${NET_SNOW[2]}/${NET_SNOW[3]} -o ${pub_nic} -j MASQUERADE" >> /etc/ufw/before.rules
+        echo "-A POSTROUTING -s ${NET_SNOW[3]}/${NET_SNOW[4]} -d ${NET_SNOW[3]}/${NET_SNOW[4]} -j ACCEPT" >> /etc/ufw/before.rules
+        echo "-A POSTROUTING -s ${NET_SNOW[3]}/${NET_SNOW[4]} -o ${pub_nic} -j MASQUERADE" >> /etc/ufw/before.rules
         echo "COMMIT" >> /etc/ufw/before.rules
 
         # Include the rest of the rules in the original file
@@ -1248,10 +1248,10 @@ function deploy()
         info_msg "Booting node(s) ${nodelist} for deployment... This may take a while, Please wait."
         boot_copy "${nodelist}" deploy ${template}
         parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[4]}" \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
+        echo "{}${NET_MGMT[5]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \; \
         sleep 5 \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \; \
         sleep $BLOCKD \
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
@@ -1526,7 +1526,7 @@ function clone_node()
             ;;
         esac
     else
-        check_host_status ${node}${NET_MGMT[4]}
+        check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone $@
     fi
 }
@@ -1622,11 +1622,11 @@ function avail_nodes()
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "----" "-------" "---------" "---------" "-----" "--------" "-----------" 1>&3
     for node in ${nodes[@]}; do
-        ping -c 1 -W 1 ${node}${NET_MGMT[4]} &> /dev/null
+        ping -c 1 -W 1 ${node}${NET_MGMT[5]} &> /dev/null
         if [[ "$?" != "0" ]]; then
             hw_status="IPMI down"
         else
-            hw_status="$(ipmitool -I $IPMI_TYPE -H ${node}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD power status | gawk '{print $4}' || echo 'IPMI down')"
+            hw_status="$(ipmitool -I $IPMI_TYPE -H ${node}${NET_MGMT[5]} -U $IPMI_USER -P $IPMI_PASSWORD power status | gawk '{print $4}' || echo 'IPMI down')"
         fi
         ping -c 1 -W 1 ${node} &> /dev/null
         if [[ "$?" != "0" ]]; then
@@ -1692,9 +1692,9 @@ function boot()
         echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
         parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[4]}" \; \
+        echo "{}${NET_MGMT[5]}" \; \
         sleep $BLOCKD \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
         info_msg "You can monitor the booting with: snow console <compute-node-name>"
@@ -1796,8 +1796,8 @@ function ndestroy()
     else
         BLOCKN=${2:-$BLOCKN}
         parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[4]}" \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
+        echo "{}${NET_MGMT[5]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power off \
         ::: $(node_list "${nodelist}")
     fi
 }
@@ -1814,8 +1814,8 @@ function npoweroff()
     else
         BLOCKN=${2:-$BLOCKN}
         parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[4]}" \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
+        echo "{}${NET_MGMT[5]}" \; \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power soft \
         ::: $(node_list "${nodelist}")
     fi
 }
@@ -1843,9 +1843,9 @@ function nreset()
         BLOCKD=${3:-$BLOCKD}
         info_msg "Rebooting node(s) ${nodelist}... This maytake a while, Please wait."
         parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[4]}" \; \
+        echo "{}${NET_MGMT[5]}" \; \
         sleep $BLOCKD \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[4]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
+        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power reset \
         ::: $(node_list "${nodelist}")
     fi
 }
@@ -1870,10 +1870,10 @@ function nconsole()
     if ((${is_vm})) ; then
         xl console ${host} 1>&3
     else
-        check_host_status ${host}${NET_MGMT[4]}
-        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
+        check_host_status ${host}${NET_MGMT[5]}
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[5]} -U $IPMI_USER -P $IPMI_PASSWORD sol deactivate
         sleep 1
-        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[4]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
+        ipmitool -I $IPMI_TYPE -H ${host}${NET_MGMT[5]} -U $IPMI_USER -P $IPMI_PASSWORD sol activate 1>&3
     fi
 }
 

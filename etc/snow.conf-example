@@ -31,12 +31,13 @@ HPCNow_USER=hpcnow
 # Private GIT Repo Setup
 #PRIVATE_GIT_TOKEN=
 #PRIVATE_GIT_REPO=
-# Network Setup [ Bridge, Gateway, Network, Netmask , Hostname extension ]
-NET_PUB=( 'xpub0' '82.98.134.254' '82.98.134.' '255.255.255.0' '-pub' )
-NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.' '255.255.255.0' '-dmz' )
-NET_SNOW=( 'xsnow0' '192.168.7.1' '192.168.7.' '255.255.255.0' '' )
-NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.0.' '255.255.255.0' '-mgmt' )
-NET_LLF=( 'xllf0' '10.1.7.1' '10.1.7.' '255.255.255.0' '-ib' )
+# Network Setup [ Bridge, Gateway, First IP in rank, Network, Netmask , Hostname extension ]
+NET_PUB=( 'xpub0' '82.98.134.254' '' '82.98.134.' '255.255.255.0' '-pub' )
+NET_DMZ=( 'xdmz0' '172.16.1.254' '172.16.1.1' '172.16.1.' '255.255.255.0' '-dmz' )
+NET_SNOW=( 'xsnow0' '192.168.0.1' '192.168.0.1' '192.168.0.' '255.255.0.0' '' )
+NET_COMP=( 'xsnow0' '192.168.0.1' '192.168.1.1' '192.168.1.' '255.255.0.0' '' )
+NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.1.1' '10.0.0.' '255.255.0.0' '-mgmt' )
+NET_LLF=( 'xllf0' '10.1.0.1' '10.1.1.1' '10.1.0.' '255.255.0.0' '-ib' )
 # IPMI / BMC Setup
 IPMI_TYPE=lanplus
 IPMI_USER=admin
