@@ -1,0 +1,6 @@
+default sNow
+# install
+label sNow
+menu label ^1) Install CentOS 7.3 x64 minimal
+kernel templates/centos-7.3-minimal/vmlinuz
+append initrd=templates/centos-7.3-minimal/initrd.img inst.ks=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/templates/centos-7.3-minimal/centos-7.3-minimal.cfg inst.repo=__INSTALL_REPO__ inst.text netdevice=eth0 ip=dhcp __CONSOLE_OPTIONS__
