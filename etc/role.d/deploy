@@ -108,7 +108,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
         PROXY_PORT="${SITE_PROXY_PORT:-8080}"
     fi
-    for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
+    for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-*" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
         for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
             sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
             sed -i "s|__LANG__|$LANG|g" $file
