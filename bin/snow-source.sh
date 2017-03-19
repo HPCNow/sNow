@@ -1,7 +1,6 @@
 #!/bin/bash
-SNOWROOT=/sNow
+SNOW_PATH=/sNow
 if [[ $(id -u) -eq 0 || "$USER" == "snow" ]] ; then
-    export PATH=$SNOWROOT/snow-tools/sbin:$PATH
+    export PATH=${SNOW_PATH}/snow-tools/sbin:$PATH
 fi
-export PATH=$SNOWROOT/snow-tools/bin:$PATH
-#export LC_ALL=C 
+export PATH=${SNOW_PATH}/snow-tools/bin:$PATH

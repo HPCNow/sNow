@@ -6,10 +6,11 @@
 NFS_SERVER=snow01
 SNOW_PATH=/sNow
 SNOW_HOME=/home
-SNOW_SOFT=$SNOW_PATH/easybuild
-SNOW_CONF=$SNOW_PATH/snow-configspace
-SNOW_TOOL=$SNOW_PATH/snow-tools
-LOGFILE=/sNow/log/snow.log
+SNOW_SOFT=${SNOW_PATH}/easybuild
+SNOW_CONF=${SNOW_PATH}/snow-configspace
+SNOW_TOOL=${SNOW_PATH}/snow-tools
+SNOW_LOG=${SNOW_PATH}/log
+LOGFILE=${SNOW_LOG}/snow.log
 # Destination of the sNow! domains OS images
 SNOW_VG=snow_vg
 IMG_DST='lvm=snow_vg'
@@ -85,8 +86,8 @@ DHCP_NIC=eth0
 #SITE_SYSLOG_SERVER=192.168.7.1
 # Shared Filesystem Support
 # NFS Clients
-MOUNT_NFS[1]="$NFS_SERVER:/sNow        /sNow   nfs    defaults 0 0"
-MOUNT_NFS[2]="$NFS_SERVER:/home        /home   nfs    defaults 0 0"
+MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_PATH}        ${SNOW_PATH}   nfs    bg,tcp,defaults 0 0"
+MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,defaults 0 0"
 # BeeGFS Clients
 #BEEGFS_MGMT=beegfs-01
 #BEEGFS_VERSION=2015.03

@@ -44,6 +44,11 @@ function print_msg()
 
 function logsetup()
 {
+    if [ ! -e $LOGFILE ]; then
+        touch $LOGFILE
+        chown root:root $LOGFILE
+        chmod 600 $LOGFILE
+    fi
     local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
@@ -210,8 +215,8 @@ function architecture_identification()
     local cpuhex=$(hex $cpudec)
     local architecture=$(grep $cpuhex ${SNOW_TOOL}/etc/cpu-id-map.conf | gawk '{print $2}')
     if [ -z $architecture ]; then
-        warning_msg "Your CPU model is not recognised."
-        warning_msg "Consider to extend the following file: ${SNOW_TOOL}/etc/cpu-id-map.conf"
+        warning_msg "Your CPU model with code ${cpuhex} is not recognised."
+        warning_msg "Consider to include this CPU code in the following file: ${SNOW_TOOL}/etc/cpu-id-map.conf"
     else
         export ARCHITECTURE=$architecture
     fi
@@ -496,7 +501,8 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "/sNow            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute exportfs -rv"
         fi
@@ -1126,18 +1132,6 @@ function node_list()
     echo ${nodes}
 }
 
-
-function node_rank()
-{
-    if [[ $1 =~ \] ]]; then
-        NPREFIX=$(echo $1 | cut -d[ -f1)
-        NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
-        NLENG=$(echo ${NRANK[1]}-${NRANK[0]} | bc -l)
-    else
-        NLENG=0
-    fi
-}
-
 function boot_copy()
 {
     local nodelist=$1
@@ -1612,12 +1606,12 @@ function avail_nodes()
 {
     if [[ -z $1 ]]; then
         for i in "${!CLUSTERS[@]}"; do
-            node_rank ${CLUSTERS[$i]}
-            nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+            nodelist=${CLUSTERS[$i]}
+            nodes+=( $(node_list "${nodelist}") )
         done
     else
-        node_rank $1
-        nodes=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        nodelist=$1
+        nodes=( $(node_list "${nodelist}") )
     fi
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "----" "-------" "---------" "---------" "-----" "--------" "-----------" 1>&3
@@ -1705,9 +1699,9 @@ function boot()
 function get_server_distribution()
 {
     local nodelist=$1
-    node_rank $nodelist
-    if (( $NLENG > 0 )); then
-        # VM ranks are not yet supported
+    local nleng=$(node_list "${nodelist}" | wc -w)
+    if (( $nleng > 0 )); then
+        # Domains ranks are not yet supported
         is_vm=0
     else
         is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
