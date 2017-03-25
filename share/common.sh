@@ -364,12 +364,29 @@ function mask2cidr()
     echo "$nbits"
 }
 
+function valid_ip()
+{
+    local ip=$1
+    local stat=1
+
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
 function last_ip_in_range()
 {
     local ip=$1
     local net=$(echo $ip | cut -d '/' -f 1);
     local prefix=$(echo $ip | cut -d '/' -f 2);
-    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if valid_ip ${preix}; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
@@ -396,7 +413,7 @@ function generate_hostlist()
     local host_extension=$2
     local net=$(echo $ip | cut -d '/' -f 1);
     local prefix=$(echo $ip | cut -d '/' -f 2);
-    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if valid_ip $prefix; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
