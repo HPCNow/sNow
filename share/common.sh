@@ -386,7 +386,7 @@ function last_ip_in_range()
     local ip=$1
     local net=$(echo $ip | cut -d '/' -f 1);
     local prefix=$(echo $ip | cut -d '/' -f 2);
-    if valid_ip ${preix}; then
+    if valid_ip ${prefix}; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
