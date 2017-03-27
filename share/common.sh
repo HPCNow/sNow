@@ -1221,13 +1221,11 @@ function deploy()
     else
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
-                local template=${DEFAULT_TEMPLATE}
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
                 info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
-                local template=${DEFAULT_TEMPLATE}
-                warning_msg "The node(s) ${nodelist} will be deployed with $template template. All the data located in the local file system will be removed."
+                warning_msg "The node(s) ${nodelist} will be deployed with default template. All the data located in the local file system will be removed."
             else
                 local template=$opt3
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
