@@ -122,9 +122,9 @@ function shelp()
         * reboot <domain|node>                      | reboot specific domain or node
         * shutdown <domain|node>                    | shutdown specific domain or node
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|node>                     | force to stop specific domain or node
+        * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
         * reset <domain|node>                       | force to reboot specific domain or node
-        * poweroff <domain|node>                    | force to shutdown specific domain or node simulating a power button press
+        * poweroff <domain|node>                    | initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
         * console <domain|node>                     | console access to specific domain or node
         * version                                   | shows the version of sNow!
         * help                                      | prints this message
