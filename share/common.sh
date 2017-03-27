@@ -1693,7 +1693,7 @@ function boot()
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
         info_msg "You can monitor the booting with: snow console <compute-node-name>"
-        error_check 0 "Deployment started."
+        error_check 0 "Boot started."
     fi
 }
 
