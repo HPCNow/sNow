@@ -1655,11 +1655,11 @@ function boot()
     get_server_distribution ${nodelist}
     if ((${is_vm})) ; then
         local domain=${nodelist}
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg ]]; then
+        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
             local is_up=$(xl list ${domain})
             if [[ "${is_up}" == "" ]]; then
                 sleep 1
-                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg
+                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg
             else
                 warning_msg "The domain ${domain} is already runnning"
             fi

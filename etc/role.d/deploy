@@ -55,7 +55,7 @@ if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     echo "
 interface=$DHCP_NIC
 # Gateway
-dhcp-option=3,$GATEWAY
+dhcp-option=3,${NET_COMP[1]}
 # DNS
 dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
