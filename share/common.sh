@@ -936,6 +936,9 @@ function add_node()
 
 function set_node()
 {
+    if [[ $# < 3 ]]; then
+        error_exit "No enough parameters have been provided."
+    fi
     local nodelist=$1
     local node_type=compute
     shift
@@ -945,7 +948,7 @@ function set_node()
     while test $# -gt 0; do
         case "$1" in
             -c|--cluster)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local cluster="$2"
                     shift
                 else
@@ -953,7 +956,7 @@ function set_node()
                 fi
                 ;;
             -i|--image)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local image="$2"
                     shift
                 else
@@ -961,7 +964,7 @@ function set_node()
                 fi
                 ;;
             -t|--template)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local template="$2"
                     shift
                 else
@@ -969,7 +972,7 @@ function set_node()
                 fi
                 ;;
             -r|--install_repo)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local install_repo="$2"
                     shift
                 else
@@ -977,7 +980,7 @@ function set_node()
                 fi
                 ;;
             -C|--console_options)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local console_options="$2"
                     shift
                 else
@@ -985,12 +988,12 @@ function set_node()
                 fi
                 ;;
             -I|--ip)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     nic=$2
                 else
                     error_exit "IP address option missing"
                 fi
-                if [ -n "$3" ]; then
+                if [[ -n "$3" ]]; then
                     ip_address="$3"
                 else
                     error_exit "IP address not defined"
@@ -1001,12 +1004,12 @@ function set_node()
                 unset ip_address
                 ;;
             -M|--mac)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     nic=$2
                 else
                     error_exit "Mac address option missing"
                 fi
-                if [ -n "$3" ]; then
+                if [[ -n "$3" ]]; then
                     mac_address="$3"
                 else
                     error_exit "Mac address not defined"
