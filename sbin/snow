@@ -197,7 +197,7 @@ case $opt1 in
                 avail_nodes "$opt3"
                 ;;
             *)
-                error_msg "Options available are: snow list <domains|templates|images|nodes>"
+                error_msg "You can list: domains, templates, images, nodes"
                 ;;
         esac
         ;;
