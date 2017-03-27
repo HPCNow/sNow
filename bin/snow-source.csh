@@ -1,5 +1,5 @@
 #!/bin/csh
 
-set SNOWROOT /sNow
-setenv PATH $SNOWROOT/snow-tools/bin:$PATH
+set SNOW_PATH /sNow
+setenv PATH ${SNOW_PATH}/snow-tools/bin:$PATH
 

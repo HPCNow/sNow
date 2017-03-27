@@ -24,6 +24,7 @@ SNOW_HOME=${SNOW_PATH}/home
 SNOW_SOFT=${SNOW_PATH}/easybuild
 SNOW_CONF=${SNOW_PATH}/snow-configspace
 SNOW_TOOL=${SNOW_PATH}/snow-tools
+SNOW_LOG=${SNOW_PATH}/log
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
 readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
@@ -57,8 +58,14 @@ if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
     HAS_EE=true
 fi
 
-if ! [[ -d ${SNOW_PATH}/log ]]; then
-    mkdir ${SNOW_PATH}/log
+if ! [[ -d ${SNOW_LOG} ]]; then
+    mkdir -p ${SNOW_LOG}
+fi
+
+if [ ! -e ${SNOW_LOG}/snow_actions.log ]; then
+    touch ${SNOW_LOG}/snow_actions.log
+    chown root:root ${SNOW_LOG}/snow_actions.log
+    chmod 600 ${SNOW_LOG}/snow_actions.log
 fi
 
 #
@@ -178,19 +185,19 @@ case $opt1 in
     list)
         case $opt2 in
             domains)
-                avail_domains
+                avail_domains "$opt3"
                 ;;
             templates)
-                avail_templates
+                avail_templates "$opt3"
                 ;;
             images)
-                avail_images
+                avail_images "$opt3"
                 ;;
             nodes)
-                avail_nodes
+                avail_nodes "$opt3"
                 ;;
             *)
-                error_msg "Option not available: $opt2"
+                error_msg "You can list: domains, templates, images, nodes"
                 ;;
         esac
         ;;
@@ -275,4 +282,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_PATH}/log/snow_actions.log 
+echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_LOG}/snow_actions.log

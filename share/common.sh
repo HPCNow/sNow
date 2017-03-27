@@ -44,6 +44,11 @@ function print_msg()
 
 function logsetup()
 {
+    if [ ! -e $LOGFILE ]; then
+        touch $LOGFILE
+        chown root:root $LOGFILE
+        chmod 600 $LOGFILE
+    fi
     local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
@@ -117,9 +122,9 @@ function shelp()
         * reboot <domain|node>                      | reboot specific domain or node
         * shutdown <domain|node>                    | shutdown specific domain or node
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|node>                     | force to stop specific domain or node
+        * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
         * reset <domain|node>                       | force to reboot specific domain or node
-        * poweroff <domain|node>                    | force to shutdown specific domain or node simulating a power button press
+        * poweroff <domain|node>                    | initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
         * console <domain|node>                     | console access to specific domain or node
         * version                                   | shows the version of sNow!
         * help                                      | prints this message
@@ -210,8 +215,8 @@ function architecture_identification()
     local cpuhex=$(hex $cpudec)
     local architecture=$(grep $cpuhex ${SNOW_TOOL}/etc/cpu-id-map.conf | gawk '{print $2}')
     if [ -z $architecture ]; then
-        warning_msg "Your CPU model is not recognised."
-        warning_msg "Consider to extend the following file: ${SNOW_TOOL}/etc/cpu-id-map.conf"
+        warning_msg "Your CPU model with code ${cpuhex} is not recognised."
+        warning_msg "Consider to include this CPU code in the following file: ${SNOW_TOOL}/etc/cpu-id-map.conf"
     else
         export ARCHITECTURE=$architecture
     fi
@@ -496,7 +501,8 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "/sNow            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute exportfs -rv"
         fi
@@ -930,6 +936,9 @@ function add_node()
 
 function set_node()
 {
+    if [[ $# < 3 ]]; then
+        error_exit "No enough parameters have been provided."
+    fi
     local nodelist=$1
     local node_type=compute
     shift
@@ -939,7 +948,7 @@ function set_node()
     while test $# -gt 0; do
         case "$1" in
             -c|--cluster)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local cluster="$2"
                     shift
                 else
@@ -947,7 +956,7 @@ function set_node()
                 fi
                 ;;
             -i|--image)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local image="$2"
                     shift
                 else
@@ -955,7 +964,7 @@ function set_node()
                 fi
                 ;;
             -t|--template)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local template="$2"
                     shift
                 else
@@ -963,7 +972,7 @@ function set_node()
                 fi
                 ;;
             -r|--install_repo)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local install_repo="$2"
                     shift
                 else
@@ -971,7 +980,7 @@ function set_node()
                 fi
                 ;;
             -C|--console_options)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     local console_options="$2"
                     shift
                 else
@@ -979,12 +988,12 @@ function set_node()
                 fi
                 ;;
             -I|--ip)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     nic=$2
                 else
                     error_exit "IP address option missing"
                 fi
-                if [ -n "$3" ]; then
+                if [[ -n "$3" ]]; then
                     ip_address="$3"
                 else
                     error_exit "IP address not defined"
@@ -995,12 +1004,12 @@ function set_node()
                 unset ip_address
                 ;;
             -M|--mac)
-                if [ -n "$2" ]; then
+                if [[ -n "$2" ]]; then
                     nic=$2
                 else
                     error_exit "Mac address option missing"
                 fi
-                if [ -n "$3" ]; then
+                if [[ -n "$3" ]]; then
                     mac_address="$3"
                 else
                     error_exit "Mac address not defined"
@@ -1126,18 +1135,6 @@ function node_list()
     echo ${nodes}
 }
 
-
-function node_rank()
-{
-    if [[ $1 =~ \] ]]; then
-        NPREFIX=$(echo $1 | cut -d[ -f1)
-        NRANK=($(echo $1 | cut -d[ -f2| cut -d] -f1|  sed -e "s/-/ /"))
-        NLENG=$(echo ${NRANK[1]}-${NRANK[0]} | bc -l)
-    else
-        NLENG=0
-    fi
-}
-
 function boot_copy()
 {
     local nodelist=$1
@@ -1224,13 +1221,11 @@ function deploy()
     else
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
-                local template=${DEFAULT_TEMPLATE}
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
                 info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
-                local template=${DEFAULT_TEMPLATE}
-                warning_msg "The node(s) ${nodelist} will be deployed with $template template. All the data located in the local file system will be removed."
+                warning_msg "The node(s) ${nodelist} will be deployed with default template. All the data located in the local file system will be removed."
             else
                 local template=$opt3
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
@@ -1612,12 +1607,12 @@ function avail_nodes()
 {
     if [[ -z $1 ]]; then
         for i in "${!CLUSTERS[@]}"; do
-            node_rank ${CLUSTERS[$i]}
-            nodes+=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+            nodelist=${CLUSTERS[$i]}
+            nodes+=( $(node_list "${nodelist}") )
         done
     else
-        node_rank $1
-        nodes=( $(eval echo "$NPREFIX{${NRANK[0]}..${NRANK[1]}}") )
+        nodelist=$1
+        nodes=( $(node_list "${nodelist}") )
     fi
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "----" "-------" "---------" "---------" "-----" "--------" "-----------" 1>&3
@@ -1661,11 +1656,11 @@ function boot()
     get_server_distribution ${nodelist}
     if ((${is_vm})) ; then
         local domain=${nodelist}
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg ]]; then
+        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
             local is_up=$(xl list ${domain})
             if [[ "${is_up}" == "" ]]; then
                 sleep 1
-                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}${DOM_EXT}.cfg
+                xl create ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg
             else
                 warning_msg "The domain ${domain} is already runnning"
             fi
@@ -1698,16 +1693,16 @@ function boot()
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
         info_msg "You can monitor the booting with: snow console <compute-node-name>"
-        error_check 0 "Deployment started."
+        error_check 0 "Boot started."
     fi
 }
 
 function get_server_distribution()
 {
     local nodelist=$1
-    node_rank $nodelist
-    if (( $NLENG > 0 )); then
-        # VM ranks are not yet supported
+    local nleng=$(node_list "${nodelist}" | wc -w)
+    if (( $nleng > 0 )); then
+        # Domains ranks are not yet supported
         is_vm=0
     else
         is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')

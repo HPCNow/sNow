@@ -29,7 +29,7 @@ SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
 LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
 LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
 LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
-LDAP_PASSWORD="${LDAP_PASSWORD:-$MASTER_PASSWORD}"
+LDAP_ADMIN_PASSWORD="${LDAP_ADMIN_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
@@ -46,8 +46,8 @@ if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then
         #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
         slapd slapd/no_configuration boolean false
-        slapd slapd/password1 password $LDAP_PASSWORD
-        slapd slapd/password2 password $LDAP_PASSWORD
+        slapd slapd/password1 password $LDAP_ADMIN_PASSWORD
+        slapd slapd/password2 password $LDAP_ADMIN_PASSWORD
         slapd shared/organization string $LDAP_ORGANIZATION
         slapd slapd/domain string $LDAP_BASE
         slapd slapd/backend select HDB

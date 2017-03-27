@@ -11,6 +11,7 @@ DOMAINS2BKP=$(snow list| egrep -v "Name|Domain-0"|gawk '{print $1}')
 
 SNOWPATH=$(dirname "$0")
 # Load the configuration
+SNOW_VG=snow_vg
 CONFIG_FILE=$SNOWPATH/../etc/snow.conf
 SNOW_DOMAINS=$SNOWPATH/../etc/domains.conf
 SELF_ACTIVE_DOMAINS=$(cat $SNOW_DOMAINS | grep -v ^# | gawk '{print $1}')
