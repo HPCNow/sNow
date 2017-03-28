@@ -3,7 +3,6 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 
-#set -xeuo pipefail
 #set -xv
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
@@ -12,23 +11,6 @@ readonly SNOW_VERSION="1.1.0"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
-
-if [[ -f ./etc/snow.conf ]]; then
-    echo "Loading custom parameters ..."
-    source ./etc/snow.conf
-else
-    wget -q http://www.hpckp.org/snow/snow-env.sh 
-    source ./snow-env.sh
-fi
-
-if [[ ! -f ./eula.txt ]]; then
-    wget -q http://www.hpckp.org/snow/eula.txt
-fi
-
-if [[ ! -f ./eula.txt ]]; then
-    wget -q http://www.hpckp.org/snow/eula.txt
-fi
-
 
 if [[ $(id -u) -ne 0 ]] ; then
     echo "Must be run as root"
@@ -40,92 +22,83 @@ if [[ "$SUDO_USER" == "$sNow_USER" || "$SUDO_USER" == "$HPCNow_USER" ]]; then
     exit 1
 fi
 
-# Check private repos
-export PRIVATE_GIT_TOKEN=${PRIVATE_GIT_TOKEN:-$1}
-export PRIVATE_GIT_REPO=${PRIVATE_GIT_REPO:-$2}
-
 if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
     echo "PRIVATE_GIT_TOKEN is not set. The snow-configspace will be created from scratch."
-fi
-
-if [[ -z "$PRIVATE_GIT_REPO" ]]; then
+elif [[ -z "$PRIVATE_GIT_REPO" ]]; then
     echo "PRIVATE_GIT_REPO is not set. The snow-configspace will be created from scratch."
 fi
 
-LOGFILE=/tmp/snow-install.log
-RETAIN_NUM_LINES=10
+if [[ -f ./etc/snow.conf ]]; then
+    echo "Loading sNow! configuration..."
+    source ./etc/snow.conf
+elif [[ -f ./snow.conf ]]; then
+    echo "Loading sNow! configuration..."
+    source ./snow.conf
+fi
 
-function logsetup() 
-{
-    TMP=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${TMP}" > $LOGFILE
-    exec > >(tee -a $LOGFILE)
-    exec 2>&1
-}
+LOGFILE=/tmp/snow-install-$(uname -n).log
 
-#logsetup
-        
-function log()
-{
-    echo "[$(date)]: $*" 
-}
+if [[ -z "${SNOW_PATH}" ]]; then
+    SNOW_PATH=/sNow
+fi
 
-function spinner()
-{
-    local pid=$1
-    local delay=0.75
-    local spinstr='|/-\'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf "[\e[0;32m%c\e[m] %s" "$spinstr" "$2" 
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
-    done
-}
+if [[ -z "${SNOW_HOME}" ]]; then
+    SNOW_HOME=/home
+fi
 
-function error_check()
-{
-    local status=$1
-    printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
-    if [ $status -eq 0 ]; then
-        printf "[\e[0;32m%c\e[m] %s \e[0;32m%s\e[m \n" "*" "$2" "OK"
+if [[ -z "${SNOW_SOFT}" ]]; then
+    SNOW_SOFT=${SNOW_PATH}/easybuild
+fi
+
+if [[ -z "${SNOW_CONF}" ]]; then
+    SNOW_CONF=${SNOW_PATH}/snow-configspace
+fi
+
+if [[ -z "${SNOW_TOOLS}" ]]; then
+    SNOW_TOOL=${SNOW_PATH}/snow-tools
+fi
+
+readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
+readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
+readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
+declare -A CLUSTERS
+HAS_EE=false
+
+
+if [[ ! -f ${SNOW_TOOL}/share/common.sh ]]; then
+    if ! [[ -d ${SNOW_PATH} ]]; then
+        mkdir -p ${SNOW_PATH}
+    fi
+    chown $sNow_USER:$sNow_USER $SNOW_PATH
+    if [[ -z "$PRIVATE_GIT_TOKEN" && -z "$PRIVATE_GIT_REPO" ]]; then
+        mkdir -p $SNOW_CONF 
     else
-        printf "[\e[0;31m%c\e[m] %s \e[0;31m%s\e[m \n" "!" "$2" "FAIL"
-        error_msg
-        exit
+        git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_CONF || echo "ERROR: please review your tokens and repo URL."
     fi
-}
-        
-function bkp()
-{
-    bkpfile=$1
-    next=$(date +%Y%m%d%H%M)
-    if [[ -e $bkpfile ]]; then 
-        cp -pr $bkpfile $bkpfile.$next-snowbkp
+    git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
+    git fetch
+    git checkout ${SNOW_VERSION}
+    if [[ -f ./etc/snow.conf ]]; then
+        cp -p ./etc/snow.conf ${SNOW_TOOL}/etc/
+    elif [[ -f ./snow.conf ]]; then
+        cp -p ./snow.conf ${SNOW_TOOL}/etc/
     fi
-}
+    chown -R ${sNow_USER}:${sNow_USER} ${SNOW_TOOL}
+fi
 
-function get_os_distro() 
-{
-    # OS release and Service pack discovery 
-    lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    # Special case redhatenterpriseserver
-    if [ "${lsb_dist}" = "redhatenterpriseserver" ]; then
-        lsb_dist='redhat'
-    fi
-    if [ "${lsb_dist}" = "suselinux" ]; then
-        lsb_dist='suse'
-    fi
-    if [[ -z "${lsb_dist}" ]]; then
-        lsb_dist=$(uname -s)
-    else
-        export OSVERSION=${dist_version}
-    fi
-    export OS=$lsb_dist
-} #1>>$LOGFILE 2>&1
+if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    source ${SNOW_TOOL}/share/common.sh
+    logsetup
+    get_os_distro
+    architecture_identification
+fi
 
-# Returns 0 if this node is the master node.
+if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
+    source ${ENTERPRISE_EXTENSIONS}
+    HAS_EE=true
+fi
+
 function is_master()
 {
     hostname | grep "$MASTER_HOSTNAME"
@@ -144,15 +117,6 @@ function is_nfs_server()
     hostname | grep "$NFS_SERVER"
     return $?
 } &>/dev/null
-
-# Check mountpoints
-function check_mountpoints()
-{
-    IS_MOUNTPOINT=$(mountpoint -d $1)
-    if [ -n "$IS_MOUNTPOINT" ]; then
-        echo "The $1 should be a dedicated filesystem. For HA it should be a reliable cluster filesystem."
-    fi
-}
 
 function setup_filesystems()
 {
@@ -338,168 +302,6 @@ function setup_software()
     fi
 } 1>>$LOGFILE 2>&1
 
-function install_docker()
-{
-    case $OS in
-        debian)
-            apt-get -y purge lxc-docker*
-            apt-get -y purge docker.io*
-            apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-            echo "deb https://apt.dockerproject.org/repo debian-jessie main" > /etc/apt/sources.list.d/docker.list
-            apt-get -y update
-            apt-cache policy docker-engine
-            apt-get -y install docker-engine
-            groupadd docker
-            gpasswd -a $sNow_USER docker
-            service docker restart
-        ;;
-        ubuntu)
-            apt-get -y install linux-image-extra-$(uname -r)
-            apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-            echo "deb https://apt.dockerproject.org/repo ubuntu-wily main" > /etc/apt/sources.list.d/docker.list
-            apt-get -y update
-            apt-get -y purge lxc-docker
-            apt-cache policy docker-engine
-            apt-get -y install docker-engine
-            usermod -aG docker $sNow_USER
-            echo "GRUB_CMDLINE_LINUX=\"cgroup_enable=memory swapaccount=1\"" >> /etc/default/grub
-            update-grub
-            service docker start
-            systemctl enable docker
-        ;;
-        rhel|redhat|centos)
-            yum -y update
-            curl -sSL https://get.docker.com/ | sh
-            usermod -aG docker $sNow_USER
-            chkconfig docker on
-            service docker start
-       ;;
-       suse|sle[sd]|opensuse)
-           zypper -n --no-gpg-checks in docker
-           /usr/sbin/usermod -a -G docker $sNow_USER
-           echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-           sysctl -p /etc/sysctl.conf
-           systemctl start docker
-           systemctl enable docker
-       ;;
-   esac
-}
-
-function setup_docker()
-{
-    if is_master; then
-        install_docker
-        curl -L https://github.com/docker/compose/releases/download/1.6.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-        #su - $sNow_USER -c "cd $SNOW_CONF/docker_files; docker-compose up -d"
-    else
-        echo "Nothing to be done yet"
-    fi
-} 1>>$LOGFILE 2>&1
-
-function install_lxd()
-{
-    case $OS in
-        debian)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
-        ;;
-        ubuntu)
-            apt-get -y install lxd zfsutils-linux
-        ;;
-        rhel|redhat|centos)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
-       ;;
-       suse|sle[sd]|opensuse)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
-       ;;
-   esac
-}
-
-function setup_lxd()
-{
-    if is_master; then
-        install_lxd
-    else
-        echo "Nothing to be done yet"
-    fi
-} 1>>$LOGFILE 2>&1
-
-
-
-function install_xen()
-{
-    case $OS in
-        debian)
-            # Following suggestions from Debian : https://wiki.debian.org/Xen
-            if [[ -f /etc/default/cpufrequtils ]]; then
-                bkp /etc/default/cpufrequtils
-                sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
-            fi
-            apt-get -y update
-            apt-get -y install xen-linux-system xen-tools
-            dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
-            sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
-            #sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
-            bkp /etc/default/grub
-            echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin"' >> /etc/default/grub
-            echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
-            #sed -i 's/(dom0-min-mem 1024)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
-            #sed -i 's/(dom0-cpus 2)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
-            bkp /etc/default/xendomains
-            sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
-            sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
-            bkp /etc/sysctl.conf
-            sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
-        ;;
-        ubuntu)
-            # Following suggestions from Debian : https://wiki.debian.org/Xen
-            sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
-            apt-get -y update
-            apt-get -y xen-linux-system xen-tools
-            dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
-            sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
-            sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
-            echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
-            sed -i 's/(dom0-min-mem 1024)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
-            sed -i 's/(dom0-cpus 2)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
-            sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
-            sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
-        ;;
-        centos)
-            echo "sNow! Xen Support not yet available for RHEL and CentOS"
-            exit 1
-            yum -y install centos-release-xen bridge-utils SDL net-tools
-            yum -y update
-            yum -y install xen
-            systemctl stop NetworkManager
-            systemctl disable NetworkManager
-       ;;
-        rhel|redhat)
-            echo "sNow! Xen Support not yet available for RHEL and CentOS"
-            exit 1
-            yum -y install xen kernel-xen
-       ;;
-       suse|sle[sd]|opensuse)
-            echo "sNow! Xen Support not yet available for SLES and OpenSUSE"
-            exit 1
-            zypper -n --no-gpg-checks in -t pattern xen_server
-       ;;
-   esac
-}
-
-function setup_xen()
-{
-    if is_master; then
-        install_xen
-    else
-        echo "Nothing to be done yet"
-    fi
-} 1>>$LOGFILE 2>&1
-
-
 function install_devel_env_hpcnow()
 {
     case $OS in
@@ -558,43 +360,13 @@ function setup_devel_env_hpcnow()
     fi
 } 1>>$LOGFILE 2>&1
 
-function end_msg(){
-    echo "--------------------------------------------------------------------------"
-    echo "
 
-    ███████╗███╗   ██╗ ██████╗ ██╗    ██╗██╗
-    ██╔════╝████╗  ██║██╔═══██╗██║    ██║██║
-    ███████╗██╔██╗ ██║██║   ██║██║ █╗ ██║██║
-    ╚════██║██║╚██╗██║██║   ██║██║███╗██║╚═╝
-    ███████║██║ ╚████║╚██████╔╝╚███╔███╔╝██╗
-    ╚══════╝╚═╝  ╚═══╝ ╚═════╝  ╚══╝╚══╝ ╚═╝
-    Developed by HPCNow! www.hpcnow.com/snow
-
-    "
-    echo "Get enterprise features and end user enterprise support from HPCNow!"
-    echo "Please help us to improve this project, report bugs and issues to : "
-    echo " sNow! Development <dev@hpcnow.com>"
-    echo "If you found some error during the installation, please review the "
-    echo "log file : $LOGFILE"
-    echo "The node needs to be rebooted after the installation in order to apply the"
-    echo "changes merged in the system."
-    echo "--------------------------------------------------------------------------"
-}
-
-function error_msg(){
-    echo "--------------------------------------------------------------------------"
-    echo "Please help us to improve this project, report bugs and issues to : "
-    echo " sNow! Development <dev@hpcnow.com>"
-    echo "If you found some error during the installation, please review the "
-    echo "log file : $LOGFILE"
-    echo "--------------------------------------------------------------------------"
-}
-
-function eula(){
-    if [[ ! -f ./snow-eula.txt ]]; then
-        wget http://www.hpcnow.com/snow/snow-eula.txt
+function eula()
+{
+    if [[ ! -f ./eula.txt ]]; then
+        wget http://www.hpcnow.com/snow/eula.txt
     fi
-    more ./snow-eula.txt
+    more ./eula.txt
     echo "Do you accept the EULA? type Accept or Decline"
     read input                                                 
 

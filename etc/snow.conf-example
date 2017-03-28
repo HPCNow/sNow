@@ -34,6 +34,12 @@ LOGFILE=${SNOW_LOG}/snow.log
 
 NFS_SERVER=snow01
 
+#                 [ Virtualization Technology ]
+# The current and default virtualization technology for sNow! domains is XEN.
+# LXD and DOCKER support require complex manual intervention and it's still experimental
+# Please, don't change this parameter unless you know what you are doing.
+VIRT_TECH=XEN
+
 #                 [ LVM disk management ]
 #
 # Defines where the domains OS files will be stored. This allows you 
