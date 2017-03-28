@@ -256,6 +256,13 @@ function is_golden_node()
     return $gn
 } 1>>$LOGFILE 2>&1
 
+function is_git_repo()
+{
+    local git_path=$1
+    git -C ${git_path} rev-parse
+    return $?
+} 1>>$LOGFILE 2>&1
+
 function get_os_distro()
 {
     # OS release and Service pack discovery

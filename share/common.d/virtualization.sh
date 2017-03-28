@@ -1,3 +1,8 @@
+#!/bin/bash
+# These are the common functions which may be used by sNow! Command Line Interface 
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
 
 function install_docker()
 {
@@ -100,7 +105,7 @@ function install_xen()
                 sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             fi
             apt-get -y update
-            apt-get -y install xen-linux-system xen-tools
+            install_software "xen-linux-system xen-tools"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             #sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
@@ -119,7 +124,7 @@ function install_xen()
             # Following suggestions from Debian : https://wiki.debian.org/Xen
             sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             apt-get -y update
-            apt-get -y xen-linux-system xen-tools
+            install_software "xen-linux-system xen-tools"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
@@ -153,9 +158,5 @@ function install_xen()
 
 function setup_xen()
 {
-    if is_master; then
-        install_xen
-    else
-        echo "Nothing to be done yet"
-    fi
+    install_xen
 } 1>>$LOGFILE 2>&1
