@@ -79,8 +79,12 @@ function setup_ssh()
     chmod 640 /root/.ssh/authorized_keys
     chmod 400 /root/.ssh/id_rsa
     cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* /etc/ssh/
-    cp -p $SNOW_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/
-    cp -p $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+    if [[ -e $SNOW_CONF/system_files/etc/ssh/shosts.equiv ]]; then
+        cp -p $SNOW_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/
+    fi
+    if [[ -e $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts ]]; then
+        cp -p $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+    fi
     if [[ -e /usr/lib64/ssh/ssh-keysign ]]; then
         chmod u+s /usr/lib64/ssh/ssh-keysign
     fi
