@@ -7,7 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="1.1.0"
+readonly SNOW_VERSION="develop"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -111,7 +111,7 @@ declare -A CLUSTERS
 if ! [[ -d ${SNOW_PATH} ]]; then
     mkdir -p ${SNOW_PATH}
 fi
-chown $sNow_USER:$sNow_USER $SNOW_PATH
+chown $sNow_UID:$sNow_GID $SNOW_PATH
 
 function is_git_repo()
 {
@@ -167,12 +167,10 @@ if is_master; then
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
     if ! is_git_repo ${SNOW_TOOL}; then
-        #git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
-        git clone https://jordiblasco@bitbucket.org/jordiblasco/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
+        git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
         cd ${SNOW_TOOL}
         git fetch
-        #git checkout ${SNOW_VERSION}
-        git checkout install_fusion
+        git checkout ${SNOW_VERSION}
         git pull
         cd -
     else
@@ -182,9 +180,9 @@ if is_master; then
         git pull
         cd -
     fi
-    chown -R ${sNow_USER}:${sNow_USER} ${SNOW_TOOL}
+    chown -R ${sNow_UID}:${sNow_GID} ${SNOW_TOOL}
 fi
-}
+} &>/dev/null
 
 function load_snow_env()
 {
