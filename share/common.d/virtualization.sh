@@ -109,23 +109,8 @@ function install_xen()
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub
-            gawk 'BEGIN{grub_cmdline=0}{
-                
-                if($1 ~ /GRUB_CMDLINE_XEN_DEFAULT/){
-                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M dom0_max_vcpus=2 dom0_vcpus_pin\""
-                    grub_cmdline=1
-                }
-                else{
-                    print $0
-                }
-            }
-            END{
-                if(grub_cmdline == 0){
-                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M  dom0_max_vcpus=2 dom0_vcpus_pin\""
-                }
-            }' /etc/default/grub > /etc/default/grub.1
-            mv /etc/default/grub.1 /etc/default/grub
-            echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
+            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M dom0_max_vcpus=2 dom0_vcpus_pin\""
+            replace_text /etc/default/grub "GRUB_DISABLE_OS_PROBER" "GRUB_DISABLE_OS_PROBER=true"
             bkp /etc/default/xendomains
             sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
