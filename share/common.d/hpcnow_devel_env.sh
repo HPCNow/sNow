@@ -42,9 +42,9 @@ function setup_devel_env_hpcnow()
 {
     if is_master; then
         install_devel_env_hpcnow 
-        git clone https://github.com/HPCNow/dotfiles.git /dev/shm/dotfiles
-        cd /dev/shm/dotfiles
-        bash dotfiles.sh
+        #git clone https://github.com/HPCNow/dotfiles.git /dev/shm/dotfiles
+        #cd /dev/shm/dotfiles
+        #bash dotfiles.sh
         git clone https://github.com/squash/sudosh2.git /dev/shm/sudosh2
         cd /dev/shm/sudosh2
         ./configure 

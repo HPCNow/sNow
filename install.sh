@@ -142,25 +142,28 @@ function is_nfs_server()
 function install_snow_repos()
 {
 if is_master; then
-    # Justify why snow-configspace is created from scratch
-    if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
-        echo "PRIVATE_GIT_TOKEN is not set. The snow-configspace will be created from scratch."
-    elif [[ -z "$PRIVATE_GIT_REPO" ]]; then
-        echo "PRIVATE_GIT_REPO is not set. The snow-configspace will be created from scratch."
-    fi
-    # Allow to re-use existing or already customised snow.conf
-    if [[ -z "$PRIVATE_GIT_TOKEN" && -z "$PRIVATE_GIT_REPO" ]]; then
-        mkdir -p $SNOW_CONF 
-        # Transfer the SSH host keys to the configspace
-        mkdir -p $SNOW_CONF/system_files/etc/ssh/
-        cp -pr /etc/ssh/ssh_host_* $SNOW_CONF/system_files/etc/ssh/
-        if [[ -f ./etc/snow.conf ]]; then
-            cp -p ./etc/snow.conf ${SNOW_TOOL}/etc/
-        elif [[ -f ./snow.conf ]]; then
-            cp -p ./snow.conf ${SNOW_TOOL}/etc/
+    # If the configspace is not available, it must be created from scratch or pulled from git
+    if [[ ! -e $SNOW_CONF ]]; then
+        # Justify why snow-configspace is created from scratch
+        if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
+            echo "PRIVATE_GIT_TOKEN is not set. The snow-configspace will be created from scratch."
+        elif [[ -z "$PRIVATE_GIT_REPO" ]]; then
+            echo "PRIVATE_GIT_REPO is not set. The snow-configspace will be created from scratch."
         fi
-    else
-        git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_CONF || echo "ERROR: please review your tokens and repo URL."
+        # Allow to re-use existing or already customised snow.conf
+        if [[ -z "$PRIVATE_GIT_TOKEN" && -z "$PRIVATE_GIT_REPO" ]]; then
+            mkdir -p $SNOW_CONF 
+            # Transfer the SSH host keys to the configspace
+            mkdir -p $SNOW_CONF/system_files/etc/ssh/
+            cp -pr /etc/ssh/ssh_host_* $SNOW_CONF/system_files/etc/ssh/
+            if [[ -f ./etc/snow.conf ]]; then
+                cp -p ./etc/snow.conf ${SNOW_TOOL}/etc/
+            elif [[ -f ./snow.conf ]]; then
+                cp -p ./snow.conf ${SNOW_TOOL}/etc/
+            fi
+        else
+            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_CONF || echo "ERROR: please review your tokens and repo URL."
+        fi
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
     if ! is_git_repo ${SNOW_TOOL}; then
