@@ -112,7 +112,7 @@ function install_xen()
             gawk 'BEGIN{grub_cmdline=0}{
                 
                 if($1 ~ /GRUB_CMDLINE_XEN_DEFAULT/){
-                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\""
+                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M dom0_max_vcpus=2 dom0_vcpus_pin\""
                     grub_cmdline=1
                 }
                 else{
@@ -121,7 +121,7 @@ function install_xen()
             }
             END{
                 if(grub_cmdline == 0){
-                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\""
+                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M  dom0_max_vcpus=2 dom0_vcpus_pin\""
                 }
             }' /etc/default/grub
             #echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin"' >> /etc/default/grub
