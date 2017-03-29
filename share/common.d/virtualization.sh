@@ -123,7 +123,8 @@ function install_xen()
                 if(grub_cmdline == 0){
                     print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M  dom0_max_vcpus=2 dom0_vcpus_pin\""
                 }
-            }' /etc/default/grub > /etc/default/grub
+            }' /etc/default/grub > /etc/default/grub.1
+            mv /etc/default/grub.1 /etc/default/grub
             echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
             bkp /etc/default/xendomains
             sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
