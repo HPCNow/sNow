@@ -167,12 +167,7 @@ if is_master; then
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
     if ! is_git_repo ${SNOW_TOOL}; then
-        git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
-        cd ${SNOW_TOOL}
-        git fetch
-        git checkout ${SNOW_VERSION}
-        git pull
-        cd -
+        git clone http://bitbucket.org/hpcnow/snow-tools.git -b ${SNOW_VERSION} ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
     else
         cd ${SNOW_TOOL}
         git fetch
