@@ -351,6 +351,34 @@ function install_software()
 } 1>>$LOGFILE 2>&1
 
 
+function replace_text()
+{
+    local file="$1"
+    local expression="$2"
+    local replacement="$3"
+    if [[ $# < 3 ]]; then
+        error_exit "Missing arguments in replace_text function call: $@"
+    fi
+    if [[ ! -e $file ]]; then
+        error_exit "File $file does not exit"
+    fi
+    gawk -v replacement=$replacement -v expression=$expression 'BEGIN{trigger=0}{
+            if($1 ~ expression){
+                print replacement
+                trigger=1
+            }
+            else{
+                print $0
+            }
+        }
+        END{
+            if(trigger == 0){
+                print replacement
+            }
+        }' $file > ${file}.tmp
+        mv ${file}.tmp $file
+} 1>>$LOGFILE 2>&1
+
 function prefix_to_bit_netmask()
 {
     local prefix=$1;
