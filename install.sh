@@ -18,11 +18,31 @@ if [[ $(id -u) -ne 0 ]] ; then
     exit 1
 fi
 
-if [[ "$SUDO_USER" == "$sNow_USER" || "$SUDO_USER" == "$HPCNow_USER" ]]; then
-    echo "The installation script needs to be run as root, without using $sNow_USER or $HPCNow_USER to scale privileges."
-    exit 1
+# Include default values for sNow! and HPCNow users if nothing is defined
+if [[ -z ${sNow_USER} ]];then
+    sNow_USER=snow
 fi
-
+if [[ -z ${sNow_GROUP} ]];then
+    sNow_GROUP=snow
+fi
+if [[ -z ${sNow_UID} ]];then
+    sNow_UID=2000
+fi
+if [[ -z ${sNow_GID} ]];then
+    sNow_GID=2000
+fi
+if [[ -z ${HPCNow_USER} ]];then
+    HPCNow_USER=hpcnow
+fi
+if [[ -z ${HPCNow_GROUP} ]];then
+    HPCNow_GROUP=snow
+fi
+if [[ -z ${HPCNow_UID} ]];then
+    HPCNow_UID=2001
+fi
+if [[ -z ${HPCNow_GID} ]];then
+    HPCNow_GID=2000
+fi
 
 # Allow to re-use existing or already customised snow.conf
 if [[ -f ./etc/snow.conf ]]; then
@@ -31,6 +51,11 @@ if [[ -f ./etc/snow.conf ]]; then
 elif [[ -f ./snow.conf ]]; then
     echo "Loading sNow! configuration..."
     source ./snow.conf
+fi
+
+if [[ "${SUDO_USER}" == "${sNow_USER}" || "$SUDO_USER" == "$HPCNow_USER" ]]; then
+    echo "The installation script needs to be run as root, without using $sNow_USER or $HPCNow_USER to scale privileges."
+    exit 1
 fi
 
 LOGFILE=/tmp/snow-install-$(uname -n).log
@@ -114,6 +139,8 @@ function is_nfs_server()
     return $?
 } &>/dev/null
 
+function install_snow_repos()
+{
 if is_master; then
     # Justify why snow-configspace is created from scratch
     if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
@@ -137,18 +164,27 @@ if is_master; then
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
     if ! is_git_repo ${SNOW_TOOL}; then
-        git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
+        #git clone http://bitbucket.org/hpcnow/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
+        git clone https://jordiblasco@bitbucket.org/jordiblasco/snow-tools.git ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
+        cd ${SNOW_TOOL}
         git fetch
-        git checkout ${SNOW_VERSION}
+        #git checkout ${SNOW_VERSION}
+        git checkout install_fusion
         git pull
+        cd -
     else
+        cd ${SNOW_TOOL}
         git fetch
         git checkout ${SNOW_VERSION}
         git pull
+        cd -
     fi
     chown -R ${sNow_USER}:${sNow_USER} ${SNOW_TOOL}
 fi
+}
 
+function load_snow_env()
+{
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
     source ${SNOW_TOOL}/share/common.sh
     logsetup
@@ -166,6 +202,7 @@ else
     echo "       and you have write access to the folder ${SNOW_TOOL}"
     exit 1
 fi
+}
 
 function setup_filesystems()
 {
@@ -241,8 +278,9 @@ function eula()
     echo "--------------------------------------------------------------------------"
 }
 
-get_os_distro
+install_snow_repos
 eula
+load_snow_env
 setup_software         && error_check 0 'Stage 1/7 : Software installed ' || error_check 1 'Stage 1/7 : Software installed ' &
 spinner $!             'Stage 1/7 : Installing Software ' 
 setup_filesystems      && error_check 0 'Stage 2/7 : Filesystem setup ' || error_check 1 'Stage 2/7 : Filesystem setup ' &

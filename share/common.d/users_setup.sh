@@ -61,7 +61,9 @@ function setup_user()
 function setup_ssh()
 {
     # Users Setup
-    echo "root:${MASTER_PASSWORD}" | chpasswd
+    if [[ ! -z "${MASTER_PASSWORD}" ]]; then
+        echo "root:${MASTER_PASSWORD}" | chpasswd
+    fi
     setup_user "${sNow_USER}" "${sNow_UID}" "${sNow_GID}" "${sNow_GROUP}" "nopasswd" "/bin/bash" "sNow! Admin User"
     if [[ "${HPCNow_Support}" != "none" ]]; then
         setup_user "${HPCNow_USER}" "${HPCNow_UID}" "${HPCNow_GID}" "${HPCNow_GROUP}" "nopasswd" "/bin/bash" "HPCNow! Admin User"
