@@ -1,0 +1,25 @@
+
+PLEASE READ THIS AGREEMENT CAREFULLY. BY PURCHASING, INSTALLING, DOWNLOADING OR
+OTHERWISE USING THE SOFTWARE (INCLUDING ITS COMPONENTS), YOU AGREE TO THE TERMS
+OF THIS AGREEMENT. IF YOU DO NOT AGREE WITH THESE TERMS, YOU ARE NOT PERMITTED
+TO DOWNLOAD, INSTALL OR USE THE SOFTWARE AND YOU SHOULD NOTIFY THE PARTY FROM
+WHICH YOU PURCHASED THE SOFTWARE TO OBTAIN A REFUND. AN INDIVIDUAL ACTING ON
+BEHALF OF AN ENTITY REPRESENTS THAT HE OR SHE HAS THE AUTHORITY TO ENTER INTO
+THIS AGREEMENT ON BEHALF OF THAT ENTITY.
+
+This End User License Agreement (“Agreement”) is a legal agreement between You
+(an entity or a person) and HPCNow! (“Licensor”). The software product
+identified in the title of this Agreement for which You have acquired licenses,
+any media or reproductions (physical or virtual) and accompanying documentation
+(collectively the “Software”) is protected by the copyright laws and treaties
+of Spain and other countries and is subject to the terms of this Agreement. If
+the laws of Your principal place of business require contracts to be in the
+local language to be enforceable, such local language version may be obtained
+from Licensor upon written request and shall be deemed to govern Your purchase
+of licenses to the Software. Any add-on, update, mobile application, module,
+adapter or support release to the Software that You may download or receive
+that is not accompanied by a license agreement is Software and governed by this
+Agreement. If the Software is an update or support release, then You must have
+validly licensed the version and quantity of the Software being updated or
+supported in order to install or use the update or support release.
+

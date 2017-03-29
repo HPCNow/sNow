@@ -152,11 +152,23 @@ function end_msg()
 
     Get enterprise features and end user enterprise support from HPCNow!
     Please help us to improve this project, report bugs and issues to:
-    sNow! Development <dev@hpcnow.com>
+    https://bitbucket.org/hpcnow/snow-tools/issues
     If you found some error during the installation, please review the
     log file: $LOGFILE
     Some changes may require to reboot the system. Please, consider to do it
     before to move it into production.
+    --------------------------------------------------------------------------
+    " 1>&3
+}
+
+function install_error_msg()
+{
+    echo "
+    --------------------------------------------------------------------------
+    Please help us to improve this project, report bugs and issues to :
+    https://bitbucket.org/hpcnow/snow-tools/issues
+    If you found some error during the installation, please review the
+    log file : $LOGFILE
     --------------------------------------------------------------------------
     " 1>&3
 }
@@ -203,6 +215,16 @@ function bkp()
     fi
 }
 
+function check_mountpoints()
+{
+    local folder=$1
+    local is_mountpoint=$(mountpoint -d $folder)
+    if [[ -n "${is_mountpoint}" ]]; then
+        warning_msg "The folder $folder should be a mount point of a dedicated filesystem."
+        warning_msg "For High Availability, it should be a reliable cluster filesystem."
+    fi
+} 1>>$LOGFILE 2>&1
+
 function hex()
 {
     #transforms the provided value to hexa
@@ -232,6 +254,13 @@ function is_golden_node()
         fi
     done
     return $gn
+} 1>>$LOGFILE 2>&1
+
+function is_git_repo()
+{
+    local git_path=$1
+    git -C ${git_path} rev-parse
+    return $?
 } 1>>$LOGFILE 2>&1
 
 function get_os_distro()

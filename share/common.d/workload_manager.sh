@@ -3,6 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+
 function install_slurm_client()
 {
     ln -sf $SNOW_TOOL/bin/slurm-source.sh /etc/profile.d/slurm.sh
