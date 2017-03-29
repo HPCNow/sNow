@@ -108,9 +108,23 @@ function install_xen()
             install_software "xen-linux-system xen-tools"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
-            #sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
             bkp /etc/default/grub
-            echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin"' >> /etc/default/grub
+            gawk 'BEGIN{grub_cmdline=0}{
+                
+                if($1 ~ /GRUB_CMDLINE_XEN_DEFAULT/){
+                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\""
+                    grub_cmdline=1
+                }
+                else{
+                    print $0
+                }
+            }
+            END{
+                if(grub_cmdline == 0){
+                    print "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\""
+                }
+            }' /etc/default/grub
+            #echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin"' >> /etc/default/grub
             echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
             #sed -i 's/(dom0-min-mem 1024)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
             #sed -i 's/(dom0-cpus 2)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp

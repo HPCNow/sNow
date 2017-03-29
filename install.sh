@@ -8,6 +8,7 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
 readonly SNOW_VERSION="develop"
+readonly LOGFILE=/tmp/snow-install-$(uname -n).log
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -18,7 +19,7 @@ if [[ $(id -u) -ne 0 ]] ; then
     exit 1
 fi
 
-# Include default values for sNow! and HPCNow users if nothing is defined
+# Default values for sNow! and HPCNow users
 if [[ -z ${sNow_USER} ]];then
     sNow_USER=snow
 fi
@@ -53,14 +54,13 @@ elif [[ -f ./snow.conf ]]; then
     source ./snow.conf
 fi
 
+# The sNow and HPCNow users can not be updated if you are login the same session.
 if [[ "${SUDO_USER}" == "${sNow_USER}" || "$SUDO_USER" == "$HPCNow_USER" ]]; then
     echo "The installation script needs to be run as root, without using $sNow_USER or $HPCNow_USER to scale privileges."
     exit 1
 fi
 
-LOGFILE=/tmp/snow-install-$(uname -n).log
-
-# Use the default values unless the environment variables are already setup.
+# Use the default path values unless the environment variables are already setup.
 if [[ -z "${SNOW_PATH}" ]]; then
     SNOW_PATH=/sNow
 fi
@@ -85,18 +85,24 @@ if [[ -z "${SNOW_LOG}" ]]; then
     SNOW_LOG=${SNOW_PATH}/log
 fi
 
+# Use the default virtualization technology
 if [[ -z "${VIRT_TECH}" ]]; then
     VIRT_TECH=XEN
 fi
 
+# If SNOW_MASTER variable is not provided, it will assume that the current node
+# is the sNow! master node
 if [[ -z "${SNOW_MASTER}" ]]; then
     SNOW_MASTER=$(uname -n)
 fi
 
+# If NFS_SERVER variable is not provided, it will assume that the current node
+# is also the NFS server
 if [[ -z "${NFS_SERVER}" ]]; then
     NFS_SERVER=$(uname -n)
 fi
 
+# By default there is no HPCNow! support arranged.
 if [[ -z "${HPCNow_Support}" ]]; then
     HPCNow_Support=none
 fi
@@ -126,12 +132,6 @@ function is_master()
     return $?
 } &>/dev/null
 
-
-function is_slave()
-{
-    hostname | grep -v "^$SNOW_MASTER$" | grep "${SNOW_HOSTNAME_PREFIX}"
-    return $?
-} &>/dev/null
 
 function is_nfs_server()
 {
@@ -282,36 +282,34 @@ function eula()
 install_snow_repos
 eula
 load_snow_env
-setup_software         && error_check 0 'Stage 1/7 : Software installed ' || error_check 1 'Stage 1/7 : Software installed ' &
-spinner $!             'Stage 1/7 : Installing Software ' 
-setup_filesystems      && error_check 0 'Stage 2/7 : Filesystem setup ' || error_check 1 'Stage 2/7 : Filesystem setup ' &
-spinner $!             'Stage 2/7 : Setting Filesystem '
-setup_ssh              && error_check 0 'Stage 3/7 : SSH service and sNow! users created ' || error_check 1 'Stage 3/7 : SSH service and sNow! users created ' & 
-spinner $!             'Stage 3/7 : Creating SSH service and sNow! users '
-#install_snow_repos     && error_check 0 'Stage 4/7 : sNow! repos installed ' || error_check 1 'Stage 4/7 : sNow! repos installed ' & 
-#spinner $!             'Stage 4/7 : sNow! repos installed '
-setup_env              && error_check 0 'Stage 5/7 : User Environment configured ' || error_check 1 'Stage 5/7 : User Environment configured ' & 
-spinner $!             'Stage 5/7 : Configuring User Environment '
+setup_software         && error_check 0 'Stage 1/6 : Software installed ' || error_check 1 'Stage 1/6 : Software installed ' &
+spinner $!             'Stage 1/6 : Installing Software ' 
+setup_filesystems      && error_check 0 'Stage 2/6 : Filesystem setup ' || error_check 1 'Stage 2/6 : Filesystem setup ' &
+spinner $!             'Stage 2/6 : Setting Filesystem '
+setup_ssh              && error_check 0 'Stage 3/6 : SSH service and sNow! users created ' || error_check 1 'Stage 3/6 : SSH service and sNow! users created ' & 
+spinner $!             'Stage 3/6 : Creating SSH service and sNow! users '
+setup_env              && error_check 0 'Stage 4/6 : User Environment configured ' || error_check 1 'Stage 4/6 : User Environment configured ' & 
+spinner $!             'Stage 4/6 : Configuring User Environment '
 case $VIRT_TECH in
     XEN)
-        setup_xen      && error_check 0 'Stage 6/7 : sNow! Xen installation ' || error_check 1 'Stage 6/7 : sNow! Xen installation ' & 
-        spinner $!     'Stage 6/7 : sNow! Xen installation '
+        setup_xen      && error_check 0 'Stage 5/6 : sNow! Xen installation ' || error_check 1 'Stage 5/6 : sNow! Xen installation ' & 
+        spinner $!     'Stage 5/6 : sNow! Xen installation '
     ;;
     DOCKER)
         echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
-        setup_docker   && error_check 0 'Stage 6/7 : sNow! Docker installed ' || error_check 1 'Stage 6/7 : sNow! Docker installed ' & 
-        spinner $!     'Stage 6/7 : sNow! Docker installation '
+        setup_docker   && error_check 0 'Stage 5/6 : sNow! Docker installed ' || error_check 1 'Stage 5/6 : sNow! Docker installed ' & 
+        spinner $!     'Stage 5/6 : sNow! Docker installation '
     ;;
     LXD)
         echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
-        setup_lxd      && error_check 0 'Stage 6/7 : sNow! LXD installation ' || error_check 1 'Stage 6/7 : sNow! LXD installation ' & 
-        spinner $!     'Stage 6/7 : sNow! LXD installation '
+        setup_lxd      && error_check 0 'Stage 5/6 : sNow! LXD installation ' || error_check 1 'Stage 5/6 : sNow! LXD installation ' & 
+        spinner $!     'Stage 5/6 : sNow! LXD installation '
         lxd init
     ;;
     *)
         echo "sNow! only accepts the following options : XEN (default), DOCKER (experimental) and LXD (experimental)."
     ;;
 esac
-setup_devel_env_hpcnow && error_check 0 'Stage 7/7 : HPCNow! development environment setup ' || error_check 1 'Stage 7/7 : HPCNow! development environment setup ' &
-spinner $!             'Stage 7/7 : HPCNow! development environment setup '
+setup_devel_env_hpcnow && error_check 0 'Stage 6/6 : HPCNow! development environment setup ' || error_check 1 'Stage 6/6 : HPCNow! development environment setup ' &
+spinner $!             'Stage 6/6 : HPCNow! development environment setup '
 end_msg
