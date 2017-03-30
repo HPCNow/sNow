@@ -838,14 +838,20 @@ function remove_domain_xen()
         if [[ -n "$IMG_DST" ]]; then
             IMG_DST_OPT="--${IMG_DST}"
         fi
-        warning_msg "Do you want to remove the domain ${domain}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        if [[ "$opt3" != "force" ]]; then
+            warning_msg "Do you want to remove the domain ${domain}? [y/N] (20 seconds)"
+            read -t 20 -u 3 answer
+            if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+                xl destroy ${domain}
+                xen-delete-image $IMG_DST_OPT --hostname=${domain}
+                rm -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg
+            else
+                error_exit "Well done. It's better to be sure."
+            fi
+        else
             xl destroy ${domain}
             xen-delete-image $IMG_DST_OPT --hostname=${domain}
             rm -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg
-        else
-            info_msg "Well done. It's better to be sure."
         fi
     fi
 } 1>>$LOGFILE 2>&1
@@ -861,7 +867,7 @@ function remove_template()
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             rm -fr ${SNOW_CONF}/boot/templates/${template}/
         else
-            info_msg "Well done. It's better to be sure."
+            error_exit "Well done. It's better to be sure."
         fi
     fi
 } 1>>$LOGFILE 2>&1
@@ -877,7 +883,7 @@ function remove_image()
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             rm -fr ${SNOW_CONF}/boot/images/${image}/
         else
-            info_msg "Well done. It's better to be sure."
+            error_exit "Well done. It's better to be sure."
         fi
     fi
 } 1>>$LOGFILE 2>&1
@@ -898,7 +904,7 @@ function remove_node()
         if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
             echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
         else
-            info_msg "Well done. It's better to be sure."
+            error_exit "Well done. It's better to be sure."
         fi
     done
 } 1>>$LOGFILE 2>&1
@@ -986,7 +992,7 @@ function add_node()
     if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
         echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
     else
-        info_msg "Well done. It's better to be sure."
+        error_exit "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -1101,7 +1107,7 @@ function set_node()
     if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
         echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
     else
-        info_msg "Well done. It's better to be sure."
+        error_exit "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -1757,11 +1763,11 @@ function get_server_distribution()
 {
     local nodelist=$1
     local nleng=$(node_list "${nodelist}" | wc -w)
-    if (( $nleng > 0 )); then
+    if [[ $nleng > 1 ]]; then
         # Domains ranks are not yet supported
         is_vm=0
     else
-        is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="$1" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
+        is_vm=$(cat ${SNOW_DOMAINS} | gawk -v vm="${nodelist}" 'BEGIN{isvm=0}{if($1 == vm){isvm=1}}END{print isvm}')
     fi
 }
 
