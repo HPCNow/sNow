@@ -91,7 +91,9 @@ function setup_ssh()
     if [[ -e /usr/libexec/openssh/ssh-keysign ]]; then
         chmod u+s /usr/libexec/openssh/ssh-keysign
     fi
-    cp -p /etc/ssh/shosts.equiv /root/.shosts
+    if [[ -e /etc/ssh/shosts.equiv ]]; then
+        cp -p /etc/ssh/shosts.equiv /root/.shosts
+    fi
     sed -i "s/RhostsRSAAuthentication no/RhostsRSAAuthentication yes/g" /etc/ssh/sshd_config
     sed -i "s/HostbasedAuthentication no/HostbasedAuthentication yes/g" /etc/ssh/sshd_config
     sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config

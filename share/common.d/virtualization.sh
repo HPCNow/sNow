@@ -121,15 +121,17 @@ function install_xen()
             # Following suggestions from Debian : https://wiki.debian.org/Xen
             sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             apt-get -y update
-            install_software "xen-linux-system xen-tools"
+            install_software "cpufrequtils xen-system xen-tools"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
-            sed -i 's/GRUB_CMDLINE_XEN_DEFAULT=/GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=4096M,max:4096M dom0_max_vcpus=2 dom0_vcpus_pin\"/' /etc/default/grub
-            echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
-            sed -i 's/(dom0-min-mem 1024)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
-            sed -i 's/(dom0-cpus 2)/(dom0-min-mem 4096)/' /etc/xen/xend-config.sxp
+            bkp /etc/default/grub
+            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=3188M,max:5875M dom0_max_vcpus=2 dom0_vcpus_pin\""
+            replace_text /etc/default/grub "GRUB_DISABLE_OS_PROBER" "GRUB_DISABLE_OS_PROBER=true"
+            bkp /etc/default/xendomains
             sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
+            bkp /etc/sysctl.conf
+            sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
         ;;
         centos)
             echo "sNow! Xen Support not yet available for RHEL and CentOS"

@@ -9,27 +9,15 @@ function install_devel_env_hpcnow()
     case $OS in
         debian)
             pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
-            if ! is_master; then
-                pkgs="$pkgs Lmod tcl tcl-devel"
-            fi
         ;;
         ubuntu)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk libibverbs libibverbs-devel python-devel python-pip apt-transport-https ca-certificates members git parallel vim"
-            if ! is_master; then
-                pkgs="$pkgs Lmod tcl tcl-devel"
-            fi
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
         ;;
         rhel|redhat|centos)
-            pkgs="epel-release @base @development-tools lsb libdb flex perl perl-Data-Dumper perl-Digest-MD5 perl-JSON perl-Parse-CPAN-Meta perl-CPAN pcre pcre-devel zlib zlib-devel bzip2 bzip2-devel bzip2-libs openssl openssl-devel openssl-libs nfs-utils rpcbind mdadm wget curl gawk patch unzip libibverbs libibverbs-devel python-devel python-pip members git parallel vim"
-            if ! is_master; then
-                pkgs="$pkgs Lmod tcl tcl-devel"
-            fi
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
         ;;
         suse|sle[sd]|opensuse)
-            pkgs="libbz2-1 libz1 openssl libopenssl-devel gcc gcc-c++ nfs-client rpcbind wget curl gawk libibverbs libibverbs-devel python-devel python-pip members git parallel vim"
-            if ! is_master; then
-                pkgs="$pkgs Lmod tcl tcl-devel"
-            fi
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
         ;;
         *)
             warning_msg "This distribution is not supported."
