@@ -266,10 +266,10 @@ function setup_software()
 
 function eula()
 {
-    if [[ ! -f ./eula.txt ]]; then
-        wget http://www.hpcnow.com/snow/eula.txt
+    if [[ ! -f  ${SNOW_TOOL}/eula.txt ]]; then
+        echo "[E] The local sNow! tools repository is corrupted. Please, test your connection to bitbucket."
     fi
-    more ./eula.txt
+    more  ${SNOW_TOOL}/eula.txt
     echo "Do you accept the EULA? type Accept or Decline"
     read input                                                 
 
