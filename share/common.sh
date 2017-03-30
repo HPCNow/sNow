@@ -350,7 +350,6 @@ function install_software()
    $INSTALLER $pkgs
 } 1>>$LOGFILE 2>&1
 
-
 function replace_text()
 {
     local file="$1"
@@ -362,7 +361,7 @@ function replace_text()
     if [[ ! -e $file ]]; then
         error_exit "File $file does not exit"
     fi
-    gawk -v replacement=$replacement -v expression=$expression 'BEGIN{trigger=0}{
+    gawk -v replacement="$replacement" -v expression="$expression" 'BEGIN{trigger=0}{
             if($1 ~ expression){
                 print replacement
                 trigger=1
