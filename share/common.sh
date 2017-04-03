@@ -1398,7 +1398,7 @@ function generate_rootfs()
     # create a mount point
     mkdir -p ${mount_point}
     # Transfer required files
-    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/*.log --exclude=/var/log/messages / ${mount_point}/
+    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
     # Create required directory structure
     mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
     # set required permissions
@@ -1471,12 +1471,13 @@ function generate_rootfs_squashfs()
     echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
     # Run hooks:
     hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
     first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Generate the squasfs image
-    mksquashfs ${mount_point} rootfs -e boot
+    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot
     # Setup squashfs support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
