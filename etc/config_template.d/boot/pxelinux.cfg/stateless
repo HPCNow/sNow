@@ -4,4 +4,4 @@ default __IMAGE__
 
 label   __IMAGE__
     kernel images/__IMAGE__/vmlinuz
-        append initrd=images/__IMAGE__/rootfs.gz root=/dev/ram0 load_ramdisk=1 ramdisk_size=4194304 rw ip=dhcp netdevice=eth0 console=tty0 console=ttyS0,115200n8
+        append initrd=images/__IMAGE__/rootfs.gz root=/dev/ram0 load_ramdisk=1 ramdisk_size=4194304 rw ip=dhcp netdevice=eth0 __CONSOLE_OPTIONS__

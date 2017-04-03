@@ -1390,6 +1390,26 @@ function first_boot_hooks()
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
+function enable_readonly_root()
+{
+    prefix=$1
+    case $OS in
+        #debian|ubuntu)
+        #    pkgs="libpam-ldap sssd-ldap sssd-tools sssd-common"
+        #    echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
+        #;;
+        rhel|redhat|centos)
+            sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
+        ;;
+        #suse|sle[sd]|opensuse)
+        #    echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
+        #;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+} 1>>$LOGFILE 2>&1
+
 function generate_rootfs()
 {
     local image=$1
@@ -1408,7 +1428,7 @@ function generate_rootfs()
     # Patch the network
     patch_network_configuration
     # Create the tarball
-    tar -cf /tmp/rootfs.tar --acls -C ${mount_point}/ .
+    tar -cf /tmp/rootfs.tar --acls -p -s --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
     pigz -9 /tmp/rootfs.tar
     # Transfer the rootfs to the shared file system
@@ -1427,18 +1447,19 @@ function generate_rootfs_nfs()
     # create the nfsroot image
     mkdir -p ${mount_point}
     # Extract raw rootfs into the nfsroot folder
-    tar -C ${mount_point} -zxf ${image_rootfs}
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
     # Update fstab
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
-    echo "/dev/nfs    /           nfs     tcp,nolock  0 0" >> ${mount_point}/etc/fstab
+    #echo "/dev/nfs    /           nfs     ro,tcp,nolock  0 0" >> ${mount_point}/etc/fstab
+    #echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    #echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
     setup_networkfs ${mount_point}
+    enable_readonly_root ${mount_point}
     # Run hooks:
     hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
