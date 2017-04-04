@@ -1355,7 +1355,6 @@ function generate_pxe_image()
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
-            #mkinitrd -f nfs -D eth0
             dracut --add "nfs network base ssh-client dm" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
@@ -1394,13 +1393,13 @@ function enable_readonly_root()
     prefix=$1
     case $OS in
         debian|ubuntu)
-            error_exit "Debian/Ubuntu is not yet supported for RO nfsroot"
+            error_exit "Read-only NFSROOT image not yet supported for this distribution"
         ;;
         rhel|redhat|centos)
             sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
         ;;
         suse|sle[sd]|opensuse)
-            ln -sf $prefix/proc/mounts /etc/mtab
+            error_exit "Read-only NFSROOT image not yet supported for this distribution"
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1450,9 +1449,7 @@ function generate_rootfs_nfs()
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
-    #echo "/dev/nfs    /           nfs     ro,tcp,nolock  0 0" >> ${mount_point}/etc/fstab
     #echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    #echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
