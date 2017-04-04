@@ -6,7 +6,6 @@ bzip2-devel
 bzip2-libs
 csh
 curl
-epel-release
 flex
 ganglia-gmond
 gawk
