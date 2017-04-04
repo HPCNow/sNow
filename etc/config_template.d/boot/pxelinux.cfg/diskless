@@ -3,6 +3,5 @@
 default __IMAGE__
 
 label   __IMAGE__
-    kernel clone/__IMAGE__/vmlinuz
-        append initrd=clone/__IMAGE__/rootfs.gz root=/dev/ram ramdisk_size=524288 rw ip=dhcp
-
+    kernel images/__IMAGE__/vmlinuz
+        append initrd=images/__IMAGE__/rootfs.gz root=/dev/ram ramdisk_size=524288 rw ip=dhcp __CONSOLE_OPTIONS__

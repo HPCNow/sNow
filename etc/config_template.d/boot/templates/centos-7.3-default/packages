@@ -8,6 +8,7 @@ csh
 curl
 epel-release
 flex
+ganglia-gmond
 gawk
 git
 hddtemp

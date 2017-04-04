@@ -106,7 +106,8 @@ function shelp()
         * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_repo, console_options
         * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
-        * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
+        * clone image <old> <new> <description>     | creates a new image based on an existing one
+        * clone node <node> <image> <type>          | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
@@ -1341,22 +1342,24 @@ function generate_pxe_image()
 {
     local image=$1
     mkdir -p ${SNOW_CONF}/boot/images/$image/
+    touch ${SNOW_CONF}/boot/images/$image/config
     case $OS in
         debian|ubuntu)
             cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         rhel|redhat|centos)
-            dracut --nomdadmconf --nolvmconf --xz --no-early-microcode --add "nfs network base ssh-client lvm dm dmraid mdraid multipath iscsi rdma" --add-drivers "nfs nfsv4 squashfs" root=dhcp --host-only -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            install_software "dracut-network dracut-tools"
+            dracut --add "nfs network base ssh-client dm rdma" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
-       ;;
-       suse|sle[sd]|opensuse)
-           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$image
-           mv initrd-netboot-*.gz initrd-$(uname -r)
-           mv initrd-netboot-*.kernel linux-$(uname -r)
-           mv *x86_64* root.gz
-       ;;
-   esac
+        ;;
+        suse|sle[sd]|opensuse)
+            dracut --add "nfs network base ssh-client dm" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
+            chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
+        ;;
+    esac
 }
 
 function hooks()
@@ -1385,29 +1388,48 @@ function first_boot_hooks()
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
+function enable_readonly_root()
+{
+    prefix=$1
+    case $OS in
+        debian|ubuntu)
+            error_exit "Read-only NFSROOT image not yet supported for this distribution"
+        ;;
+        rhel|redhat|centos)
+            sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
+        ;;
+        suse|sle[sd]|opensuse)
+            error_exit "Read-only NFSROOT image not yet supported for this distribution"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+} 1>>$LOGFILE 2>&1
+
 function generate_rootfs()
 {
     local image=$1
     # set mount point for the rootfs
-    local mount_point="/root/rootfs"
+    local mount_point="/dev/shm/rootfs"
     # create a mount point
     mkdir -p ${mount_point}
     # Transfer required files
-    rsync -av --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/* / ${mount_point}/
+    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
     # Create required directory structure
-    mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,log,run,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
+    mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
     # set required permissions
-    chown root:lock ${mount_point}var/lock
+    chown root:lock ${mount_point}/var/lock
     # Update fstab
     bkp ${mount_point}/etc/fstab
     # Patch the network
     patch_network_configuration
     # Create the tarball
-    tar -cf /root/rootfs.tar --acls -C ${mount_point}/ .
+    tar -cf /tmp/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
-    pigz -9 /root/rootfs.tar
+    pigz -9 /tmp/rootfs.tar
     # Transfer the rootfs to the shared file system
-    cp -p /root/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
+    cp -p /tmp/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
 }
 
 function generate_rootfs_nfs()
@@ -1422,17 +1444,17 @@ function generate_rootfs_nfs()
     # create the nfsroot image
     mkdir -p ${mount_point}
     # Extract raw rootfs into the nfsroot folder
-    tar -C ${mount_point} -zxf ${image_rootfs}
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
     # Update fstab
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
-    echo "/dev/nfs    /           nfs     tcp,nolock  0 0" >> ${mount_point}/etc/fstab
+    #echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
+    enable_readonly_root ${mount_point}
     # Run hooks:
     hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
@@ -1465,12 +1487,13 @@ function generate_rootfs_squashfs()
     echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
     # Run hooks:
     hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
     first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Generate the squasfs image
-    mksquashfs ${mount_point} rootfs -e boot
+    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot
     # Setup squashfs support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
@@ -1545,6 +1568,7 @@ function clone_template()
 
 function clone_node()
 {
+    set -xv
     local node=$1
     local image=$2
     local image_type=$3
@@ -1558,18 +1582,67 @@ function clone_node()
         error_exit "ERROR: no type of image is provided"
     fi
     # Check if snow CLI is executed in the same golden node or from the snow server
+    if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
+        warning_msg "This will overwrite the image $image"
+    else
+        warning_msg "This will clone $node and generate the image $image."
+    fi
     if [[ "$(uname -n)" == "$node" ]]; then
-        if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.gz ]]; then
-            warning_msg "This will overwrite the image $image"
-        else
-            warning_msg "This will clone $node and generate the image $image."
+        if [[ -e ${SNOW_CONF}/boot/images/$image ]]; then
+            mkdir -p ${SNOW_CONF}/boot/images/$image
         fi
         get_server_distribution $node
+        generate_pxe_image $image
+        generate_rootfs $image
+        #set_image_type $image ${image_type}
+    else
+        check_host_status ${node}${NET_MGMT[5]}
+        ssh $node $0 clone node $@
+        set_image_type $image ${image_type}
+    fi
+}
+
+function clone_image()
+{
+    local old_image="$1"
+    local new_image="$2"
+    local new_description="$3"
+    if [[ -z "${old_image}" ]]; then
+        error_exit "ERROR: no image name to clone is provided"
+    fi
+    if [[ -z "${new_image}" ]]; then
+        error_exit "ERROR: no name is provided for the new image"
+    fi
+    if [[ ! -f ${SNOW_CONF}/boot/images/${old_image}/${old_image}.pxe ]]; then
+        error_msg "There is no image with this name (${old_image}). Please, review the name with: snow list images."
+    else
+        if [[ -f ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe ]]; then
+            error_msg "The image ${new_image} already exist. Please remove it before to create a new one."
+        fi
+        cp -pr ${SNOW_CONF}/boot/images/${old_image} ${SNOW_CONF}/boot/images/${new_image}
+        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe
+        mv ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe
+        if [[ ! -z "${new_description}" ]]; then
+            echo "${new_description}" > ${SNOW_CONF}/boot/images/${new_image}/description
+        fi
+    fi
+}
+
+function set_image_type()
+{
+    local image=$1
+    local image_type=$2
+    if [[ -z "$image" ]]; then
+        error_exit "No name of image is provided"
+    fi
+    if [[ -z "${image_type}" ]]; then
+        error_exit "No type of image is provided"
+    fi
+
+    if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
         case ${image_type} in
             nfsroot)
-                generate_pxe_image $image
-                generate_rootfs $image
-                #generate_rootfs_nfs $image
+                generate_rootfs_nfs $image
             ;;
             stateless)
                 generate_rootfs_squashfs $image
@@ -1583,8 +1656,7 @@ function clone_node()
             ;;
         esac
     else
-        check_host_status ${node}${NET_MGMT[5]}
-        ssh $node $0 clone $@
+        error_msg "This image ($image) is not available."
     fi
 }
 
@@ -1732,8 +1804,8 @@ function boot()
     else
         local image=$2
         local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-        local BLOCKN=${2:-$BLOCKN}
-        local BLOCKD=${3:-$BLOCKD}
+        local BLOCKN=${12:-$BLOCKN}
+        local BLOCKD=${4:-$BLOCKD}
         if [ -z "$image" ]; then
             boot_copy "${nodelist}" boot
         else

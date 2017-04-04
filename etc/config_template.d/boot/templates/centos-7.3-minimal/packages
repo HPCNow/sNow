@@ -4,6 +4,7 @@ bzip2
 csh
 curl
 epel-release
+ganglia-gmond
 gawk
 git
 hddtemp
