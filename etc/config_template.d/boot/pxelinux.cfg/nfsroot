@@ -4,4 +4,4 @@ default __IMAGE__
 
 label   __IMAGE__
     kernel images/__IMAGE__/vmlinuz
-        append initrd=images/__IMAGE__/initrd.img root=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/images/__IMAGE__/rootfs ro ip=dhcp netdevice=eth0 __CONSOLE_OPTIONS__
+        append initrd=images/__IMAGE__/initrd.img root=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/images/__IMAGE__/rootfs ro ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__

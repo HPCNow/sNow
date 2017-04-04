@@ -106,7 +106,8 @@ function shelp()
         * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_repo, console_options
         * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
-        * clone <node> <image> <type>               | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless, statelite).
+        * clone image <old> <new> <description>     | creates a new image based on an existing one
+        * clone node <node> <image> <type>          | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
         * remove domain <domain>                    | removes an existing domain deployed with sNow!
         * remove node <node>                        | removes an existing node from sNow! configuration
         * remove template <template>                | removes an existing template
@@ -1349,19 +1350,17 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            #dracut --nomdadmconf --nolvmconf --xz --no-early-microcode --add "nfs network base ssh-client lvm dm dmraid mdraid multipath iscsi rdma" --add-drivers "nfs nfsv4 squashfs" root=dhcp --host-only -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
-            #dracut --add "nfs network base ssh-client lvm dm dmraid mdraid multipath iscsi rdma" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             dracut --add "nfs network base ssh-client dm rdma" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
-       ;;
-       suse|sle[sd]|opensuse)
-           kiwi --root / --add-profile netboot --type pxe -d ${SNOW_CONF}/boot/images/$image
-           mv initrd-netboot-*.gz initrd-$(uname -r)
-           mv initrd-netboot-*.kernel linux-$(uname -r)
-           mv *x86_64* root.gz
-       ;;
-   esac
+        ;;
+        suse|sle[sd]|opensuse)
+            #mkinitrd -f nfs -D eth0
+            dracut --add "nfs network base ssh-client dm" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
+            chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
+        ;;
+    esac
 }
 
 function hooks()
@@ -1394,16 +1393,15 @@ function enable_readonly_root()
 {
     prefix=$1
     case $OS in
-        #debian|ubuntu)
-        #    pkgs="libpam-ldap sssd-ldap sssd-tools sssd-common"
-        #    echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
-        #;;
+        debian|ubuntu)
+            error_exit "Debian/Ubuntu is not yet supported for RO nfsroot"
+        ;;
         rhel|redhat|centos)
             sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
         ;;
-        #suse|sle[sd]|opensuse)
-        #    echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
-        #;;
+        suse|sle[sd]|opensuse)
+            ln -sf $prefix/proc/mounts /etc/mtab
+        ;;
         *)
             warning_msg "This distribution is not supported."
         ;;
@@ -1428,7 +1426,7 @@ function generate_rootfs()
     # Patch the network
     patch_network_configuration
     # Create the tarball
-    tar -cf /tmp/rootfs.tar --acls -p -s --numeric-owner -C ${mount_point}/ .
+    tar -cf /tmp/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
     pigz -9 /tmp/rootfs.tar
     # Transfer the rootfs to the shared file system
@@ -1604,6 +1602,32 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
+    fi
+}
+
+function clone_image()
+{
+    local old_image="$1"
+    local new_image="$2"
+    local new_description="$3"
+    if [[ -z "${old_image}" ]]; then
+        error_exit "ERROR: no image name to clone is provided"
+    fi
+    if [[ -z "${new_image}" ]]; then
+        error_exit "ERROR: no name is provided for the new image"
+    fi
+    if [[ ! -f ${SNOW_CONF}/boot/images/${old_image}/${old_image}.pxe ]]; then
+        error_msg "There is no image with this name (${old_image}). Please, review the name with: snow list images."
+    else
+        if [[ -f ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe ]]; then
+            error_msg "The image ${new_image} already exist. Please remove it before to create a new one."
+        fi
+        cp -pr ${SNOW_CONF}/boot/images/${old_image} ${SNOW_CONF}/boot/images/${new_image}
+        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe
+        mv ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe
+        if [[ ! -z "${new_description}" ]]; then
+            echo "${new_description}" > ${SNOW_CONF}/boot/images/${new_image}/description
+        fi
     fi
 }
 
