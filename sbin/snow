@@ -201,6 +201,26 @@ case $opt1 in
                 ;;
         esac
         ;;
+    show)
+        case $opt2 in
+            #domains)
+            #    avail_domains "$opt3"
+            #    ;;
+            #templates)
+            #    avail_templates "$opt3"
+            #    ;;
+            #images)
+            #    avail_images "$opt3"
+            #    ;;
+            nodes)
+                show_nodes "$opt3"
+                ;;
+            *)
+                #error_msg "You can list: domains, templates, images, nodes"
+                error_msg "You can show: nodes"
+                ;;
+        esac
+        ;;
     takeover)
         takeover $opt2
         ;;

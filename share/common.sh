@@ -997,6 +997,22 @@ function add_node()
     fi
 } 1>>$LOGFILE 2>&1
 
+function show_nodes()
+{
+    local nodelist=$1
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    for node in $(node_list "${nodelist}"); do
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+        if [[ "${node_query}" == "null" ]]; then
+            error_msg "The node $node does not exist in the database."
+        else
+            echo "${node_query}" | jq '.' 1>&3
+        fi
+    done
+    unset node
+} 1>>$LOGFILE 2>&1
+
+
 function set_node()
 {
     if [[ $# < 3 ]]; then
@@ -1568,7 +1584,6 @@ function clone_template()
 
 function clone_node()
 {
-    set -xv
     local node=$1
     local image=$2
     local image_type=$3
