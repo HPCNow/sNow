@@ -1001,17 +1001,23 @@ function add_node()
 
 function show_nodes()
 {
+    set -xv
     local nodelist=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-    for node in $(node_list "${nodelist}"); do
-        node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
-        if [[ "${node_query}" == "null" ]]; then
-            error_msg "The node $node does not exist in the database."
-        else
-            echo "${node_query}" | jq '.' 1>&3
-        fi
-    done
-    unset node
+    if [[ -z "$nodelist" ]]; then
+        node_query=$(echo ${nodes_json} | jq -r ".\"compute\"")
+        echo "${node_query}" | jq '.' 1>&3
+    else
+        for node in $(node_list "${nodelist}"); do
+            node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
+            if [[ "${node_query}" == "null" ]]; then
+                error_msg "The node $node does not exist in the database."
+            else
+                echo "${node_query}" | jq '.' 1>&3
+            fi
+        done
+        unset node
+    fi
 } 1>>$LOGFILE 2>&1
 
 
