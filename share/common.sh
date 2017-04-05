@@ -113,9 +113,11 @@ function shelp()
         * remove template <template>                | removes an existing template
         * remove image <image>                      | removes an existing image
         * list domains                              | list the current domains (services) and their status
+        * list roles                                | list the available roles for domains (services)
         * list nodes                                | list the available compute nodes and their status
         * list templates                            | list the templates installed in the system
         * list images                               | list the images generated or downloaded
+        * show nodes <node>                         | shows the node(s) configuration.
         * boot <domain>                             | boot specific domain
         * boot <node> <image>                       | boot specific node with optional image
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
@@ -1693,6 +1695,24 @@ function avail_domains()
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
             printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
         fi
+    done
+}
+
+function avail_roles()
+{
+    local roles="$1"
+    if [[ -z $roles ]]; then
+        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g")
+    fi
+    printf "%-25s    %-80s\n" "Role Name" " Description" 1>&3
+    printf "%-25s    %-80s\n" "-------------" " -----------" 1>&3
+    for role in ${roles}; do
+        role_desc=$(cat $SNOW_TOOL/etc/role.d/${role} | gawk '{if($0 ~ /#SHORT_DESCRIPTION:/){$1=""; print $0}}')
+        if [[ -z ${role_desc} ]]; then
+            role_desc=" Description not availalbe"
+        fi
+        printf "%-25s    %-80s\n" "$role" "$role_desc" 1>&3
+        #printf "%-25s    %-80s\n" "" " path: $SNOW_TOOL/etc/role.d/${role}" 1>&3
     done
 }
 

@@ -184,6 +184,9 @@ case $opt1 in
         ;;
     list)
         case $opt2 in
+            roles)
+                avail_roles "$opt3"
+                ;;
             domains)
                 avail_domains "$opt3"
                 ;;
