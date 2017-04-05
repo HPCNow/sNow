@@ -3,6 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+#SHORT_DESCRIPTION: Installs the required to deploy OS and boot OS via PXE and TFTP. It also provides DHCP and DNS.
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
