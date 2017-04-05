@@ -1001,7 +1001,6 @@ function add_node()
 
 function show_nodes()
 {
-    set -xv
     local nodelist=$1
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
     if [[ -z "$nodelist" ]]; then
