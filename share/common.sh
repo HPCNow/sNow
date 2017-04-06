@@ -1665,7 +1665,7 @@ function chroot_image()
         error_exit "The image ${image} does not support chroot"
     else
         local ps1="\[\033[32m\][\[\033[31m\] ${image} \[\033[32m\]]\[\033[00m\] # "
-        PS1="${ps1}" chroot ${SNOW_CONF}/boot/images/${image}/rootfs #1>&3
+        PS1="${ps1}" chroot ${SNOW_CONF}/boot/images/${image}/rootfs
     fi
 } 1>>$LOGFILE 2>&3 1>&3
 
