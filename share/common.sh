@@ -92,7 +92,7 @@ function shelp()
     Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
     For more information, visit the official website: www.hpcnow.com
 
-    Usage: snow [function] <option|domain|server>
+    Usage: snow [function] <domain|server> <option>
 
     Function List:
 
@@ -117,6 +117,7 @@ function shelp()
         * list nodes                                | list the available compute nodes and their status
         * list templates                            | list the templates installed in the system
         * list images                               | list the images generated or downloaded
+        * chroot <image>                            | provides chroot environment inside a read-only nfsroot image
         * show nodes <node>                         | shows the node(s) configuration.
         * boot <domain>                             | boot specific domain
         * boot <node> <image>                       | boot specific node with optional image
@@ -1621,6 +1622,7 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
+        mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
     fi
 }
 
@@ -1649,6 +1651,23 @@ function clone_image()
         fi
     fi
 }
+
+function chroot_image()
+{
+    local image="$1"
+    if [[ -z "${image}" ]]; then
+        error_exit "No image name is provided"
+    fi
+    if [[ ! -e ${SNOW_CONF}/boot/images/${image} ]]; then
+        error_exit "The image ${image} does not exist"
+    fi
+    if [[ ! -e ${SNOW_CONF}/boot/images/${image}/rootfs/bin/bash ]]; then
+        error_exit "The image ${image} does not support chroot"
+    else
+        local ps1="\[\033[32m\][\[\033[31m\] ${image} \[\033[32m\]]\[\033[00m\] # "
+        PS1="${ps1}" chroot ${SNOW_CONF}/boot/images/${image}/rootfs #1>&3
+    fi
+} 1>>$LOGFILE 2>&3 1>&3
 
 function set_image_type()
 {
@@ -1763,12 +1782,12 @@ function avail_images()
             fi
             printf "%-30s    %-80s\n" "$img" "$desc" 1>&3
             printf "%-30s    %-80s\n" "" "path: ${SNOW_CONF}/boot/images/${img}" 1>&3
-            hooks=$(ls -1 ${SNOW_CONF}/boot/images/${img}/??-*.sh)
+            hooks=$(ls -1 ${SNOW_CONF}/boot/images/${img}/first_boot/??-*.sh)
             if [[ ! -z $hooks ]]; then
                 printf "%-30s    %-80s\n" "" "hooks:" 1>&3
                 for hook in $hooks; do
                     if [[ -x "$hook" ]]; then
-                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/images/$img/||g")
+                        hookname=$(echo $hook | sed -e "s|$SNOW_CONF/boot/images/$img/first_boot/||g")
                         printf "%-30s    %-80s\n" "" "- $hookname" 1>&3
                     fi
                 done
