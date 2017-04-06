@@ -131,6 +131,8 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
             chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
         fi
+        chown root:root ${prefix}/etc/sssd/sssd.conf
+        chmod 600 ${prefix}/etc/sssd/sssd.conf
     elif [[ "$LDAP_TLS" == "FALSE" && "$LDAP_PROTO" != "ldaps" ]]; then 
         installDebianPackage ${prefix} ldap-utils libpam-ldap libnss-ldap nscd nslcd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
