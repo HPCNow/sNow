@@ -83,4 +83,17 @@ else
 fi
 
 # Create a home directory for new users
-echo "session    required   pam_mkhomedir.so skel=/etc/skel/ umask=0002" >> ${prefix}/etc/pam.d/common-account
+cat <<EOF > ${prefix}/usr/share/pam-configs/mkhomedir
+Name: Create home directory during login
+Default: yes
+Priority: 0
+Session-Interactive-Only: yes
+Session-Type: Additional
+Session-Final:
+       optional        pam_mkhomedir.so
+EOF
+
+chroot ${prefix} /usr/sbin/dpkg-reconfigure -f noninteractive libpam-runtime 2>&1
+
+
+
