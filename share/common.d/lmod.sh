@@ -13,7 +13,7 @@ function install_lmod()
             pkgs="lua-devel lua-filesystem lua-posix"
         ;;
         suse|sle[sd]|opensuse)
-            pkgs="lua lua-filesystem lua-posix"
+            pkgs="lua lua-devel lua-luafilesystem lua-luaposix"
         ;;
         *)
             warning_msg "This distribution is not supported."
