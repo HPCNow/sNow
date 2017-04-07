@@ -14,7 +14,7 @@
 # Based on Alan Orth interactive script
 # URL : https://github.com/alanorth/hpc_infrastructure_scripts/blob/master/slurm/interactive
 #
-source /sNow/snow-utils/etc/slurm.env
+source /sNow/snow-tools/etc/slurm.env
 
 # defaults
 if [ $USER != "snow" ] ; then
