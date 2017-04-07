@@ -90,7 +90,7 @@ Priority: 0
 Session-Interactive-Only: yes
 Session-Type: Additional
 Session-Final:
-       optional        pam_mkhomedir.so
+       optional        pam_mkhomedir.so skel=/etc/skel/ umask=0002
 EOF
 
 chroot ${prefix} /usr/sbin/dpkg-reconfigure -f noninteractive libpam-runtime 2>&1
