@@ -224,6 +224,9 @@ case $opt1 in
                 ;;
         esac
         ;;
+    chroot)
+        chroot_image $opt2
+        ;;
     takeover)
         takeover $opt2
         ;;
