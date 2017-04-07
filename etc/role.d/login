@@ -65,6 +65,7 @@ if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
     ln -sf $SNOW_CONF/system_files/etc/slurm.env $SNOW_TOOL/etc/slurm.env
 fi
 
+ln -sf ${SNOW_TOOL}/bin/snow-source.sh ${prefix}/etc/profile.d/snow.sh
 
 # SSH Setup
 if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config.pub ]]; then 
