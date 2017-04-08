@@ -280,6 +280,7 @@ function eula()
     echo "--------------------------------------------------------------------------"
 }
 
+echo "[I] Downloading required files... This may take a while, Please wait."
 install_snow_repos
 eula
 load_snow_env

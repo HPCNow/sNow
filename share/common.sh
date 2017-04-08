@@ -1365,8 +1365,10 @@ function patch_network_configuration()
 function generate_pxe_image()
 {
     local image=$1
-    mkdir -p ${SNOW_CONF}/boot/images/$image/
-    touch ${SNOW_CONF}/boot/images/$image/config
+    if [[ ! -e ${SNOW_CONF}/boot/images/$image/ ]]; then
+        mkdir -p ${SNOW_CONF}/boot/images/$image/
+        touch ${SNOW_CONF}/boot/images/$image/config
+    fi
     case $OS in
         debian|ubuntu)
             cp -p /boot/initrd.img-$(uname -r) ${SNOW_CONF}/boot/images/$image/initrd.img
@@ -1389,9 +1391,8 @@ function generate_pxe_image()
 function hooks()
 {
     local hooks_path=$1
-    local hooks=$(ls -1 ${hooks_path}/??-*.sh)
-    if [[ ! -z $hooks ]]; then
-        for hook in $hooks
+    if [[ -e ${hooks_path} ]]; then
+        for hook in ${hooks_path}/??-*.sh
         do
             if [[ -x "$hook" ]]; then
                 $hook && error_check 0 "Running hook: $hook " || error_check 1 "Running hook error: $hook " &
@@ -1449,11 +1450,11 @@ function generate_rootfs()
     # Patch the network
     patch_network_configuration
     # Create the tarball
-    tar -cf /tmp/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
+    tar -cf /dev/shm/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
-    pigz -9 /tmp/rootfs.tar
+    pigz -9 /dev/shm/rootfs.tar
     # Transfer the rootfs to the shared file system
-    cp -p /tmp/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
+    cp -p /dev/shm/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
 }
 
 function generate_rootfs_nfs()
@@ -1622,7 +1623,9 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
-        mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
+        if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
+            mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
+        fi
     fi
 }
 
@@ -1792,6 +1795,7 @@ function avail_images()
                     fi
                 done
             fi
+            printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
         fi
     done
 }
