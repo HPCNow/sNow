@@ -4,6 +4,7 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 #SHORT_DESCRIPTION: Allows to setup NFS client and cluster file system clients (experimental)
+prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
@@ -31,7 +32,7 @@ if [[ "$NFS_CLIENT" == "TRUE" ]]; then
     installDebianPackage ${prefix} nfs-common
     for i in {1..100}; do
         if [[ ! -z ${MOUNT_NFS[$i]} ]]; then
-            mkdir -p $(echo "${MOUNT_NFS[$i]}" | gawk '{print $2}')
+            mkdir -p ${prefix}$(echo "${MOUNT_NFS[$i]}" | gawk '{print $2}')
             echo "${MOUNT_NFS[$i]}" >> ${prefix}/etc/fstab
         fi
     done
