@@ -269,22 +269,40 @@ function is_git_repo()
 
 function get_os_distro()
 {
-    # OS release and Service pack discovery
-    local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    # Special case redhatenterpriseserver
-    if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
-        lsb_dist='redhat'
-    fi
-    if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
-        lsb_dist='suse'
-    fi
-    if [[ -z "${lsb_dist}" ]]; then
-        lsb_dist=$(uname -s)
+    local prefix=$1
+    if [[ -z "${prefix}" ]]; then
+        # OS release and Service pack discovery
+        local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        # Special case redhatenterpriseserver
+        if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
+            lsb_dist='redhat'
+        fi
+        if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
+            lsb_dist='suse'
+        fi
+        if [[ -z "${lsb_dist}" ]]; then
+            lsb_dist=$(uname -s)
+        else
+            export OSVERSION=${dist_version}
+        fi
+        export OS=$lsb_dist
     else
-        export OSVERSION=${dist_version}
+        # OS release and Service pack discovery
+        local lsb_dist=$(chroot ${prefix} /usr/bin/lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version=$(chroot ${prefix} /usr/bin/lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        # Special case redhatenterpriseserver
+        if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
+            lsb_dist='redhat'
+        fi
+        if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
+            lsb_dist='suse'
+        fi
+        if [[ -z "${lsb_dist}" ]]; then
+            lsb_dist=$(uname -s)
+        fi
+        echo $lsb_dist
     fi
-    export OS=$lsb_dist
 }
 
 function add_repo()
@@ -1419,16 +1437,22 @@ function first_boot_hooks()
 
 function enable_readonly_root()
 {
-    prefix=$1
-    case $OS in
+    local prefix=$1
+    local os=$(get_os_distro $prefix)
+    case $os in
         debian|ubuntu)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
         ;;
         rhel|redhat|centos)
             sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
+            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
+            replace_text $prefix/etc/hosts "^::1" " "
+            echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
+            echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
         ;;
         suse|sle[sd]|opensuse)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
+            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1459,6 +1483,7 @@ function generate_rootfs()
     pigz -9 /dev/shm/rootfs.tar
     # Transfer the rootfs to the shared file system
     cp -p /dev/shm/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
+    rm -f /dev/shm/rootfs.tar.gz
 }
 
 function generate_rootfs_nfs()
