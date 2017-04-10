@@ -1394,8 +1394,9 @@ function generate_pxe_image()
 function hooks()
 {
     local hooks_path=$1
-    if [[ -e ${hooks_path} ]]; then
-        for hook in ${hooks_path}/??-*.sh
+    local hooks=$(ls -1 ${hooks_path}/??-*.sh)
+    if [[ ! -z $hooks ]]; then
+        for hook in $hooks
         do
             if [[ -x "$hook" ]]; then
                 $hook && error_check 0 "Running hook: $hook " || error_check 1 "Running hook error: $hook " &
@@ -1772,7 +1773,7 @@ function avail_templates()
             fi
         fi
     done
-}
+} 1>>$LOGFILE 2>&1
 
 function avail_images()
 {
