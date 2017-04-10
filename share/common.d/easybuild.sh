@@ -8,7 +8,7 @@ function install_easybuild()
     ln -sf $SNOW_TOOL/bin/easybuild-source.sh /etc/profile.d/easybuild.sh
     #ln -sf $SNOW_TOOL/bin/easybuild-source.csh /etc/profile.d/easybuild.csh
     if is_golden_node; then
-        if [[ ! -e $SNOW_SOFT/modules/all ]]; then
+        if [[ ! -e $SNOW_SOFT/modules/all/EasyBuild ]]; then
             chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
             cd $SNOW_SOFT
             curl -O https://raw.githubusercontent.com/hpcugent/easybuild-framework/develop/easybuild/scripts/bootstrap_eb.py
