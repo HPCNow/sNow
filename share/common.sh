@@ -222,8 +222,8 @@ function bkp()
 function check_mountpoints()
 {
     local folder=$1
-    local is_mountpoint=$(mountpoint -d $folder)
-    if [[ -n "${is_mountpoint}" ]]; then
+    local is_mountpoint=$(mountpoint $folder)
+    if [[ "${is_mountpoint}" =~ "is not a mountpoint" ]]; then
         warning_msg "The folder $folder should be a mount point of a dedicated filesystem."
         warning_msg "For High Availability, it should be a reliable cluster filesystem."
     fi
@@ -269,22 +269,40 @@ function is_git_repo()
 
 function get_os_distro()
 {
-    # OS release and Service pack discovery
-    local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
-    # Special case redhatenterpriseserver
-    if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
-        lsb_dist='redhat'
-    fi
-    if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
-        lsb_dist='suse'
-    fi
-    if [[ -z "${lsb_dist}" ]]; then
-        lsb_dist=$(uname -s)
+    local prefix=$1
+    if [[ -z "${prefix}" ]]; then
+        # OS release and Service pack discovery
+        local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        # Special case redhatenterpriseserver
+        if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
+            lsb_dist='redhat'
+        fi
+        if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
+            lsb_dist='suse'
+        fi
+        if [[ -z "${lsb_dist}" ]]; then
+            lsb_dist=$(uname -s)
+        else
+            export OSVERSION=${dist_version}
+        fi
+        export OS=$lsb_dist
     else
-        export OSVERSION=${dist_version}
+        # OS release and Service pack discovery
+        local lsb_dist=$(chroot ${prefix} /usr/bin/lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version=$(chroot ${prefix} /usr/bin/lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        # Special case redhatenterpriseserver
+        if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
+            lsb_dist='redhat'
+        fi
+        if [[ "${lsb_dist}" == "suselinux" || "${lsb_dist}" == "opensuseproject" ]]; then
+            lsb_dist='suse'
+        fi
+        if [[ -z "${lsb_dist}" ]]; then
+            lsb_dist=$(uname -s)
+        fi
+        echo $lsb_dist
     fi
-    export OS=$lsb_dist
 }
 
 function add_repo()
@@ -552,7 +570,8 @@ function init()
             }' ${SNOW_ACTIVE_DOMAINS} > ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports
             ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
-            warning_msg "Once you are done, execute exportfs -u"
+            warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
+            info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
     fi
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
@@ -618,7 +637,9 @@ function init()
     gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    if [[ ! -z ${NET_LLF[2]} ]]; then
+        generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    fi
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
 
     # Generate /etc/ssh/ssh_known_hosts
@@ -1391,8 +1412,9 @@ function generate_pxe_image()
 function hooks()
 {
     local hooks_path=$1
-    if [[ -e ${hooks_path} ]]; then
-        for hook in ${hooks_path}/??-*.sh
+    local hooks=$(ls -1 ${hooks_path}/??-*.sh)
+    if [[ ! -z $hooks ]]; then
+        for hook in $hooks
         do
             if [[ -x "$hook" ]]; then
                 $hook && error_check 0 "Running hook: $hook " || error_check 1 "Running hook error: $hook " &
@@ -1415,16 +1437,22 @@ function first_boot_hooks()
 
 function enable_readonly_root()
 {
-    prefix=$1
-    case $OS in
+    local prefix=$1
+    local os=$(get_os_distro $prefix)
+    case $os in
         debian|ubuntu)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
         ;;
         rhel|redhat|centos)
             sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
+            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
+            replace_text $prefix/etc/hosts "^::1" " "
+            echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
+            echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
         ;;
         suse|sle[sd]|opensuse)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
+            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1455,6 +1483,7 @@ function generate_rootfs()
     pigz -9 /dev/shm/rootfs.tar
     # Transfer the rootfs to the shared file system
     cp -p /dev/shm/rootfs.tar.gz ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz
+    rm -f /dev/shm/rootfs.tar.gz
 }
 
 function generate_rootfs_nfs()
@@ -1769,7 +1798,7 @@ function avail_templates()
             fi
         fi
     done
-}
+} 1>>$LOGFILE 2>&1
 
 function avail_images()
 {

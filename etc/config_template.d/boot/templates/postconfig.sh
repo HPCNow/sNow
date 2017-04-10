@@ -13,6 +13,37 @@ SNOW_TOOL=$SNOW_PATH/snow-tools
 SNOW_CONF=$SNOW_PATH/snow-configspace
 readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 
+# Default values for sNow! and HPCNow users
+if [[ -z ${sNow_USER} ]];then
+    sNow_USER=snow
+fi
+if [[ -z ${sNow_GROUP} ]];then
+    sNow_GROUP=snow
+fi
+if [[ -z ${sNow_UID} ]];then
+    sNow_UID=2000
+fi
+if [[ -z ${sNow_GID} ]];then
+    sNow_GID=2000
+fi
+
+# By default HPCNow User is not created, unless HPCNow_Support is setup
+if [[ -z ${HPCNow_Support} ]];then
+    HPCNow_Support=none
+fi
+if [[ -z ${HPCNow_USER} ]];then
+    HPCNow_USER=hpcnow
+fi
+if [[ -z ${HPCNow_GROUP} ]];then
+    HPCNow_GROUP=snow
+fi
+if [[ -z ${HPCNow_UID} ]];then
+    HPCNow_UID=2001
+fi
+if [[ -z ${HPCNow_GID} ]];then
+    HPCNow_GID=2000
+fi
+
 if [[ -f ${CONFIG_FILE} ]]; then
     echo "Loading sNow! configuration ..."
     source ${CONFIG_FILE}
