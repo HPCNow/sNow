@@ -32,6 +32,10 @@ fi
 if [[ -z ${sNow_GID} ]];then
     sNow_GID=2000
 fi
+# By default HPCNow User is not created, unless HPCNow_Support is setup
+if [[ -z ${HPCNow_Support} ]];then
+    HPCNow_Support=none
+fi
 if [[ -z ${HPCNow_USER} ]];then
     HPCNow_USER=hpcnow
 fi
