@@ -618,7 +618,9 @@ function init()
     gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    if [[ ! -z ${NET_LLF[2]} ]]; then
+        generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    fi
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
 
     # Generate /etc/ssh/ssh_known_hosts
