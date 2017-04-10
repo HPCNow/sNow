@@ -222,8 +222,8 @@ function bkp()
 function check_mountpoints()
 {
     local folder=$1
-    local is_mountpoint=$(mountpoint -d $folder)
-    if [[ -n "${is_mountpoint}" ]]; then
+    local is_mountpoint=$(mountpoint $folder)
+    if [[ "${is_mountpoint}" =~ "is not a mountpoint" ]]; then
         warning_msg "The folder $folder should be a mount point of a dedicated filesystem."
         warning_msg "For High Availability, it should be a reliable cluster filesystem."
     fi
