@@ -552,7 +552,8 @@ function init()
             }' ${SNOW_ACTIVE_DOMAINS} > ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports
             ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports /etc/exports.d/snow_domains.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow_domains.exports"
-            warning_msg "Once you are done, execute exportfs -u"
+            warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
+            info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
     fi
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
