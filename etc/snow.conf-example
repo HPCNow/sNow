@@ -358,11 +358,22 @@ MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,def
 SLURMDBD_USER=slurm
 SLURMDBD_PASSWORD=whatever
 #SLURMDBD_NAME=slurm_acct_db
+
+#             [ Slurm Accounting and Fair Share ]
+#               
 # The following option forces to use associations and QoS for accounting.
 # Fairsharing is the most common approach to share resources. Consider to use
-# the helper script "$SNOW_TOOLS/bin/slurm_share_tree.sh" to define how to share
-# the computational resources within your groups and users 
-ACCOUNTING_STORAGE_ENFORCE=associations,qos
+# the helper script "$SNOW_TOOLS/contrib/slurm_fairshare/slurm_share_tree.sh"
+# to define how to share the computational resources within your groups and users 
+#ACCOUNTING_STORAGE_ENFORCE=associations,qos
+#
+# nojobs - This will make it so no job information is stored in accounting.
+# nosteps - This will make it so no step information is stored in accounting.
+# Both nojobs and nosteps could be helpful in an environment where you want to
+# use limits but don't really care about utilization.
+#
+# More information here: https://slurm.schedmd.com/accounting.html
+ACCOUNTING_STORAGE_ENFORCE=nojobs
 SLURM_CLUSTER_NAME=mycluster
 
 # MUNGE User definition
@@ -378,7 +389,8 @@ SLURM_UID=20995
 # The following parameter defines the number of licenses available for each
 # software. 
 # Syntax: LICENSES=licenseA*number_of_tockens,licenseB*number_of_tockens
-LICENSES=intel*2,fluent*5000
+# Example: LICENSES=intel*2,fluent*5000
+#LICENSES=intel*2,fluent*5000
 # The following lines define three different types of Slurm Compute Nodes 
 SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 
 SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN" 

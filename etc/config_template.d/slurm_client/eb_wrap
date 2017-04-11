@@ -14,12 +14,23 @@
 # Based on Alan Orth interactive script
 # URL : https://github.com/alanorth/hpc_infrastructure_scripts/blob/master/slurm/interactive
 #
-source /sNow/snow-tools/etc/slurm.env
 
 # defaults
 if [ $USER != "snow" ] ; then
    echo "You need to use snow account!"
    exit 0
+fi
+DEF_NUM_CPUS=8
+DEF_MEM_PER_CPU=4
+#DEF_PARTITION=easybuild
+DEF_JOB_NAME=EasyBuild
+DEF_ACCOUNT=snow
+#DEF_UID=1000
+DEF_TIME=12:00:00
+DEF_RUNEXEC="eb --tmp-logdir=/sNow/easybuild/log/tmp $@"
+source /sNow/snow-tools/etc/slurm.env
+if [[ -e $HOME/.slurm.env ]]; then
+    source $HOME/.slurm.env
 fi
 
 if [ ! -d /sNow/easybuild/log/tmp ]; then
@@ -30,14 +41,6 @@ if [ ! -d /sNow/easybuild/jobs ]; then
     mkdir -p /sNow/easybuild/jobs
 fi
 
-DEF_NUM_CPUS=8
-DEF_MEM_PER_CPU=4
-DEF_PARTITION=easybuild
-DEF_JOB_NAME=EasyBuild
-DEF_ACCOUNT=snow
-DEF_UID=1000
-DEF_TIME=12:00:00
-DEF_RUNEXEC="eb --tmp-logdir=/sNow/easybuild/log/tmp $@"
 
 ######
  
@@ -50,9 +53,9 @@ function envsetup() {
 
     SRUN_BIN="/usr/bin/srun"
     # add the interactive partition
-    SBATCH_OPTS="$SBATCH_OPTS -p $DEF_PARTITION"
+    #SBATCH_OPTS="$SBATCH_OPTS -p $DEF_PARTITION"
     # add the snow UID
-    SBATCH_OPTS="$SBATCH_OPTS --uid=$DEF_UID"
+    #SBATCH_OPTS="$SBATCH_OPTS --uid=$DEF_UID"
     # add the default time limit
     SBATCH_OPTS="$SBATCH_OPTS -t $DEF_TIME"
     # add working directory 
