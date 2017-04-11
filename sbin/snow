@@ -40,6 +40,9 @@ HAS_EE=false
 if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
     export PDSH_RCMD_TYPE
+else
+    echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
+    exit 1
 fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
@@ -272,7 +275,8 @@ case $opt1 in
     shutdown)
         case $opt2 in
             domains)  
-                shutdown_domains 
+                shutdown_domains && error_check 0 "Domains are down " || error_check 1 "Some domains are not responsive " &
+                spinner $!             'Shutting down domains'
                 ;;
             cluster)
                 shutdown_cluster $opt3 
