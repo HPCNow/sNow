@@ -53,7 +53,7 @@ if [[ -e $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
     # Transfer Slurm user scripts
     ln -sf $SNOW_TOOL/etc/config_template.d/slurm_client/interactive ${SNOW_TOOL}/bin/
     ln -sf $SNOW_TOOL/etc/config_template.d/slurm_client/eb_wrap ${SNOW_TOOL}/bin/
-    ln -sf $SNOW_TOOL/etc/config_template.d/slurm_client/slurm_share_tree.sh ${SNOW_TOOL}/bin/
+    #ln -sf $SNOW_TOOL/etc/config_template.d/slurm_client/slurm_share_tree.sh ${SNOW_TOOL}/bin/
     if [[ ! -e $SNOW_CONF/system_files/etc/profile.d/slurm-source.sh ]]; then
         cp -p $SNOW_TOOL/etc/config_template.d/slurm_client/slurm-source.* $SNOW_CONF/system_files/etc/profile.d/
     fi
