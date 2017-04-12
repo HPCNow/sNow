@@ -1966,6 +1966,7 @@ function ncmd()
         error_exit "ERROR: No domain(s) or node(s) to execute command."
     fi
     shift
+    check_host_status $(node_list "${nodelist}")
     pdsh -w $nodelist $@
 }
 
@@ -1975,6 +1976,7 @@ function nreboot()
     if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to reboot."
     fi
+    check_host_status $(node_list "${nodelist}")
     pdsh -w ${nodelist} reboot
 }  &>/dev/null
 
@@ -1984,6 +1986,7 @@ function nshutdown()
     if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
+    check_host_status $(node_list "${nodelist}")
     pdsh -w ${nodelist} systemctl poweroff
 }  &>/dev/null
 
@@ -2011,6 +2014,7 @@ function ndestroy()
     if [ -z "${nodelist}" ]; then
         error_exit "ERROR: No domain(s) or node(s) to power down."
     fi
+    check_host_status $(node_list "${nodelist}")
     get_server_distribution ${nodelist}
     if ((${is_vm})) ; then
         xl destroy ${nodelist}
@@ -2104,6 +2108,7 @@ function nuptime()
     if [ -z "${nodelist}" ]; then
         error_exit "ERROR: please, specify the domain(s) or node(s) to check the uptime."
     fi
+    check_host_status $(node_list "${nodelist}")
     pdsh -w ${nodelist} uptime
 }
 
