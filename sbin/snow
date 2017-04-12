@@ -35,6 +35,7 @@ readonly opt3=$3
 readonly opt4=$4
 readonly opt5=$5
 declare -A CLUSTERS
+PDSH_RCMD_TYPE=ssh
 HAS_EE=false
 
 if [[ -f ${CONFIG_FILE} ]]; then
