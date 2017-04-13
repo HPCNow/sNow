@@ -124,7 +124,7 @@ function shelp()
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
         * reboot <domain|node>                      | reboot specific domain or node
-        * shutdown <domain|node>                    | shutdown specific domain or node
+        * shutdown <domain|node>                    | shutdown specific domain or node (equivalent to systemctl poweroff)
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
         * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
         * reset <domain|node>                       | force to reboot specific domain or node
@@ -583,7 +583,8 @@ function init()
             echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
-            warning_msg "Once you are done, execute exportfs -rv"
+            warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
+            info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
         if [[ ! -d /etc/exports.d ]]; then
             mkdir -p /etc/exports.d
@@ -1375,6 +1376,7 @@ function patch_network_configuration()
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
                 gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > ${mount_point}/$i
+                replace_text ${mount_point}/$i "^LINKDELAY" "LINKDELAY=20"
             done
        ;;
        suse|sle[sd]|opensuse)
@@ -1429,9 +1431,15 @@ function hooks()
 function first_boot_hooks()
 {
     local hooks_path=$1
-    cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
-    cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
-    chmod 700 /usr/local/bin/first_boot
+    if [[ ! -e ${hooks_path}/first_boot ]]; then 
+        mkdir -p ${hooks_path}/first_boot
+    fi
+    if [[ ! -e /usr/local/bin/first_boot ]]; then
+        cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
+        cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
+        chmod 700 /usr/local/bin/first_boot
+    fi
+    replace_text /usr/local/bin/first_boot "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
@@ -1445,14 +1453,22 @@ function enable_readonly_root()
         ;;
         rhel|redhat|centos)
             sed -i "s|READONLY=no|READONLY=yes|g" $prefix/etc/sysconfig/readonly-root
-            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
             replace_text $prefix/etc/hosts "^::1" " "
             echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
             echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
+            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy" >> /etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
         ;;
         suse|sle[sd]|opensuse)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
-            chroot $prefix /usr/bin/systemctl disable systemd-readahead-collect.service
+            echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
+            echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
+            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy/rcache" >> /etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1463,10 +1479,16 @@ function enable_readonly_root()
 function generate_rootfs()
 {
     local image=$1
+    local hooks_path=${SNOW_CONF}/boot/images/$image
     # set mount point for the rootfs
     local mount_point="/dev/shm/rootfs"
     # create a mount point
     mkdir -p ${mount_point}
+    # Run hooks:
+    hooks ${hooks_path}
+    # Setup the first boot hooks
+    replace_text /usr/local/bin/first_boot "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    systemctl enable first_boot
     # Transfer required files
     rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
     # Create required directory structure
@@ -1509,10 +1531,6 @@ function generate_rootfs_nfs()
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
     setup_networkfs ${mount_point}
     enable_readonly_root ${mount_point}
-    # Run hooks:
-    hooks ${SNOW_CONF}/boot/images/$image
-    # Setup the first boot hooks
-    first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Setup NFSROOT support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/nfsroot ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}

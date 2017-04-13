@@ -92,9 +92,15 @@ sNow_GID=2000
 sNow_GROUP=snow
 sNow_UID=2000
 sNow_USER=snow
-HPCNow_UID=2001
-HPCNow_GID=2000
-HPCNow_USER=hpcnow
+
+# By default, there is no support from HPCNow! and the hpcnow user is not created.
+# Uncomment and update the following parameters if you have already arranged
+# support from sNow! developers.
+#HPCNow_Support=none
+#HPCNow_UID=2001
+#HPCNow_GID=2000
+#HPCNow_USER=hpcnow
+#HPCNow_GROUP=snow
 
 #
 #         [ Source Control and Continuous Integration Support ]
@@ -161,7 +167,7 @@ NET_COMP=( 'xsnow0' '192.168.0.1' '192.168.1.1' '192.168.1.' '255.255.0.0' '' )
 NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.1.1' '10.0.0.' '255.255.0.0' '-mgmt' )
 
 # The NET_LLF is the low latency fabric network. If you don't use an Infiniband,
-# OPA or other high speed network, just leave it as it is.
+# OPA or other high speed network, just comment the following line:
 
 NET_LLF=( 'xllf0' '10.1.0.1' '10.1.1.1' '10.1.0.' '255.255.0.0' '-ib' )
 

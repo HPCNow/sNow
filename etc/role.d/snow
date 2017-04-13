@@ -281,18 +281,16 @@ fi
 if [[ -e /sNow/snow-configspace/system_files/etc/issue ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
 else
-    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue
-    chmod 644 /sNow/snow-configspace/system_files/etc/issue
-    chown root:root /sNow/snow-configspace/system_files/etc/issue
-    cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
+    echo "======= $GUEST_FQDN =======" > ${prefix}/etc/issue
+    chmod 644 ${prefix}/etc/issue
+    chown root:root ${prefix}/etc/issue
 fi
 if [[ -e /sNow/snow-configspace/system_files/etc/issue.net ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
 else
-    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue.net
-    chmod 644 /sNow/snow-configspace/system_files/etc/issue.net
-    chown root:root /sNow/snow-configspace/system_files/etc/issue.net
-    cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
+    echo "======= $GUEST_FQDN =======" > ${prefix}/etc/issue.net
+    chmod 644 ${prefix}/etc/issue.net
+    chown root:root ${prefix}/etc/issue.net
 fi
 
 # Enable First Boot actions
