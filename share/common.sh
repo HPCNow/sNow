@@ -1376,6 +1376,7 @@ function patch_network_configuration()
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
                 gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > ${mount_point}/$i
+                replace_text ${mount_point}/$i "^LINKDELAY" "LINKDELAY=20"
             done
        ;;
        suse|sle[sd]|opensuse)
