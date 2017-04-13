@@ -17,9 +17,4 @@ function setup_networkfs()
             fi
         done
     fi
-    # Disable readahead
-    systemctl disable systemd-readahead-collect.service
-    systemctl disable systemd-readahead-done.service
-    systemctl disable systemd-readahead-replay.service
-    systemctl disable systemd-readahead-done.timer
 } 1>>$LOGFILE 2>&1
