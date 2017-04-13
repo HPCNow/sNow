@@ -583,7 +583,8 @@ function init()
             echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
-            warning_msg "Once you are done, execute exportfs -rv"
+            warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
+            info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
         if [[ ! -d /etc/exports.d ]]; then
             mkdir -p /etc/exports.d

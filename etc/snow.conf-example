@@ -92,9 +92,15 @@ sNow_GID=2000
 sNow_GROUP=snow
 sNow_UID=2000
 sNow_USER=snow
-HPCNow_UID=2001
-HPCNow_GID=2000
-HPCNow_USER=hpcnow
+
+# By default, there is no support from HPCNow! and the hpcnow user is not created.
+# Uncomment and update the following parameters if you have already arranged
+# support from sNow! developers.
+#HPCNow_Support=none
+#HPCNow_UID=2001
+#HPCNow_GID=2000
+#HPCNow_USER=hpcnow
+#HPCNow_GROUP=snow
 
 #
 #         [ Source Control and Continuous Integration Support ]
