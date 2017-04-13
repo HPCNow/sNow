@@ -4,7 +4,6 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
-TEMPLATE=opensuse-leap-42.2-x86_64-default
 SNOW_PATH=/sNow
 SNOW_TOOL=$SNOW_PATH/snow-tools
 # Load sNow! functions
@@ -19,22 +18,21 @@ fi
 # Load sNow! configuration
 if [[ -e ${SNOW_TOOL}/etc/snow.conf ]]; then
     source ${SNOW_TOOL}/etc/snow.conf
-    TEMPLATE_PATH=${SNOW_CONF}/boot/templates/$TEMPLATE
 else
     error_msg  "The ${SNOW_TOOL}/etc/snow.conf is not available."
     error_exit "Please use the ${SNOW_TOOL}/etc/snow.conf-example to setup your environment."
 fi
 
-if [[ -f ${TEMPLATE_PATH}/config ]]; then
-    info_msg "Loading $TEMPLATE configuration ..."
-    source ${TEMPLATE_PATH}/config
+if [[ -f ${HOOKS_PATH}/config ]]; then
+    info_msg "Loading configuration ..."
+    source ${HOOKS_PATH}/config
 else
     info_msg "Config file not found"
 fi
 
 case "$1" in
   start)
-    hooks ${TEMPLATE_PATH}/first_boot/ 
+    hooks ${HOOKS_PATH}/first_boot
     systemctl disable first_boot
 	;;
   stop)
