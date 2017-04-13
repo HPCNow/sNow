@@ -124,7 +124,7 @@ function shelp()
         * boot domains                              | boot all the domains (all services not available under sNow! HA)
         * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
         * reboot <domain|node>                      | reboot specific domain or node
-        * shutdown <domain|node>                    | shutdown specific domain or node
+        * shutdown <domain|node>                    | shutdown specific domain or node (equivalent to systemctl poweroff)
         * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
         * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
         * reset <domain|node>                       | force to reboot specific domain or node
