@@ -167,7 +167,7 @@ NET_COMP=( 'xsnow0' '192.168.0.1' '192.168.1.1' '192.168.1.' '255.255.0.0' '' )
 NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.1.1' '10.0.0.' '255.255.0.0' '-mgmt' )
 
 # The NET_LLF is the low latency fabric network. If you don't use an Infiniband,
-# OPA or other high speed network, just leave it as it is.
+# OPA or other high speed network, just comment the following line:
 
 NET_LLF=( 'xllf0' '10.1.0.1' '10.1.1.1' '10.1.0.' '255.255.0.0' '-ib' )
 
