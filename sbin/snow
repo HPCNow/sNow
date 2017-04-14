@@ -288,7 +288,18 @@ case $opt1 in
         esac
         ;;
     destroy)
-        ndestroy $opt2
+        case $opt2 in
+            domains)  
+                destroy_domains && error_check 0 "Domains are down " || error_check 1 "Some domains are not responsive " &
+                spinner $!             'Stopping domains'
+                ;;
+            cluster)
+                destroy_cluster $opt3 
+                ;;
+            *)
+                ndestroy $opt2 
+                ;;
+        esac
         ;;
     console)
         nconsole $opt2

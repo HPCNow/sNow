@@ -2045,6 +2045,24 @@ function ndestroy()
     fi
 }
 
+function destroy_domains()
+{
+    for domain in ${SELF_ACTIVE_DOMAINS}
+    do
+        ndestroy ${domain}
+    done
+    unset domain
+}
+
+function destroy_cluster()
+{
+    local cluster=$1
+    if [ -z "${cluster}" ]; then
+        error_exit "ERROR: No cluster to destroy."
+    fi
+    ndestroy ${CLUSTERS[${cluster}]}
+}  &>/dev/null
+
 function npoweroff()
 {
     local nodelist=$1
