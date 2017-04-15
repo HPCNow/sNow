@@ -1249,21 +1249,22 @@ function boot_copy()
     local nodelist=$1
     local pxelinux_action=$2
     local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_type=compute
     for node in $(node_list "${nodelist}"); do
         node_hash=$(gethostip $node | gawk '{print $3}')
-        console_options=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"console_options\"")
+        console_options=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"console_options\"")
         if [[ "${pxelinux_action}" == "deploy" ]]; then
             template=$3
             if [[ -z "${template}" ]]; then
-                template=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"template\"")
-                install_repo=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"install_repo\"")
+                template=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"template\"")
+                install_repo=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"install_repo\"")
             fi
             template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
             template_config=${SNOW_CONF}/boot/templates/${template}/config
-            if ! [[ -f ${template_pxe} ]] ; then
+            if [[ ! -f ${template_pxe} ]] ; then
                 error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
             fi
-            if ! [[ -f ${template_pxe} ]] ; then
+            if [[ ! -f ${template_pxe} ]] ; then
                 warning_message "The following file does not exist: ${template_config}"
             else
                 source ${template_config}
@@ -1277,17 +1278,17 @@ function boot_copy()
         if [[ "${pxelinux_action}" == "boot" ]]; then
             image=$3
             if [[ -z "${image}" ]]; then
-                image=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\".\"image\"")
+                image=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image\"")
                 if [[ "${image}" == "null" ]]; then
                     image=${DEFAULT_BOOT}
                 fi
             fi
             image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
             image_config=${SNOW_CONF}/boot/images/${image}/config
-            if ! [[ -f ${image_pxe} ]] ; then
+            if [[ ! -f ${image_pxe} ]] ; then
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
-            if ! [[ -f ${image_pxe} ]] ; then
+            if [[ ! -f ${image_pxe} ]] ; then
                 warning_message "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
