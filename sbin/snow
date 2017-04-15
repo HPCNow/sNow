@@ -290,7 +290,7 @@ case $opt1 in
     destroy)
         case $opt2 in
             domains)  
-                destroy_domains && error_check 0 "Domains are down " || error_check 1 "Some domains are not responsive " &
+                destroy_domains && error_check 0 "Domains are down " || error_check 1 "Some domains were already down " &
                 spinner $!             'Stopping domains'
                 ;;
             cluster)

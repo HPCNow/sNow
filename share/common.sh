@@ -1936,7 +1936,6 @@ function boot()
         sleep $BLOCKD \; \
         ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
         ::: $(node_list "${nodelist}")
-        sleep $BOOT_DELAY
         info_msg "You can monitor the booting with: snow console <compute-node-name>"
         error_check 0 "Boot started."
     fi
@@ -2059,7 +2058,7 @@ function destroy_cluster()
 {
     local cluster=$1
     if [ -z "${cluster}" ]; then
-        error_exit "ERROR: No cluster to destroy."
+        error_exit "ERROR: No cluster name provided."
     fi
     ndestroy ${CLUSTERS[${cluster}]}
 }  &>/dev/null
