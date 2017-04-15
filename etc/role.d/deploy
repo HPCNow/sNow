@@ -33,18 +33,8 @@ installDebianPackage ${prefix} ipmitool openipmi freeipmi nfs-common
 # KickStart (RedHat Based) - Ref : http://www.tecmint.com/multiple-centos-installations-using-kickstart/
 # Preseed (Debian Based) - Ref :  https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
 
-# Install System Imager (Cloning System)
-REPOFILE=systemimager.org.list
-URL=http://download.systemimager.org/sources.list.d/$REPOFILE
-cd /etc/apt/sources.list.d/
-wget $URL -O ${prefix}/etc/apt/sources.list.d/$REPOFILE
-wget http://systemimager.org/pub/brian@thefinleys.com.gpg.key -O ${prefix}/tmp/brian@thefinleys.com.gpg.key
-chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
-chroot ${prefix} /usr/bin/apt-get update
-installDebianPackage ${prefix} systemimager-server simple-state-manager
-
 # Setup TFTP
-echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      bg,rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
 
 # Setup DNSMASQ
