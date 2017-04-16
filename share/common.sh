@@ -1374,10 +1374,10 @@ function patch_network_configuration()
         ;;
         rhel|redhat|centos)
             gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > ${mount_point}/etc/sysconfig/network
+            replace_text ${mount_point}/etc/sysconfig/network "^LINKDELAY" "LINKDELAY=20"
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
                 gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > ${mount_point}/$i
-                replace_text ${mount_point}/$i "^LINKDELAY" "LINKDELAY=20"
             done
        ;;
        suse|sle[sd]|opensuse)
