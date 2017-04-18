@@ -1373,7 +1373,7 @@ function patch_network_configuration()
             echo "Nothing required"
         ;;
         rhel|redhat|centos)
-            gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > ${mount_point}/etc/sysconfig/network
+            replace_text ${mount_point}/etc/sysconfig/network "^HOSTNAME" "HOSTNAME="
             replace_text ${mount_point}/etc/sysconfig/network "^LINKDELAY" "LINKDELAY=20"
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
