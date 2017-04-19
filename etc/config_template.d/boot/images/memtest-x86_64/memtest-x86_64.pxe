@@ -1,0 +1,5 @@
+default memtest-x86_64
+
+label memtest-x86_64
+    kernel images/memtest-x86_64/vmlinuz
+        append __CONSOLE_OPTIONS__

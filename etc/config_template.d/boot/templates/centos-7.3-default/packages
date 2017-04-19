@@ -7,6 +7,7 @@ bzip2-libs
 csh
 curl
 flex
+ganglia-gmond
 gawk
 git
 hddtemp
@@ -47,6 +48,7 @@ perl-Data-Dumper
 perl-Digest-MD5
 perl-JSON
 perl-Parse-CPAN-Meta
+pigz
 python-devel
 python-pip
 read-edid

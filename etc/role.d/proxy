@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
+#SHORT_DESCRIPTION: Installs proxy server for HTTP(S),FTP and other relay services (NTP, mail).
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -14,11 +14,16 @@ else
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
-    . /sNow/snow-tools/etc/snow.conf
+    source /sNow/snow-tools/etc/snow.conf
 else
-    echo "The /sNow/snow-tools/etc/snow.conf is not available."
-    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
-    exit 1
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 # Hostname 
@@ -34,7 +39,7 @@ if  [[ ! -z "$SNOW_NTP_SERVER" ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
     else
         cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        echo "restrict ${NET_SNOW[2]}0 mask ${NET_SNOW[3]} notrust" >> /sNow/snow-configspace/system_files/etc/ntp_server.conf
+        echo "restrict ${NET_SNOW[3]}0 mask ${NET_SNOW[4]} notrust" >> /sNow/snow-configspace/system_files/etc/ntp_server.conf
         sed -i "s|__NTP_SERVER__|$NTP_SERVER|g" /sNow/snow-configspace/system_files/etc/ntp_server.conf
         chmod 644 /sNow/snow-configspace/system_files/etc/ntp_server.conf
         cp -p /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
@@ -53,7 +58,7 @@ if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then
     else
         mkdir -p /sNow/snow-configspace/system_files/etc/squid3
         cp -pr /sNow/snow-tools/etc/config_template.d/squid3/* /sNow/snow-configspace/system_files/etc/squid3/
-        sed -i "s|__ALLOWED_HOSTS__|${NET_SNOW[2]}0/${NET_SNOW[3]}|g" /sNow/snow-configspace/system_files/etc/squid3/*
+        sed -i "s|__ALLOWED_HOSTS__|${NET_SNOW[3]}0/${NET_SNOW[4]}|g" /sNow/snow-configspace/system_files/etc/squid3/*
         sed -i "s|__PROXY_SERVER__|$SNOW_PROXY_SERVER|g" /sNow/snow-configspace/system_files/etc/squid3/*
         sed -i "s|__PROXY_PORT__|$SNOW_PROXY_PORT|g" /sNow/snow-configspace/system_files/etc/squid3/*
         chmod 644 /sNow/snow-configspace/system_files/etc/squid3/*
@@ -73,7 +78,7 @@ if  [[ ! -z "$SNOW_MAIL_SERVER" ]]; then
         chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
 exim4-config    exim4/hide_mailname boolean false
 exim4-config    exim4/dc_localdelivery select mbox format in /var/mail/
-exim4-config    exim4/dc_relay_nets string ${NET_SNOW[2]}0/${NET_SNOW[3]}
+exim4-config    exim4/dc_relay_nets string ${NET_SNOW[3]}0/${NET_SNOW[4]}
 exim4-config    exim4/dc_minimaldns boolean false
 exim4-config    exim4/dc_other_hostnames string $DOMAIN
 exim4-config    exim4/use_split_config boolean true

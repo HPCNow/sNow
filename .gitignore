@@ -32,6 +32,13 @@ etc/snow_exports.conf
 etc/vms.conf
 etc/nodes.json
 
+# Ignore all the files in $SNOW_TOOLS/bin except the mandatory files
+bin/*
+!bin/easybuild-source.csh
+!bin/easybuild-source.sh
+!bin/snow-source.csh
+!bin/snow-source.sh
+
 # Temporary vi and emacs files 
 *.swp
 *~

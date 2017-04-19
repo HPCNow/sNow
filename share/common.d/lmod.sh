@@ -13,7 +13,7 @@ function install_lmod()
             pkgs="lua-devel lua-filesystem lua-posix"
         ;;
         suse|sle[sd]|opensuse)
-            pkgs="lua lua-filesystem lua-posix"
+            pkgs="lua lua-devel lua-luafilesystem lua-luaposix"
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -24,7 +24,8 @@ function install_lmod()
         if [[ ! -e $SNOW_SOFT/lmod/lmod/init/profile ]]; then
             chown -R $sNow_USER:$sNow_GROUP $SNOW_SOFT
             cd $SNOW_SOFT
-            su $sNow_USER -c "unset https_proxy; git clone https://github.com/TACC/Lmod.git /tmp/Lmod; cd /tmp/Lmod; ./configure --prefix=$SNOW_SOFT; make; make install"
+            su $sNow_USER -c "unset https_proxy; git clone https://github.com/TACC/Lmod.git /dev/shm/Lmod; cd /dev/shm/Lmod; ./configure --prefix=$SNOW_SOFT; make; make install"
+            rm -fr /dev/shm/Lmod
         fi
     fi
     ln -sf $SNOW_SOFT/lmod/lmod/init/profile /etc/profile.d/lmod.sh

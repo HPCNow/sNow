@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-
+#SHORT_DESCRIPTION: Installs LDAP master server.
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -14,11 +14,16 @@ else
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
-    . /sNow/snow-tools/etc/snow.conf
+    source /sNow/snow-tools/etc/snow.conf
 else
-    echo "The /sNow/snow-tools/etc/snow.conf is not available."
-    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
-    exit 1
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 # LDAP Server Setup
@@ -29,7 +34,7 @@ SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
 LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
 LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
 LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
-LDAP_PASSWORD="${LDAP_PASSWORD:-$MASTER_PASSWORD}"
+LDAP_ADMIN_PASSWORD="${LDAP_ADMIN_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
@@ -46,8 +51,8 @@ if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then
         #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
         slapd slapd/no_configuration boolean false
-        slapd slapd/password1 password $LDAP_PASSWORD
-        slapd slapd/password2 password $LDAP_PASSWORD
+        slapd slapd/password1 password $LDAP_ADMIN_PASSWORD
+        slapd slapd/password2 password $LDAP_ADMIN_PASSWORD
         slapd shared/organization string $LDAP_ORGANIZATION
         slapd slapd/domain string $LDAP_BASE
         slapd slapd/backend select HDB

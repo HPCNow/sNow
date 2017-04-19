@@ -6,24 +6,28 @@
 # --
 # http://www.steve.org.uk/
 #
-
-
+#SHORT_DESCRIPTION: Installs GDM with VNC support.
 prefix=$1
 
-
-
-#
 #  Source our common functions - this will let us install a Debian package.
-#
-if [ -e /usr/share/xen-tools/common.sh ]; then
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
     . /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
-
-
-
-
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
 
 #
 #  Update APT lists.

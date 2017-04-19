@@ -3,6 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+#SHORT_DESCRIPTION: Base role responsible to setup all the required clients and generate the configuration files.
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -13,11 +14,16 @@ else
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
-    . /sNow/snow-tools/etc/snow.conf
+    source /sNow/snow-tools/etc/snow.conf
 else
-    echo "The /sNow/snow-tools/etc/snow.conf is not available."
-    echo "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
-    exit 1
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
 fi
 
 # Include HPCNow! repository
@@ -112,7 +118,7 @@ LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
 LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
 if  [[ ! -z "$LDAP_SERVER" ]]; then 
     if [[ "$LDAP_TLS" == "TRUE" || "$LDAP_PROTO" == "ldaps" ]]; then
-        installDebianPackage ${prefix} libpam-ldap sssd-ldap sssd-tools sssd-common
+        installDebianPackage ${prefix} libnss-sss libpam-sss sssd-ldap sssd-tools sssd-common
         if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
             #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
@@ -125,6 +131,8 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
             chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
         fi
+        chown root:root ${prefix}/etc/sssd/sssd.conf
+        chmod 600 ${prefix}/etc/sssd/sssd.conf
     elif [[ "$LDAP_TLS" == "FALSE" && "$LDAP_PROTO" != "ldaps" ]]; then 
         installDebianPackage ${prefix} ldap-utils libpam-ldap libnss-ldap nscd nslcd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
@@ -273,18 +281,16 @@ fi
 if [[ -e /sNow/snow-configspace/system_files/etc/issue ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
 else
-    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue
-    chmod 644 /sNow/snow-configspace/system_files/etc/issue
-    chown root:root /sNow/snow-configspace/system_files/etc/issue
-    cp -p /sNow/snow-configspace/system_files/etc/issue ${prefix}/etc/
+    echo "======= $GUEST_FQDN =======" > ${prefix}/etc/issue
+    chmod 644 ${prefix}/etc/issue
+    chown root:root ${prefix}/etc/issue
 fi
 if [[ -e /sNow/snow-configspace/system_files/etc/issue.net ]]; then 
     cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
 else
-    echo "======= $GUEST_FQDN =======" > /sNow/snow-configspace/system_files/etc/issue.net
-    chmod 644 /sNow/snow-configspace/system_files/etc/issue.net
-    chown root:root /sNow/snow-configspace/system_files/etc/issue.net
-    cp -p /sNow/snow-configspace/system_files/etc/issue.net ${prefix}/etc/
+    echo "======= $GUEST_FQDN =======" > ${prefix}/etc/issue.net
+    chmod 644 ${prefix}/etc/issue.net
+    chown root:root ${prefix}/etc/issue.net
 fi
 
 # Enable First Boot actions

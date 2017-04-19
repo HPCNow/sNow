@@ -3,6 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
+#SHORT_DESCRIPTION: Installs the required to deploy OS and boot OS via PXE and TFTP. It also provides DHCP and DNS.
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
@@ -32,18 +33,8 @@ installDebianPackage ${prefix} ipmitool openipmi freeipmi nfs-common
 # KickStart (RedHat Based) - Ref : http://www.tecmint.com/multiple-centos-installations-using-kickstart/
 # Preseed (Debian Based) - Ref :  https://www.debian-administration.org/article/708/Automating_the_Debian_installer_with_PXE_and_preseeding
 
-# Install System Imager (Cloning System)
-REPOFILE=systemimager.org.list
-URL=http://download.systemimager.org/sources.list.d/$REPOFILE
-cd /etc/apt/sources.list.d/
-wget $URL -O ${prefix}/etc/apt/sources.list.d/$REPOFILE
-wget http://systemimager.org/pub/brian@thefinleys.com.gpg.key -O ${prefix}/tmp/brian@thefinleys.com.gpg.key
-chroot ${prefix} /usr/bin/apt-key add /tmp/brian@thefinleys.com.gpg.key
-chroot ${prefix} /usr/bin/apt-get update
-installDebianPackage ${prefix} systemimager-server simple-state-manager
-
 # Setup TFTP
-echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      rw,defaults     0 0 " >> ${prefix}/etc/fstab
+echo "$NFS_SERVER:$SNOW_CONF/boot   /srv/tftp   nfs      bg,rw,defaults     0 0 " >> ${prefix}/etc/fstab
 mkdir -p ${prefix}/srv/tftp
 
 # Setup DNSMASQ
@@ -51,17 +42,17 @@ SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.co
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
-    last_ip=$(last_ip_in_range ${NET_SNOW[2]}100/${NET_SNOW[3]})
+    last_ip=$(last_ip_in_range ${NET_COMP[2]}/${NET_COMP[4]})
     echo "
 interface=$DHCP_NIC
 # Gateway
-dhcp-option=3,$GATEWAY
+dhcp-option=3,${NET_COMP[1]}
 # DNS
 dhcp-option=6,$SNOW_DNS_SERVER,$DNS_SERVERS
 # Domain Name
 dhcp-option=15,$DOMAIN
 # 0.0.0.0 Means to reference self for this option
-dhcp-range=$DHCP_NIC,${NET_SNOW[2]}100,${last_ip},24h
+dhcp-range=$DHCP_NIC,${NET_COMP[2]},${last_ip},24h
 dhcp-boot=pxelinux.0
 addn-hosts=/etc/static_hosts
 dhcp-sequential-ip
@@ -108,7 +99,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
         PROXY_SERVER="${SITE_PROXY_SERVER:-$SNOW_PROXY_SERVER}"
         PROXY_PORT="${SITE_PROXY_PORT:-8080}"
     fi
-    for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-default" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
+    for tmpl in $(find $SNOW_CONF/boot/templates/ -name "*-*" -type d | sed -e "s|$SNOW_CONF/boot/templates/||g"); do
         for file in $(find $SNOW_CONF/boot/templates/$tmpl -type f); do
             sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
             sed -i "s|__LANG__|$LANG|g" $file
@@ -116,6 +107,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
             sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
             sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" $file
             sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
+            sed -i "s|__SNOW_HOME__|$SNOW_HOME|g" $file
             sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
             sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 
         done 
