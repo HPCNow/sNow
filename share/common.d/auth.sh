@@ -11,7 +11,7 @@ function setup_ldap_client()
             echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
         ;;
         rhel|redhat|centos)
-            pkgs="sssd-common sssd-client sssd-ldap"
+            pkgs="sssd sssd-common sssd-client sssd-ldap"
             sed -i "s|USEMKHOMEDIR=no|USEMKHOMEDIR=yes|g" /etc/sysconfig/authconfig
             authconfig --enablemkhomedir --update
         ;;
