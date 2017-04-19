@@ -1373,11 +1373,11 @@ function patch_network_configuration()
             echo "Nothing required"
         ;;
         rhel|redhat|centos)
-            gawk '{if($1 ~ /^HOSTNAME/){print "HOSTNAME="}else{print $0}}' /etc/sysconfig/network > ${mount_point}/etc/sysconfig/network
+            replace_text ${mount_point}/etc/sysconfig/network "^HOSTNAME" "HOSTNAME="
+            replace_text ${mount_point}/etc/sysconfig/network "^LINKDELAY" "LINKDELAY=20"
             for i in $(ls -1 /etc/sysconfig/network-scripts/ifcfg-*)
             do
                 gawk '{if($1 ~ /^HWADDR/){print "HWADDR="}else{print $0}}' $i > ${mount_point}/$i
-                replace_text ${mount_point}/$i "^LINKDELAY" "LINKDELAY=20"
             done
        ;;
        suse|sle[sd]|opensuse)
@@ -1440,7 +1440,7 @@ function first_boot_hooks()
         cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
         chmod 700 /usr/local/bin/first_boot
     fi
-    replace_text /usr/local/bin/first_boot "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
@@ -1488,7 +1488,7 @@ function generate_rootfs()
     # Run hooks:
     hooks ${hooks_path}
     # Setup the first boot hooks
-    replace_text /usr/local/bin/first_boot "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     systemctl enable first_boot
     # Transfer required files
     rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
