@@ -1361,7 +1361,7 @@ function deploy()
         ::: $(node_list "${nodelist}")
         sleep $BOOT_DELAY
         info_msg "You can monitor the deployment with: snow console <compute-node-name>"
-        boot_copy "${nodelist}" boot
+        boot_copy "${nodelist}" boot localboot
         error_check 0 "Deployment started."
     fi
 }  1>>$LOGFILE 2>&1
