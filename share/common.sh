@@ -1335,7 +1335,7 @@ function deploy()
                 info_msg "Use 'force' option to avoid the waiting."
                 sleep 10
             elif [[ "$opt3" == "force"  ]]; then
-                warning_msg "The node(s) ${nodelist} will be deployed with default template. All the data located in the local file system will be removed."
+                warning_msg "The node(s) ${nodelist} will be deployed. The data located in the local file system may be removed."
             else
                 local template=$opt3
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
@@ -1345,7 +1345,7 @@ function deploy()
         else
             if [[ "$opt4" == "force" ]]; then
                 local template=$opt3
-                warning_msg "The node(s) ${nodelist} will be deployed with $template template. All the data located in the local file system will be removed."
+                warning_msg "The node(s) ${nodelist} will be deployed with $template template. The data located in the local file system may be removed."
             else
                 error_exit "sNow! deploy only supports the following options: snow deploy <domain|server> <template> <force>"
             fi

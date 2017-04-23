@@ -1,5 +1,5 @@
-[1.1.0]
-*Major fixes*
+## 1.1.0
+### Major fixes
 
 * FIX default console options and install repo
 * FIX issue #63 - missing mail program and empty license variable
@@ -14,7 +14,7 @@
 * Fix IPv6 issues related with RPCbind Server Activation Socket.
 
 
-*New Features and Changes*
+### New Features and Changes
 
 * included OpenSUSE Leap 42.2 template
 * Diskless image support based on read-only nfsroot image
@@ -44,9 +44,14 @@
 * Introduced NET_COMP in order to define the DHCP service for the compute nodes
 
 
-*Known Issues*
+### Known Issues
 
 * Read-only NFSROOT image only working for CentOS/RHEL. Tuned dracut module is required to enable it for SuSE
 
 
+## 1.1.1
 
+### Major fixes
+
+* Fix issue related with multicluster in ganglia monitoring
+* Fix issue with minimal domain role deployment
