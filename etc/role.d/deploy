@@ -80,10 +80,14 @@ cp -p $SNOW_TOOL/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 # DNS Client Setup
 if [[ -e $SNOW_CONF/system_files/etc/resolv.conf ]]; then 
     echo "search $DOMAIN" > ${prefix}/etc/resolv.conf
-    SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
-    PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
-    echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
-    echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
+    if [[ ! -z "$SITE_DNS_SERVER" ]]; then
+        SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "$SITE_DNS" >> ${prefix}/etc/resolv.conf
+    fi
+    if [[ ! -z "$DNS_SERVERS" ]]; then 
+        PUBLIC_DNS=$(echo $DNS_SERVERS | tr ',' '\n' | gawk '{print "nameserver "$1}')
+        echo "$PUBLIC_DNS" >> ${prefix}/etc/resolv.conf
+    fi
 fi
 
 # Install and setup sNow! deploy system
