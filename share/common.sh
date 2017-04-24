@@ -103,8 +103,8 @@ function shelp()
         * update template                           | updates the sNow! image used to create new domains
         * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
         * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
-        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_repo, console_options
-        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_repo, console_options
+        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_proxy, install_repo, console_options
+        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_proxy, install_repo, console_options
         * clone template <old> <new> <description>  | creates a new template based on an existing one
         * clone image <old> <new> <description>     | creates a new image based on an existing one
         * clone node <node> <image> <type>          | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
@@ -942,6 +942,7 @@ function add_node()
     local image=${DEFAULT_BOOT} 
     local template=${DEFAULT_TEMPLATE}
     local install_repo=${INSTALL_REPO}
+    local install_proxy=${INSTALL_PROXY}
     local console_options=${DEFAULT_CONSOLE_OPTIONS}
     local last_deploy=null
     shift
@@ -970,6 +971,14 @@ function add_node()
                     shift
                 else
                     error_exit "Option template missing"
+                fi
+                ;;
+            -p|--install_proxy)
+                if [ -n "$2" ]; then
+                    install_proxy="$2"
+                    shift
+                else
+                    error_exit "Option install_proxy missing"
                 fi
                 ;;
             -r|--install_repo)
@@ -1080,6 +1089,14 @@ function set_node()
                     error_exit "Option template missing"
                 fi
                 ;;
+            -p|--install_proxy)
+                if [[ -n "$2" ]]; then
+                    local install_proxy="$2"
+                    shift
+                else
+                    error_exit "Option install_proxy missing"
+                fi
+                ;;
             -r|--install_repo)
                 if [[ -n "$2" ]]; then
                     local install_repo="$2"
@@ -1174,6 +1191,9 @@ function set_snow_json()
     if [[ -n "$template" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"template\" = \"${template}\"")
     fi
+    if [[ -n "${install_proxy}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"install_proxy\" = \"${install_proxy}\"")
+    fi
     if [[ -n "${install_repo}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"install_repo\" = \"${install_repo}\"")
     fi
@@ -1257,6 +1277,7 @@ function boot_copy()
             template=$3
             if [[ -z "${template}" ]]; then
                 template=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"template\"")
+                install_proxy=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"install_proxy\"")
                 install_repo=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"install_repo\"")
             fi
             template_pxe=${SNOW_CONF}/boot/templates/${template}/${template}.pxe
@@ -1269,10 +1290,14 @@ function boot_copy()
             else
                 source ${template_config}
             fi
+            if [[ "${install_proxy}" == "null" || -z "${install_proxy}" ]]; then
+                install_proxy=${INSTALL_PROXY}
+            fi
             if [[ "${install_repo}" == "null" || -z "${install_repo}" ]]; then
                 install_repo=${INSTALL_REPO}
             fi
             cp -p ${template_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__INSTALL_PROXY__|${install_proxy}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
             sed -i "s|__INSTALL_REPO__|${install_repo}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         fi
         if [[ "${pxelinux_action}" == "boot" ]]; then
@@ -1888,7 +1913,7 @@ function check_host_status()
     local host=$1
     ping -c 1 ${host} &> /dev/null
     if [[ "$?" != "0" ]]; then
-        error_exit "The host ${host} is not responsive. Please check the host name, DNS server or /etc/hosts."
+        error_msg "The host ${host} is not responsive. Please check the host name, DNS server or /etc/hosts."
     fi
 }
 
