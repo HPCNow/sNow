@@ -29,35 +29,20 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     architecture_identification
 fi
 
-#
 #  Update APT lists.
-#
 chroot ${prefix} /usr/bin/apt-get update
 
-#
 #  Install the packages
-#
-installDebianPackage ${prefix} xserver-xfree86
-installDebianPackage ${prefix} vncserver
+installDebianPackage ${prefix} xserver-xorg
+installDebianPackage ${prefix} openbsd-inetd
+installDebianPackage ${prefix} vnc4server
 installDebianPackage ${prefix} xfonts-100dpi
 installDebianPackage ${prefix} xfonts-75dpi
 installDebianPackage ${prefix} xfonts-base
 installDebianPackage ${prefix} rxvt
-installDebianPackage ${prefix} gdm
-installDebianPackage ${prefix} icewm-experimental
+installDebianPackage ${prefix} gdm3
+installDebianPackage ${prefix} lxde-core
 
-#
-#  Add a new section to the GDM configuration file.
-#
-cat <<EOF >> ${prefix}/etc/gdm/gdm.conf
-[server-VNC]
-name=VNC server
-command=/usr/bin/Xvnc -geometry 800x600 -depth 24
-flexible=true
-EOF
-
-
-#
-#  Make the new section the default
-#
-perl -pi.bak -e 's/^0=Standard\n//g ; s/^\[servers\]/\[servers\]\n0=VNC/g' ${prefix}/etc/gdm/gdm.conf 
+# Add a new section to the GDM3 configuration file and setup inetd.conf
+replace_text ${prefix}/etc/gdm3/daemon.conf "[xdmcp]" "[xdmcp]\n Enable=true"
+replace_text ${prefix}/etc/inetd.conf "5900" "5900  stream  tcp  nowait  nobody.tty  /usr/bin/Xvnc Xvnc -inetd -query localhost -once -geometry 1024x768 -depth 16 securitytypes=none"

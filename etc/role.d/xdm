@@ -29,32 +29,22 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     architecture_identification
 fi
 
-#
 #  Update APT lists.
-#
 chroot ${prefix} /usr/bin/apt-get update
 
-#
 #  Install the packages
-#
-installDebianPackage ${prefix} xserver-xfree86
-installDebianPackage ${prefix} vncserver
+installDebianPackage ${prefix} xserver-xorg
+installDebianPackage ${prefix} vnc4server
 installDebianPackage ${prefix} xfonts-100dpi
 installDebianPackage ${prefix} xfonts-75dpi
 installDebianPackage ${prefix} xfonts-base
 installDebianPackage ${prefix} rxvt
 installDebianPackage ${prefix} xdm
-installDebianPackage ${prefix} icewm-experimental
+installDebianPackage ${prefix} lxde-core
 
-
-#
 #  Remove the default settings.
-#
 rm ${prefix}/etc/X11/xdm/Xserver
 rm ${prefix}/etc/X11/xdm/Xservers
 
-#
 #  Setup XDM to use the VNC server we installed.
-#
-/bin/echo ':0 /usr/bin/Xvnc /usr/bin/Xvnc -geometry 1024x768 -depth 24' > \
-  ${prefix}/etc/X11/xdm/Xservers
+/bin/echo ':0 /usr/bin/Xvnc /usr/bin/Xvnc -geometry 1024x768 -depth 24' > ${prefix}/etc/X11/xdm/Xservers
