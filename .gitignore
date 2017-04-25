@@ -31,6 +31,7 @@ etc/snow.conf
 etc/snow_exports.conf
 etc/vms.conf
 etc/nodes.json
+etc/slurm.env
 
 # Ignore all the files in $SNOW_TOOLS/bin except the mandatory files
 bin/*

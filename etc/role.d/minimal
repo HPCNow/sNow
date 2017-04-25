@@ -1,23 +1,22 @@
-#!/bin/sh
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
 #
-#  Configure the new image to be a minimal image, by removing
-# packages I don't care about - and installing new ones I prefer.
-#
-# Steve
-# --
-# http://www.steve.org.uk/
+# Based on Steve Kemp's role: http://www.steve.org.uk/
 #
 #SHORT_DESCRIPTION: Installs a minimal OS.
 prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
-    . /usr/share/xen-tools/common.sh
+    source /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
     source /sNow/snow-tools/etc/snow.conf
 else
     error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
@@ -30,39 +29,58 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     architecture_identification
 fi
 
-#  Install some new packages - do this first to avoid dependency errors.
-installDebianPackage ${prefix} syslog-ng 
-installDebianPackage ${prefix} deborphan
-installDebianPackage ${prefix} less
-installDebianPackage ${prefix} screen
-installDebianPackage ${prefix} sudo
-installDebianPackage ${prefix} vim
-
-#  Remove some standard packages.
-
-# PPP stuff.
-removeDebianPackage ${prefix} pppconfig
-removeDebianPackage ${prefix} pppoeconf
-removeDebianPackage ${prefix} pppoe
-removeDebianPackage ${prefix} ppp
-removeDebianPackage ${prefix} libpcap0.7
-
-# Editors
+removeDebianPackage ${prefix} build-essential
+removeDebianPackage ${prefix} byobu
+removeDebianPackage ${prefix} bzip2
+removeDebianPackage ${prefix} cpp
+removeDebianPackage ${prefix} cpp-4.9
+removeDebianPackage ${prefix} dash
+removeDebianPackage ${prefix} dmidecode
+removeDebianPackage ${prefix} fakeroot
+removeDebianPackage ${prefix} g++
+removeDebianPackage ${prefix} g++-4.9
+removeDebianPackage ${prefix} gcc
+removeDebianPackage ${prefix} gcc-4.8-base:amd64
+removeDebianPackage ${prefix} gcc-4.9
+removeDebianPackage ${prefix} gcc-4.9-base:amd64
+removeDebianPackage ${prefix} git
+removeDebianPackage ${prefix} git-man
+removeDebianPackage ${prefix} gnupg
+removeDebianPackage ${prefix} htop
+removeDebianPackage ${prefix} iotop
+removeDebianPackage ${prefix} iproute2
+removeDebianPackage ${prefix} iptables
+removeDebianPackage ${prefix} iptraf
+removeDebianPackage ${prefix} iputils-ping
+removeDebianPackage ${prefix} less
+removeDebianPackage ${prefix} lsof
+removeDebianPackage ${prefix} make
+removeDebianPackage ${prefix} man-db
+removeDebianPackage ${prefix} manpages
+removeDebianPackage ${prefix} mawk
+removeDebianPackage ${prefix} members
+removeDebianPackage ${prefix} mime-support
 removeDebianPackage ${prefix} nano
-removeDebianPackage ${prefix} ed
-removeDebianPackage ${prefix} nvi
-
-# Syslog
-removeDebianPackage ${prefix} klogd
-removeDebianPackage ${prefix} sysklogd
-
-# manpages
-removeDebianPackage ${prefix} manpages  
-removeDebianPackage ${prefix} man-db 
-removeDebianPackage ${prefix} info
-
-# misc
-removeDebianPackage ${prefix} tasksel tasksel-data
-removeDebianPackage ${prefix} pciutils
-removeDebianPackage ${prefix} fdutils
-removeDebianPackage ${prefix} cpio
+removeDebianPackage ${prefix} ncurses-base
+removeDebianPackage ${prefix} ncurses-bin
+removeDebianPackage ${prefix} netcat-traditional
+removeDebianPackage ${prefix} parallel
+removeDebianPackage ${prefix} patch
+removeDebianPackage ${prefix} perl
+removeDebianPackage ${prefix} perl-base
+removeDebianPackage ${prefix} perl-modules
+removeDebianPackage ${prefix} readline-common
+removeDebianPackage ${prefix} rsyslog
+removeDebianPackage ${prefix} sensible-utils
+removeDebianPackage ${prefix} startpar
+removeDebianPackage ${prefix} tmux
+removeDebianPackage ${prefix} traceroute
+removeDebianPackage ${prefix} vim
+removeDebianPackage ${prefix} vim-common
+removeDebianPackage ${prefix} vim-runtime
+removeDebianPackage ${prefix} vim-tiny
+removeDebianPackage ${prefix} wget
+removeDebianPackage ${prefix} xz-utils
+chroot ${prefix} /usr/bin/apt-get autoclean 
+chroot ${prefix} /usr/bin/apt-get clean 
+rm -fr ${prefix}/var/lib/apt/*

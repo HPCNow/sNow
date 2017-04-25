@@ -8,12 +8,13 @@ prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
-    . /usr/share/xen-tools/common.sh
+    source /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
     source /sNow/snow-tools/etc/snow.conf
 else
     error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
@@ -25,27 +26,13 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     get_os_distro
     architecture_identification
 fi
-#
-#  This role installs CFengine upon the new guest system.
-#
-#  It must make sure that the server is not running before it exits 
-# otherwise the temporary mounted directory will not be unmountable.
-#
-
-# Log our start
-logMessage Script $0 starting
-
 
 #  Install CFengine
 installDebianPackage ${prefix} cfengine2
 
-#  Make sure the CFengine server isn't running, this will cause our
-# unmounting of the disk image to fail..
+#  Make sure the CFengine server isn't running, this will cause unmounting of the disk image to fail..
 chroot ${prefix} /etc/init.d/cfengine2 stop
 
 #  Copy cfengine update.conf & defaults from Dom0
 cp /etc/cfengine/update.conf ${prefix}/etc/cfengine/
 cp /etc/default/cfengine2 ${prefix}/etc/default/
-
-#  Log our finish
-logMessage Script $0 finished

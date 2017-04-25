@@ -8,54 +8,52 @@ function install_docker()
 {
     case $OS in
         debian)
-            apt-get -y purge lxc-docker*
-            apt-get -y purge docker.io*
-            apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-            echo "deb https://apt.dockerproject.org/repo debian-jessie main" > /etc/apt/sources.list.d/docker.list
+            apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+            curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
             apt-get -y update
-            apt-cache policy docker-engine
-            apt-get -y install docker-engine
+            apt-get -y install docker-ce
             groupadd docker
-            gpasswd -a $sNow_USER docker
-            service docker restart
+            usermod -aG docker $sNow_USER
+            systemctl enable docker
+            systemctl start docker
         ;;
         ubuntu)
-            apt-get -y install linux-image-extra-$(uname -r)
-            apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-            echo "deb https://apt.dockerproject.org/repo ubuntu-wily main" > /etc/apt/sources.list.d/docker.list
+            apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
             apt-get -y update
-            apt-get -y purge lxc-docker
-            apt-cache policy docker-engine
-            apt-get -y install docker-engine
+            apt-get -y install docker-ce
+            groupadd docker
             usermod -aG docker $sNow_USER
+            systemctl enable docker
+            systemctl start docker
             echo "GRUB_CMDLINE_LINUX=\"cgroup_enable=memory swapaccount=1\"" >> /etc/default/grub
             update-grub
-            service docker start
-            systemctl enable docker
         ;;
         rhel|redhat|centos)
             yum -y update
             curl -sSL https://get.docker.com/ | sh
             usermod -aG docker $sNow_USER
-            chkconfig docker on
-            service docker start
-       ;;
-       suse|sle[sd]|opensuse)
-           zypper -n --no-gpg-checks in docker
-           /usr/sbin/usermod -a -G docker $sNow_USER
-           echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-           sysctl -p /etc/sysctl.conf
-           systemctl start docker
-           systemctl enable docker
-       ;;
-   esac
+            systemctl start docker
+            systemctl enable docker
+        ;;
+        suse|sle[sd]|opensuse)
+            zypper -n --no-gpg-checks in docker
+            /usr/sbin/usermod -a -G docker $sNow_USER
+            echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+            sysctl -p /etc/sysctl.conf
+            systemctl start docker
+            systemctl enable docker
+        ;;
+    esac
 }
 
 function setup_docker()
 {
     if is_master; then
         install_docker
-        curl -L https://github.com/docker/compose/releases/download/1.6.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+        curl -L https://github.com/docker/compose/releases/download/1.12.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
         chmod +x /usr/local/bin/docker-compose
         #su - $sNow_USER -c "cd $SNOW_CONF/docker_files; docker-compose up -d"
     else
