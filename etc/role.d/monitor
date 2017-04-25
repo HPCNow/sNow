@@ -8,12 +8,13 @@ prefix=$1
 
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
-    . /usr/share/xen-tools/common.sh
+    source /usr/share/xen-tools/common.sh
 else
     echo "Installation problem"
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
     source /sNow/snow-tools/etc/snow.conf
 else
     error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
@@ -47,22 +48,15 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
         cp -p $SNOW_CONF/system_files/etc/ganglia/gmetad.conf ${prefix}/etc/ganglia/gmetad.conf
     else
         cp -p $SNOW_TOOL/etc/config_template.d/ganglia/gmetad.conf ${prefix}/etc/ganglia/gmetad.conf
-        for i in "${!CLUSTERS[@]}" 
+        for cluster in "${!CLUSTERS[@]}" 
         do 
-            gawk -v cluster="$i" '{
-                if($1 ~ /^__DATA_SOURCE_COMPUTE__/){
-                    print "__DATA_SOURCE_COMPUTE__"
-                    print "data_source \""cluster"\" 60 localhost \n"
-                }
-                else{
-                    print $0
-                }
-            }' ${prefix}/etc/ganglia/gmetad.conf > ${prefix}/etc/ganglia/gmetad.conf.0
-            mv ${prefix}/etc/ganglia/gmetad.conf.0 ${prefix}/etc/ganglia/gmetad.conf
+            nodelist=${CLUSTERS[$cluster]}
+            aggregators=$(node_list "${nodelist}" | gawk '{print $1" "$2}')
+            replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_COMPUTE__" "#__DATA_SOURCE_COMPUTE__\ndata_source $cluster 60 $aggregators"
+            unset nodelist
+            unset aggregators
         done
-        sed -i "s|__DATA_SOURCE_COMPUTE__|#__DATA_SOURCE_COMPUTE__|g" ${prefix}/etc/ganglia/gmetad.conf
-        sed -i "s|__DATA_SOURCE_DOMAINS__|data_source \"sNow! Domains\" 60 localhost|g" ${prefix}/etc/ganglia/gmetad.conf
-        sed -i "s|__DATA_SOURCE_CFS__|data_source \"Cluster File System\" 60 localhost|g" ${prefix}/etc/ganglia/gmetad.conf
+        replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_DOMAINS__" "data_source \"sNow! Domains\" 60 $SNOW_MONITOR_SERVER"
         mkdir -p $SNOW_CONF/system_files/etc/ganglia/
         cp -p ${prefix}/etc/ganglia/gmetad.conf $SNOW_CONF/system_files/etc/ganglia/gmetad.conf
     fi

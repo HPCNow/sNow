@@ -1,1 +1,2 @@
 INSTALL_REPO=http://download.opensuse.org/distribution/leap/42.2/repo/oss/
+INSTALL_PROXY=http://__PROXY_SERVER__:__PROXY_PORT__
