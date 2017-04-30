@@ -35,10 +35,10 @@ cp -p $SNOW_TOOL/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_
 sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 
 # Domain Setup
-if [[ -d /sNow/snow-configspace/files/etc/openvpn_as ]]; then
-    cp -pr /sNow/snow-configspace/files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
+if [[ -d /sNow/snow-configspace/system_files/etc/openvpn_as ]]; then
+    cp -pr /sNow/snow-configspace/system_files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
     sed -i "s|__OPENVPNAS_RECONFIGURE__|false|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 else
-    mkdir -p /sNow/snow-configspace/files/etc/openvpn_as
+    mkdir -p /sNow/snow-configspace/system_files/etc/openvpn_as
     sed -i "s|__OPENVPNAS_RECONFIGURE__|true|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 fi
