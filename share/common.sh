@@ -1788,7 +1788,7 @@ function avail_domains()
         if [[ ! -z $domain ]]; then
             hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
             if [[ "$hw_status" == "on" ]]; then
-                os_status="$(ssh ${domain} uptime -p || echo 'down')"
+                os_status="$(ssh -o ConnectTimeout=5 ${domain} uptime -p || echo 'down')"
             else
                 os_status="down"
             fi
@@ -1924,7 +1924,7 @@ function boot()
         error_exit "No domain or node to boot."
     fi
     get_server_distribution ${nodelist}
-    if ((${is_vm})) ; then
+    if ((${is_vm})); then
         local domain=${nodelist}
         if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
             local is_up=$(xl list ${domain})
@@ -1935,7 +1935,7 @@ function boot()
                 warning_msg "The domain ${domain} is already runnning"
             fi
         else
-            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
+            error_msg "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
         local image=$2
@@ -1980,8 +1980,7 @@ function get_server_distribution()
 
 function boot_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}
-    do
+    for domain in ${SELF_ACTIVE_DOMAINS}; do
         boot $domain
     done
     unset domain
@@ -2035,8 +2034,7 @@ function nshutdown()
 
 function shutdown_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}
-    do
+    for domain in ${SELF_ACTIVE_DOMAINS}; do 
         nshutdown ${domain}
     done
     unset domain
@@ -2072,8 +2070,7 @@ function ndestroy()
 
 function destroy_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}
-    do
+    for domain in ${SELF_ACTIVE_DOMAINS}; do
         ndestroy ${domain}
     done
     unset domain
@@ -2108,8 +2105,7 @@ function npoweroff()
 
 function poweroff_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}
-    do
+    for domain in ${SELF_ACTIVE_DOMAINS}; do 
         npoweroff ${domain}
     done
     unset domain
@@ -2139,8 +2135,7 @@ function nreset()
 
 function reset_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}
-    do
+    for domain in ${SELF_ACTIVE_DOMAINS}; do
         nreset ${domain}
     done
     unset domain
