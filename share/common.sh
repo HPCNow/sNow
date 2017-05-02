@@ -1982,6 +1982,7 @@ function boot_domains()
 {
     for domain in ${SELF_ACTIVE_DOMAINS}; do
         boot $domain
+        sleep 2
     done
     unset domain
 }
