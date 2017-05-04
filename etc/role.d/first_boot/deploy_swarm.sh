@@ -1,0 +1,14 @@
+#!/bin/bash
+
+swarm_role=__SWARM_ROLE__
+if [[ "${swarm_role}" == "manager" ]]; then 
+    docker swarm init --advertise-addr __SWARM_MANAGER_IP__ | gawk '{if($0 ~ /--token/){print $2}}' > /root/docker_swarm.token
+    mkdir /etc/portainer
+    docker stack deploy --compose-file /root/docker-compose.yml vote
+fi
+
+
+if [[ "${swarm_role}" == "worker" ]]; then 
+    mkdir /etc/portainer
+    docker swarm join --token $(cat /root/docker_swarm.token) __SWARM_MANAGER_IP__:2377
+fi

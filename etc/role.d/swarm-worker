@@ -1,0 +1,77 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+#SHORT_DESCRIPTION: Installs and setup Docker Swarm to accomodate docker based services.
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
+
+# Setup Swarm Cluster Manager
+SNOW_SWARM_MANAGER=$(gawk '{if($2 ~ /swarm-manager/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_SWARM_MANAGER_IP=$(gawk '{if($2 ~ /swarm-manager/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_SWARM_MANAGER" && ! -z "$SITE_SWARM_MANAGER" ]]; then 
+    SWARM_MANAGER=$SNOW_SWARM_MANAGER
+else
+    SWARM_MANAGER="${SITE_SWARM_MANAGER:-$SNOW_SWARM_MANAGER}"
+fi
+
+if  [[ ! -z "$SNOW_SWARM_MANAGER_IP" && ! -z "$SITE_SWARM_MANAGER_IP" ]]; then 
+    SWARM_MANAGER_IP=$SNOW_SWARM_MANAGER_IP
+else
+    SWARM_MANAGER_IP="${SITE_SWARM_MANAGER_IP:-$SNOW_SWARM_MANAGER_IP}"
+fi
+
+if  [[ ! -z "$SWARM_MANAGER" ]]; then 
+    # Install the required packages
+    installDebianPackage ${prefix} apt-transport-https ca-certificates curl gnupg2 software-properties-common
+    curl -fsSL https://download.docker.com/linux/debian/gpg | chroot ${prefix} /usr/bin/apt-key add -
+    chroot ${prefix} /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+    chroot ${prefix} /usr/bin/apt-get -y update
+    chroot ${prefix} /usr/bin/apt-get -y install docker-ce
+    #chroot ${prefix} /usr/sbin/usermod -aG docker $sNow_USER
+    chroot ${prefix} /bin/systemctl enable docker
+    curl -L https://github.com/docker/compose/releases/download/1.12.0/docker-compose-`uname -s`-`uname -m` > ${prefix}/usr/local/bin/docker-compose
+    chmod +x ${prefix}/usr/local/bin/docker-compose
+    cp -p $SNOW_TOOL/etc/role.d/first_boot/deploy_swarm.sh ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
+    sed -i "s|__SWARM_ROLE__|worker|g" ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
+    sed -i "s|__SWARM_MANAGER_IP__|${SWARM_MANAGER_IP}|g" ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
+    sed -i "s|__SNOW_SERVER__|${SNOW_NODES[0]}|g" ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
+    sed -i "s|__SWARM_TOKEN_PATH__|${SNOW_CONF}/system_files/etc/docker_swarm.token}|g" ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
+    # Check if the token file already exists
+    if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then 
+        # Transfer the existing file to the final destination
+        cp -p ${SNOW_CONF}/system_files/etc/docker_swarm.token ${prefix}/root/docker_swarm.token
+    else
+        check_host_status ${SWARM_MANAGER}
+        scp -p ${SWARM_MANAGER}:/root/docker_swarm.token ${SNOW_CONF}/system_files/etc/docker_swarm.token
+        cp -p ${SNOW_CONF}/system_files/etc/docker_swarm.token ${prefix}/root/docker_swarm.token
+        if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then
+            error_msg "Docker Swarm Worker requires the file ${SNOW_CONF}/system_files/etc/docker_swarm.token"
+            error_msg "Which is generated once the Docker Swarm manager is booted for first time"
+        fi
+    fi
+else
+    error_msg "Docker Swarm Worker requires a manager already deployed and running"
+fi
