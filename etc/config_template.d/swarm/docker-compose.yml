@@ -1,0 +1,33 @@
+# Related article: https://docs.docker.com/engine/getstarted-voting-app/#docker-stackyml-deployment-configuration-file
+
+version: "3"
+services:
+
+  hello-world:
+    image: hello-world
+    networks:
+      - frontend
+    deploy:
+      replicas: 6
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - "9000:9000"
+    volumes:
+      - /etc/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  frontend:
+  backend:
+
