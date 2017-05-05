@@ -1,0 +1,74 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+#SHORT_DESCRIPTION: Installs Torque workload manager and generates the install packages for the compute nodes.
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
+
+# Setup New Serivce Client
+# get the IP of the server offering this service
+SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_TORQUE_MASTER_IP=$(gawk '{if($2 ~ /torque-master/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+# If the site is offering the server already and sNow! is also deploying the server,
+# then we asume that sNow server will act as a proxy or relay server (usefull to avoid DOS of performance degradation)
+# Otherwise, we will use the only available service.
+if  [[ ! -z "$SNOW_TORQUE_MASTER" && ! -z "$SITE_TORQUE_MASTER" ]]; then 
+    TORQUE_MASTER=$SNOW_TORQUE_MASTER
+else
+    TORQUE_MASTER="${SITE_TORQUE_MASTER:-$SNOW_TORQUE_MASTER}"
+fi
+
+##############     EVALUATE IF THE SERVER IS AVAILABLE/EXPECTED OR NOT     ###############
+if  [[ ! -z "$TORQUE_MASTER" ]]; then 
+    # Install the required packages
+    installDebianPackage ${prefix} libtool libssl-dev libxml2-dev libboost-dev ca-certificates automake pkg-config hwloc libhwloc-dev libpam0g-dev cgroup-tools
+    # Compile torque and create the packages to be distributed to other Torque master nodes and clients
+    cat << EOF | chroot ${prefix}
+        git clone http://github.com/adaptivecomputing/torque -b ${TORQUE_VERSION} /root/torque/${TORQUE_VERSION}
+        cd /root/torque/${TORQUE_VERSION}
+        ./autogen.sh
+        ./configure --with-pam --enable-acct-x --enable-drmaa --enable-cgroups
+        make -j 4
+        make install
+        make packages
+        rm /etc/init.d/trqauthd /etc/init.d/pbs_server /etc/init.d/pbs_mom
+        sed -i "s|pbs_server -t create -d|pbs_server -f -t create -d|g" torque.setup
+EOF
+    # Transfer packages to the shared file system
+    mkdir -p /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}
+    cp -p ${prefix}/root/torque/${TORQUE_VERSION}/torque-package-* /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}/
+    cp -pr ${prefix}/root/torque/${TORQUE_VERSION}/contrib /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}/
+    cp -p $SNOW_TOOL/etc/role.d/first_boot/torque_create_cluster.sh ${prefix}/usr/local/first_boot/01-torque_create_cluster.sh
+    sed -i "s|__TORQUE_VERSION__|$TORQUE_VERSION|g" ${prefix}/usr/local/first_boot/01-torque_create_cluster.sh
+    # Check if Torque configuration file already exists
+    if [[ -e $SNOW_CONF/system_files/etc/torque/torque.conf ]]; then 
+        # Transfer the existing configuration file to the final destination
+        cp -p $SNOW_CONF/system_files/etc/torque/torque.conf ${prefix}/etc/torque.conf
+        warning_msg "It's a good practice to run a backup of the configuration."
+        warning_msg "Consider to include the following command in your crontab:"
+        warning_msg "ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_CONF/system_files/etc/torque/torque.conf"
+    fi
+fi

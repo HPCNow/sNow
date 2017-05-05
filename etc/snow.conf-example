@@ -408,6 +408,13 @@ SLURM_PARTITION[2]="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]
 SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=NO      Priority=50  MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
 SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES Shared=FORCE:1 Priority=25  MaxTime=168:00:00 PreemptMode=suspend"
 
+#             [ Torque Configuration ]
+# sNow! allows to install a torque master domain and also build the required packages to 
+# be deployed in the compute nodes. The following two parameters will help you to define the very basic
+# configuration of torque. Maui is not supported
+
+#TORQUE_VERSION=6.1.1.1
+
 #             [ LDAP Configuration ]
 # sNow! can deploy and integrate LDAP server(s). The following parameters allow
 # you to setup the service with a minor overhead.
