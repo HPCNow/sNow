@@ -175,9 +175,6 @@ function envsetup()
 
     if [[ -n "$ACCOUNT" ]]; then
         SALLOC_OPTS="$SALLOC_OPTS -A $ACCOUNT"
-    else
-        echo "Account is mandatory, please add : -A account_code"
-        exit 0
     fi 
 
     # add the partition 

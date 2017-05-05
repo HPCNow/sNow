@@ -55,3 +55,34 @@
 
 * Fix issue related with multicluster in ganglia monitoring
 * Fix issue with minimal domain role deployment
+
+## 1.1.2
+
+### New Features and changes
+* Increased memory of snow server to 8GB
+* Included installation proxy per node basis in order to achieve better scalability in the deployment
+### Minor fixes
+* Fixed OpenVPN AS role deployment
+* introduced ConnectTimeout=5 in snow list domains to avoid long waiting when a domain is not responsive
+* Fixed minor coding style issues
+
+## 1.1.3
+
+### Minor fixes
+
+* Fixed issue with public instance of ssh in login role
+* Introduced a delay after each domain booted while booting them all with snow boot domains to improve server responsiveness in the bridge management
+* Fixed issues related with gmetad
+* Fixed issue related with resolv.conf content
+* Fixed issues related with xdm and gdm  roles
+* Minor improvements in the minimal role
+
+## 1.1.4
+
+### New Features and changes
+* Included Docker support in domain rols
+* included Docker Swarm roles (swarm-manager, swarm-worker) to accommodate docker based services.
+* Included torque master role. The support of Torque in sNow is not as mature as slurm.
+
+### Minor fixes
+* interactive CLI not longer requires a Slurm account
