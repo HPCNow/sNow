@@ -51,7 +51,7 @@ if  [[ ! -z "$TORQUE_MASTER" ]]; then
         cd /root/torque/${TORQUE_VERSION}
         ./autogen.sh
         ./configure --with-pam --enable-acct-x --enable-drmaa --enable-cgroups
-        make -j 4
+        make -j 2
         make install
         make packages
         rm /etc/init.d/trqauthd /etc/init.d/pbs_server /etc/init.d/pbs_mom
