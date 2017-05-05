@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-#SHORT_DESCRIPTION: Installs and setup Docker Swarm to accomodate docker based services.
+#SHORT_DESCRIPTION: Installs and setup Docker Swarm to accommodate docker based services.
 
 prefix=$1
 
