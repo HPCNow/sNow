@@ -12,6 +12,7 @@ if [[ -e /etc/torque.conf ]]; then
 else
     cd /root/torque/${torque_version}
     bash torque.setup root
+    qmgr -c "set server auto_node_np=true"
 fi
 qterm
 # PBS Server
