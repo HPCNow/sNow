@@ -56,7 +56,7 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
             unset nodelist
             unset aggregators
         done
-        replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_DOMAINS__" "data_source \"sNow! Domains\" 60 $SNOW_MONITOR_SERVER"
+        replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_DOMAINS__" "data_source \"sNow Domains\" 60 $SNOW_MONITOR_SERVER"
         mkdir -p $SNOW_CONF/system_files/etc/ganglia/
         cp -p ${prefix}/etc/ganglia/gmetad.conf $SNOW_CONF/system_files/etc/ganglia/gmetad.conf
     fi
