@@ -4,6 +4,7 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 #SHORT_DESCRIPTION: Installs Gate One, a web based terminal emulator and SSH client
+# For more information about this software, visit http://liftoffsoftware.com/Products/GateOne
 
 prefix=$1
 
