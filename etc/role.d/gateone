@@ -31,8 +31,8 @@ fi
 
 # Setup Gate One
 # get the IP of the server offering this service
-SNOW_GATEONE_SERVER=$(gawk '{if($2 ~ /service/){print $1}}' $SNOW_TOOL/etc/domains.conf)
-SNOW_GATEONE_SERVER_IP=$(gawk '{if($2 ~ /service/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_GATEONE_SERVER=$(gawk '{if($2 ~ /gateone/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_GATEONE_SERVER_IP=$(gawk '{if($2 ~ /gateone/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 # If the site is offering the server already and sNow! is also deploying the server,
 # then we asume that sNow server will act as a proxy or relay server (usefull to avoid DOS of performance degradation)
 # Otherwise, we will use the only available service.
@@ -45,27 +45,22 @@ fi
 ##############     EVALUATE IF THE SERVER IS AVAILABLE/EXPECTED OR NOT     ###############
 if  [[ ! -z "$GATEONE_SERVER" ]]; then 
     # Install the required packages
-    installDebianPackage ${prefix} install python-pip python-imaging python-setuptools python-mutagen python-pam python-dev git telnet openssh-client
+    installDebianPackage ${prefix} python-pip python-imaging python-setuptools python-mutagen python-pam python-dev git telnet openssh-client dtach
     chroot ${prefix} pip install --upgrade futures tornado cssmin slimit psutil
-    # Check if the configuration file already exists
+    # Check if the configuration files already exist
     if [[ -e /sNow/snow-configspace/system_files/etc/gateone ]]; then 
-        # Transfer the existing file to the final destination
+        # Transfer the existing configuration files to the final destination
         cp -pr /sNow/snow-configspace/system_files/etc/gateone ${prefix}/etc/gateone
     else
         # Parse the default configuration file provided by the OS distribution or your advanced 
-        # configuration template located in etc/config_template.d/NEWSERVICE/NEWSERVICE.conf
-        cp -p etc/config_template.d/gateone ${prefix}/etc/gateone
-        #sed -i 's|__NEW_SERVICE_PARAMETER__|$NEW_SERVICE_PARAMETER|g' ${prefix}/etc/NEWSERVICE.conf
-        #cp -p ${prefix}/etc/NEWSERVICE.conf /sNow/snow-configspace/system_files/etc/NEWSERVICE.conf
-        mkdir -p ${prefix}/gateone/{logs,users,conf.d,ssl}
-        # Compile torque and create the packages to be distributed to other Torque master nodes and clients
         cat << EOF | chroot ${prefix}
-            git clone http://github.com/liftoff/GateOne.git /root/gateone/
+            git clone http://github.com/liftoff/GateOne.git /root/GateOne
             cd /root/GateOne
             python setup.py install
             /usr/local/bin/gateone --configure --log_file_prefix="/var/log/gateone.log"
-            # Remove the auto-generated key/certificate so that a new one gets created the first time the container is started:
-            rm -f /etc/gateone/ssl/key.pem /etc/gateone/ssl/certificate.pem
+            # Remove the auto-generated key/certificate so that a new one gets created the first time the domain is started:
+            #rm -f /etc/gateone/ssl/key.pem /etc/gateone/ssl/certificate.pem
 EOF
+        cp -pr ${prefix}/etc/gateone /sNow/snow-configspace/system_files/etc/gateone
     fi
 fi
