@@ -1,0 +1,13 @@
+[Unit]
+Description=Maui Scheduler
+Requires=network.target
+After=network.target remote-fs.target
+
+[Service]
+Type=forking
+User=root
+PIDFILE=/var/run/maui.pid
+ExecStart=/usr/local/maui/sbin/maui
+
+[Install]
+WantedBy=multi-user.target
