@@ -80,9 +80,18 @@
 ## 1.1.4
 
 ### New Features and changes
-* Included Docker support in domain rols
+* Included Docker support in domain roles
 * included Docker Swarm roles (swarm-manager, swarm-worker) to accommodate docker based services.
 * Included torque master role. The support of Torque in sNow is not as mature as slurm.
 
 ### Minor fixes
 * interactive CLI not longer requires a Slurm account
+
+## 1.1.5
+
+### New Features and changes
+* Included logic in the Torque and Maui role deployment in order to avoid incompatibility issues
+* Included support for Torque and Maui in the node deployment
+
+### Minor fixes
+* included list roles in the snow CLI error message
