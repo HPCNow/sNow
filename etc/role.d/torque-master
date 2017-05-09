@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
 #
-#SHORT_DESCRIPTION: Installs Torque workload manager and generates the install packages for the compute nodes.
+#SHORT_DESCRIPTION: Installs Torque and Maui. It also generates the install packages for the compute nodes.
 
 prefix=$1
 
@@ -28,34 +28,39 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     architecture_identification
 fi
 
-# Setup New Serivce Client
-# get the IP of the server offering this service
 SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 SNOW_TORQUE_MASTER_IP=$(gawk '{if($2 ~ /torque-master/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-# If the site is offering the server already and sNow! is also deploying the server,
-# then we asume that sNow server will act as a proxy or relay server (usefull to avoid DOS of performance degradation)
-# Otherwise, we will use the only available service.
+MAUI_VERSION=${MAUI_VERSION:-master}
+torque_major_release=$(echo ${TORQUE_VERSION} | cut -d. -f1)
+#maui_major_release=$(echo ${MAUI_VERSION} | cut -d. -f1)
 if  [[ ! -z "$SNOW_TORQUE_MASTER" && ! -z "$SITE_TORQUE_MASTER" ]]; then 
     TORQUE_MASTER=$SNOW_TORQUE_MASTER
 else
     TORQUE_MASTER="${SITE_TORQUE_MASTER:-$SNOW_TORQUE_MASTER}"
 fi
 
-##############     EVALUATE IF THE SERVER IS AVAILABLE/EXPECTED OR NOT     ###############
+# Build and install Torque
 if  [[ ! -z "$TORQUE_MASTER" ]]; then 
     # Install the required packages
     installDebianPackage ${prefix} libtool libssl-dev libxml2-dev libboost-dev ca-certificates automake pkg-config hwloc libhwloc-dev libpam0g-dev cgroup-tools
     # Compile torque and create the packages to be distributed to other Torque master nodes and clients
+    if [[ "$torque_major_release" > "5" ]]; then
+        torque_config_opts="--enable-cgroups"
+    fi
+    #if [[ "$torque_major_release" == "5" ]]; then
+    #    torque_config_opts="--disable-cpuset"
+    #fi
     cat << EOF | chroot ${prefix}
         git clone http://github.com/adaptivecomputing/torque -b ${TORQUE_VERSION} /root/torque/${TORQUE_VERSION}
         cd /root/torque/${TORQUE_VERSION}
         ./autogen.sh
-        ./configure --with-pam --enable-acct-x --enable-drmaa --enable-cgroups
+        ./configure --prefix=/usr --with-pam --enable-acct-x ${torque_config_opts}
         make -j 2
         make install
+        ldconfig
         make packages
-        rm /etc/init.d/trqauthd /etc/init.d/pbs_server /etc/init.d/pbs_mom
-        sed -i "s|pbs_server -t create -d|pbs_server -f -t create -d|g" torque.setup
+        #rm /etc/init.d/trqauthd /etc/init.d/pbs_server /etc/init.d/pbs_mom
+        sed -i "s|pbs_server |pbs_server -f |g" torque.setup
 EOF
     # Transfer packages to the shared file system
     mkdir -p /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}
@@ -70,5 +75,28 @@ EOF
         warning_msg "It's a good practice to run a backup of the configuration."
         warning_msg "Consider to include the following command in your crontab:"
         warning_msg "ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_CONF/system_files/etc/torque/torque.conf"
+    fi
+    # Build and install Maui scheduler
+    # Maui is not compatible with Torque > 5.
+    if [[ "$torque_major_release" > "5" ]]; then
+        warning_msg "Maui is not compatible with Torque > 5 and it's not going to be installed"
+    else
+        cat << EOF | chroot ${prefix}
+            git clone https://github.com/jbarber/maui -b ${MAUI_VERSION} /root/maui/${MAUI_VERSION}
+            cd /root/maui/${MAUI_VERSION}
+            ./configure --with-pbs
+            make -j 2
+            make install
+            echo '/usr/local/maui/lib/' > /etc/ld.so.conf.d/maui.conf
+            echo 'PATH=/usr/local/maui/bin:/usr/local/maui/sbin:$PATH' > /etc/profile.d/maui.sh
+EOF
+        cp -p $SNOW_TOOLS/etc/config_template.d/maui/maui.service ${prefix}/usr/lib/systemd/system/maui.service
+        if [[ -e $SNOW_CONF/system_files/etc/maui/maui.cfg ]]; then 
+            cp -p $SNOW_CONF/system_files/etc/maui/maui.cfg ${prefix}/usr/local/maui/maui.cfg
+        else
+            replace_text ${prefix}/usr/local/maui/maui.cfg "^SERVERHOST" "SERVERHOST            ${TORQUE_MASTER}"
+            mkdir -p $SNOW_CONF/system_files/etc/maui
+            cp -p ${prefix}/usr/local/maui/maui.cfg $SNOW_CONF/system_files/etc/maui/
+        fi
     fi
 fi

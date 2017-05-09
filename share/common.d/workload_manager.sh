@@ -40,11 +40,54 @@ function install_slurm_client()
     systemctl disable slurm.service
 } 1>>$LOGFILE 2>&1
 
+function install_torque_client()
+{
+    case $OS in
+        debian|ubuntu)
+            pkgs="cgroup-tools hwloc libssl-dev libxml2-dev"
+        ;;
+        rhel|redhat|centos)
+            pkgs="libcgroup-tools hwloc openssl-devel libxml2-devel"
+        ;;
+        suse|sle[sd]|opensuse)
+            pkgs="libcgroup-tools libcgroup hwloc numactl libopenssl-devel libxml2-devel"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
+    system_arch=$(uname -m)
+    /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/torque-package-mom-linux-${system_arch}.sh --install
+    /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/torque-package-clients-linux-${system_arch}.sh --install
+    /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/torque-package-doc-linux-${system_arch}.sh --install
+    /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/torque-package-pam-linux-${system_arch}.sh --install
+    ldconfig
+    cp /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/contrib/systemd/pbs_mom.service /usr/lib/systemd/system/
+    systemctl enable pbs_mom.service
+    systemctl start pbs_mom.service
+    cp /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/contrib/systemd/trqauthd.service /usr/lib/systemd/system/
+    systemctl enable trqauthd.service
+    systemctl start trqauthd.service
+    SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+    if  [[ ! -z "$SNOW_TORQUE_MASTER" && ! -z "$SITE_TORQUE_MASTER" ]]; then 
+        TORQUE_MASTER=$SNOW_TORQUE_MASTER
+    else
+        TORQUE_MASTER="${SITE_TORQUE_MASTER:-$SNOW_TORQUE_MASTER}"
+    fi
+    echo "${TORQUE_MASTER}" > /var/spool/torque/server_name
+} 1>>$LOGFILE 2>&1
+
+
 function setup_workload_client()
 {
-    #Slurm Workload Manager
+    # Slurm Workload Manager
     if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
         install_slurm_client
+    fi
+    # Torque Workload Manager
+    if  [[ ! -z "${TORQUE_VERSION}" ]]; then
+        install_torque_client
     fi
 }
 
