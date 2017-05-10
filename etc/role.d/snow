@@ -250,7 +250,8 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
             mkdir -p $SNOW_CONF/system_files/etc/ganglia
         fi
         chroot ${prefix} /usr/sbin/gmond -t > $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i 's|name = "unspecified"|name = "sNow! Domains"|g' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf 
+        sed -i 's|send_metadata_interval = 0|send_metadata_interval = 30|g' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf 
+        sed -i 's|name = "unspecified"|name = "sNow Domains"|g' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf 
     fi
     cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf ${prefix}/etc/ganglia/gmond.conf
 fi
