@@ -56,10 +56,10 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
             sed -i "s|port = .*|port = ${PORT}|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             sed -i "s|mute = .*|mute = yes|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             sed -i "s|deaf = .*|deaf = no|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
-            sed -i "s|name = .*|name = \"${cluster}\"|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|name = \"sNow Domains\"|name = \"${cluster}\"|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             cp -p ${prefix}/etc/init.d/ganglia-monitor ${prefix}/etc/init.d/ganglia-monitor-${cluster}
             sed -i "s|ganglia-monitor|ganglia-monitor-${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
-            sed -i "s|gmond|gmond_${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            sed -i "s|NAME=gmond|NAME=gmond_${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
             sed -i 's|$DAEMON --|$DAEMON -- -c /etc/ganglia/${NAME}.conf|g' ${prefix}/etc/init.d/ganglia-monitor-${cluster}
             sed -i 's|--oknodo --name $NAME|--oknodo --pidfile /var/run/$NAME.pid|g' ${prefix}/etc/init.d/ganglia-monitor-${cluster}
             chroot ${prefix} update-rc.d ganglia-monitor-${cluster} defaults
@@ -77,7 +77,7 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
         sed -i "s|deaf = .*|deaf = no|g" ${prefix}/etc/ganglia/gmond_domains.conf
             cp -p ${prefix}/etc/init.d/ganglia-monitor ${prefix}/etc/init.d/ganglia-monitor-domains
         sed -i "s|ganglia-monitor|ganglia-monitor-domains|g" ${prefix}/etc/init.d/ganglia-monitor-domains
-        sed -i "s|gmond|gmond_domains|g" ${prefix}/etc/init.d/ganglia-monitor-domains
+        sed -i "s|NAME=gmond|NAME=gmond_domains|g" ${prefix}/etc/init.d/ganglia-monitor-domains
         sed -i 's|$DAEMON --|$DAEMON -- -c /etc/ganglia/${NAME}.conf|g' ${prefix}/etc/init.d/ganglia-monitor-domains
         sed -i 's|--oknodo --name $NAME|--oknodo --pidfile /var/run/$NAME.pid|g' ${prefix}/etc/init.d/ganglia-monitor-domains
         chroot ${prefix} update-rc.d ganglia-monitor remove
