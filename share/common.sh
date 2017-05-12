@@ -925,14 +925,14 @@ function remove_node()
         else
             nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
         fi
-        warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-        else
-            error_exit "Well done. It's better to be sure."
-        fi
     done
+    warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
 } 1>>$LOGFILE 2>&1
 
 function add_node()
@@ -1016,7 +1016,7 @@ function add_node()
     for node in $(node_list "${nodelist}"); do
         node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
         if [[ "${node_query}" != "null" ]]; then
-            error_msg "There node $node already exist in the database."
+            error_exit "There node $node already exist in the database."
         else
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
             set_snow_json
