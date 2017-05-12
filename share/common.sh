@@ -1348,6 +1348,8 @@ function list_templates()
 function deploy()
 {
     local nodelist=$opt2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_type=compute
     if [[ -z "${nodelist}" ]]; then
         error_exit "ERROR: No domain or node to deploy"
     fi
@@ -1355,6 +1357,12 @@ function deploy()
     if ((${is_vm})) ; then
         deploy_domain_xen ${nodelist} $2
     else
+        for node in $(node_list "${nodelist}"); do
+            node_query=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\"")
+            if [[ "${node_query}" == "null" ]]; then
+                error_exit "There node $node does not exist in the database."
+            fi
+        done
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
