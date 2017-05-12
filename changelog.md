@@ -95,3 +95,18 @@
 
 ### Minor fixes
 * included list roles in the snow CLI error message
+
+## 1.1.6
+
+### New Features and changes
+* Initial support for GateOne
+* Improvements in ganglia setup - use unicast
+
+### Minor fixes
+* Fix minor issues in Torque 5.3.1 services startup
+* Fix issue 114 - snow add node populates the database as expected
+* Fix issue 111 - check if a node list is already defined in the database
+* Fix issue 118 - corrected squid3 path /var/spool/squid3
+* Fix issue 115 - replaced error message with an error exit when trying to add nodes that already exist in the database. 
+* Fix issue 115 - moved interactive question in node remove outside the loop
+* Fix issue 123 - included NTP configuration in compute nodes

@@ -48,16 +48,41 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
         cp -p $SNOW_CONF/system_files/etc/ganglia/gmetad.conf ${prefix}/etc/ganglia/gmetad.conf
     else
         cp -p $SNOW_TOOL/etc/config_template.d/ganglia/gmetad.conf ${prefix}/etc/ganglia/gmetad.conf
+        PORT=8649
         for cluster in "${!CLUSTERS[@]}" 
         do 
-            nodelist=${CLUSTERS[$cluster]}
-            aggregators=$(node_list "${nodelist}" | gawk '{print $1" "$2}')
-            replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_COMPUTE__" "#__DATA_SOURCE_COMPUTE__\ndata_source $cluster 60 $aggregators"
-            unset nodelist
-            unset aggregators
+            replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_COMPUTE__" "#__DATA_SOURCE_COMPUTE__\ndata_source \"${cluster}\" 60 ${SNOW_MONITOR_SERVER}:${PORT}"
+            cp -p ${prefix}/etc/ganglia/gmond.conf ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|port = .*|port = ${PORT}|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|mute = .*|mute = yes|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|deaf = .*|deaf = no|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|name = \"sNow Domains\"|name = \"${cluster}\"|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            cp -p ${prefix}/etc/init.d/ganglia-monitor ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            sed -i "s|ganglia-monitor|ganglia-monitor-${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            sed -i "s|NAME=gmond|NAME=gmond_${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            sed -i 's|$DAEMON --|$DAEMON -- -c /etc/ganglia/${NAME}.conf|g' ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            sed -i 's|--oknodo --name $NAME|--oknodo --pidfile /var/run/$NAME.pid|g' ${prefix}/etc/init.d/ganglia-monitor-${cluster}
+            chroot ${prefix} /usr/sbin/update-rc.d ganglia-monitor-${cluster} defaults
+            PORT=$((PORT-=1))
+            cp -p ${prefix}/etc/ganglia/gmond_${cluster}.conf $SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|mute = .*|mute = no|g" $SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf
+            sed -i "s|deaf = .*|deaf = yes|g" $SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf
         done
-        replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_DOMAINS__" "data_source \"sNow! Domains\" 60 $SNOW_MONITOR_SERVER"
+        unset PORT
+        replace_text ${prefix}/etc/ganglia/gmetad.conf "^#__DATA_SOURCE_DOMAINS__" "data_source \"sNow Domains\" 60 $SNOW_MONITOR_SERVER:8650"
         mkdir -p $SNOW_CONF/system_files/etc/ganglia/
         cp -p ${prefix}/etc/ganglia/gmetad.conf $SNOW_CONF/system_files/etc/ganglia/gmetad.conf
+        cp -p ${prefix}/etc/ganglia/gmond.conf ${prefix}/etc/ganglia/gmond_domains.conf
+        sed -i "s|mute = .*|mute = no|g" ${prefix}/etc/ganglia/gmond_domains.conf
+        sed -i "s|deaf = .*|deaf = no|g" ${prefix}/etc/ganglia/gmond_domains.conf
+        cp -p ${prefix}/etc/init.d/ganglia-monitor ${prefix}/etc/init.d/ganglia-monitor-domains
+        sed -i "s|ganglia-monitor|ganglia-monitor-domains|g" ${prefix}/etc/init.d/ganglia-monitor-domains
+        sed -i "s|NAME=gmond|NAME=gmond_domains|g" ${prefix}/etc/init.d/ganglia-monitor-domains
+        sed -i 's|$DAEMON --|$DAEMON -- -c /etc/ganglia/${NAME}.conf|g' ${prefix}/etc/init.d/ganglia-monitor-domains
+        sed -i 's|--oknodo --name $NAME|--oknodo --pidfile /var/run/$NAME.pid|g' ${prefix}/etc/init.d/ganglia-monitor-domains
+        chroot ${prefix} /usr/sbin/update-rc.d ganglia-monitor remove
+        chroot ${prefix} /bin/chmod -x /etc/init.d/ganglia-monitor
+        chroot ${prefix} /usr/sbin/update-rc.d ganglia-monitor-domains defaults
+
     fi
 fi

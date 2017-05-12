@@ -20,11 +20,12 @@ function setup_ganglia_client()
         ;;
     esac
     install_software "$pkgs"
-    if [[ ! -e $SNOW_CONF/system_files/etc/ganglia/gmond.conf ]]; then 
-        chroot ${prefix} /usr/sbin/gmond -t > $SNOW_CONF/system_files/etc/ganglia/gmond.conf
-        sed -i 's|name = "unspecified"|name = "sNow!"|g' $SNOW_CONF/system_files/etc/ganglia/gmond.conf
+    cluster=$(jq ".compute.${HOSTNAME}.cluster" ${SNOW_TOOL}/etc/nodes.json |sed -e 's|"||g')
+    if [[ ! -e $SNOW_CONF/system_files/etc/ganglia/gmond.${cluster}.conf ]]; then 
+        /usr/sbin/gmond -t > $SNOW_CONF/system_files/etc/ganglia/gmond.conf
+        sed -i 's|name = "unspecified"|name = "sNow"|g' $SNOW_CONF/system_files/etc/ganglia/gmond.conf
     fi
-    cp -p $SNOW_CONF/system_files/etc/ganglia/gmond.conf /etc/ganglia/gmond.conf
+    cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf /etc/ganglia/gmond.conf
     chown root:root /etc/ganglia/gmond.conf
     chmod 640 /etc/ganglia/gmond.conf
     systemctl enable gmond.service
