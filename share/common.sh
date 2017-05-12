@@ -938,6 +938,7 @@ function remove_node()
 function add_node()
 {
     local nodelist=$1
+    local node_type=compute
     local cluster=""
     local image=${DEFAULT_BOOT} 
     local template=${DEFAULT_TEMPLATE}
