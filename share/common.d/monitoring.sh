@@ -5,7 +5,6 @@
 #
 function setup_ganglia_client()
 {
-    set -x
     case $OS in
         debian|ubuntu)
             pkgs="ganglia-monitor"
@@ -31,5 +30,4 @@ function setup_ganglia_client()
     chmod 640 /etc/ganglia/gmond.conf
     systemctl enable gmond.service
     systemctl start gmond.service
-    set +x
 } 1>>$LOGFILE 2>&1
