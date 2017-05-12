@@ -925,19 +925,20 @@ function remove_node()
         else
             nodes_json=$(echo "${nodes_json}" | jq "del(.\"compute\".\"${node}\")")
         fi
-        warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-        else
-            error_exit "Well done. It's better to be sure."
-        fi
     done
+    warning_msg "Do you want to remove the node(s) ${nodelist}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
 } 1>>$LOGFILE 2>&1
 
 function add_node()
 {
     local nodelist=$1
+    local node_type=compute
     local cluster=""
     local image=${DEFAULT_BOOT} 
     local template=${DEFAULT_TEMPLATE}
@@ -1015,7 +1016,7 @@ function add_node()
     for node in $(node_list "${nodelist}"); do
         node_query=$(echo ${nodes_json} | jq -r ".\"compute\".\"${node}\"")
         if [[ "${node_query}" != "null" ]]; then
-            error_msg "There node $node already exist in the database."
+            error_exit "There node $node already exist in the database."
         else
             nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\" = {} ")
             set_snow_json
@@ -1347,6 +1348,8 @@ function list_templates()
 function deploy()
 {
     local nodelist=$opt2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local node_type=compute
     if [[ -z "${nodelist}" ]]; then
         error_exit "ERROR: No domain or node to deploy"
     fi
@@ -1354,6 +1357,12 @@ function deploy()
     if ((${is_vm})) ; then
         deploy_domain_xen ${nodelist} $2
     else
+        for node in $(node_list "${nodelist}"); do
+            node_query=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\"")
+            if [[ "${node_query}" == "null" ]]; then
+                error_exit "There node $node does not exist in the database."
+            fi
+        done
         if [[ -z "$opt4" ]]; then
             if [[ -z "$opt3" ]]; then
                 warning_msg "sNow! will start to deploy the following node(s) ${nodelist} in 10 seconds, unless you interrupt that with 'Ctrl+C'."
