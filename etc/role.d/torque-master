@@ -60,7 +60,7 @@ if  [[ ! -z "$TORQUE_MASTER" ]]; then
         ldconfig
         make packages
         #rm /etc/init.d/trqauthd /etc/init.d/pbs_server /etc/init.d/pbs_mom
-        sed -i "s|pbs_server |pbs_server -f |g" torque.setup
+        sed -i "s|^pbs_server|pbs_server -f|g" torque.setup
 EOF
     # Transfer packages to the shared file system
     mkdir -p /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}
@@ -71,7 +71,7 @@ EOF
     # Check if Torque configuration file already exists
     if [[ -e $SNOW_CONF/system_files/etc/torque/torque.conf ]]; then 
         # Transfer the existing configuration file to the final destination
-        cp -p $SNOW_CONF/system_files/etc/torque/torque.conf ${prefix}/etc/torque.conf
+        cp -p $SNOW_CONF/system_files/etc/torque/torque.conf ${prefix}/etc/torque/torque.conf
         warning_msg "It's a good practice to run a backup of the configuration."
         warning_msg "Consider to include the following command in your crontab:"
         warning_msg "ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_CONF/system_files/etc/torque/torque.conf"
@@ -90,7 +90,9 @@ EOF
             echo '/usr/local/maui/lib/' > /etc/ld.so.conf.d/maui.conf
             echo 'PATH=/usr/local/maui/bin:/usr/local/maui/sbin:$PATH' > /etc/profile.d/maui.sh
 EOF
-        cp -p $SNOW_TOOLS/etc/config_template.d/maui/maui.service ${prefix}/usr/lib/systemd/system/maui.service
+        mkdir -p /usr/lib/systemd/system
+        cp -p $SNOW_TOOL/etc/config_template.d/maui/maui.service ${prefix}/usr/lib/systemd/system/maui.service
+        chroot ${prefix} /bin/systemctl enable maui.service
         if [[ -e $SNOW_CONF/system_files/etc/maui/maui.cfg ]]; then 
             cp -p $SNOW_CONF/system_files/etc/maui/maui.cfg ${prefix}/usr/local/maui/maui.cfg
         else
