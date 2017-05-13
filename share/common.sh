@@ -667,7 +667,7 @@ function update_tools()
     if [[ ! -d ${SNOW_TOOL} ]]; then
         mkdir -p ${SNOW_TOOL}
         cd ${SNOW_TOOL}
-        git clone http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review the communication to the Internet."
+        git clone http://bitbucket.org/hpcnow/snow-tools.git . || error_exit "Please, review the communication to the Internet."
         cd -
     else
         cd ${SNOW_TOOL}
@@ -684,7 +684,7 @@ function update_configspace()
         if [[ ! -d ${SNOW_CONF}  ]]; then
             mkdir -p ${SNOW_CONF}
             cd ${SNOW_CONF}
-            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO . || error_exit "ERROR: please review the SSH certificates in your bitbucket."
             cd -
         else
             cd ${SNOW_CONF}
