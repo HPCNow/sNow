@@ -1440,7 +1440,8 @@ function generate_pxe_image()
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
-            dracut --add "nfs network base ssh-client dm" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
+            dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
@@ -1471,11 +1472,17 @@ function first_boot_hooks()
         mkdir -p ${hooks_path}/first_boot
     fi
     if [[ ! -e /usr/local/bin/first_boot ]]; then
-        cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
         cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
         chmod 700 /usr/local/bin/first_boot
     fi
-    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    if [[ -d /lib/systemd/system ]]; then
+        cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
+        replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
+    if [[ -d /usr/lib/systemd/system ]]; then
+        cp -p ${hooks_path}/first_boot/first_boot.service  /usr/lib/systemd/system/
+        replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
@@ -1523,7 +1530,12 @@ function generate_rootfs()
     # Run hooks:
     hooks ${hooks_path}
     # Setup the first boot hooks
-    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    if [[ -d /lib/systemd/system ]]; then
+        replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
+    if [[ -d /usr/lib/systemd/system ]]; then
+        replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
     systemctl enable first_boot
     # Transfer required files
     rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
