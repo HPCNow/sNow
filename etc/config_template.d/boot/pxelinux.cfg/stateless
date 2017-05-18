@@ -4,4 +4,4 @@ default __IMAGE__
 
 label   __IMAGE__
     kernel images/__IMAGE__/vmlinuz
-        append initrd=images/__IMAGE__/rootfs.gz root=/dev/ram0 load_ramdisk=1 ramdisk_size=4194304 rw ip=dhcp netdevice=eth0 __CONSOLE_OPTIONS__
+        append initrd=images/__IMAGE__/initrd.img overlay_rootfs=__OVERLAY__PROTOCOL__://__OVERLAY_SERVER__/images/__IMAGE__/rootfs.squashfs overlay_type=squashfs ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__ rd.info

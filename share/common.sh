@@ -1434,7 +1434,8 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            dracut --add "nfs network base ssh-client dm rdma" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
+            dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
@@ -1584,21 +1585,21 @@ function generate_rootfs_squashfs()
     # create the squashfs rootfs working dir
     mkdir -p ${mount_point}
     # Extract raw rootfs into the squashfs working dir
-    tar -C ${mount_point} -zxf ${image_rootfs}
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
     # Update fstab
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    #echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    #echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
     setup_networkfs ${mount_point}
     # Run hooks:
-    hooks ${SNOW_CONF}/boot/images/$image
+    #hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
-    first_boot_hooks ${SNOW_CONF}/boot/images/$image
+    #first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Generate the squasfs image
     mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot
     # Setup squashfs support for PXE
