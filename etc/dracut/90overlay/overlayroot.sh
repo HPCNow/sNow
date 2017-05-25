@@ -13,8 +13,8 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 #. /lib/url-lib.sh
 #. /lib/nfs-lib.sh
-netif="$1"
-netroot="$2"
+netif="${1:-eth0}"
+#netroot="$2"
 newroot="${3:-/sysroot}"
 
 

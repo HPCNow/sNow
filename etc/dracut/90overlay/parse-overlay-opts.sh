@@ -73,9 +73,15 @@ esac
 # Set of varialbles required by dracut
 rootok=1
 root="overlayfs"
-netroot=overlayfs
+#netroot=overlayfs
 
-
-echo '[ -e $NEWROOT/proc ]' > /initqueue-finished/overlayroot.sh
-echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/finished/overlayroot.sh
+# RHEL/CentOS
+if [ -e /initqueue-finished ]; then
+    echo '[ -e $NEWROOT/proc ]' > /initqueue-finished/overlayroot.sh
+fi
+# SuSE
+if [ -e $hookdir/initqueue/finished ]; then
+    [ -e /dev/root ] || ln -s null /dev/root
+    echo '[ -e /dev/root ]' > $hookdir/initqueue/finished/overlayroot.sh
+fi
 
