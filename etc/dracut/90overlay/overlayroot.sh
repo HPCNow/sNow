@@ -13,10 +13,10 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 #. /lib/url-lib.sh
 #. /lib/nfs-lib.sh
-netif="${1:-eth0}"
+#netif="${1:-eth0}"
+netif="$1"
 #netroot="$2"
 newroot="${3:-/sysroot}"
-
 
 # Read the settings from the files created by a command-line parsing script from /tmp
 [ -r /tmp/overlay.type ] && read overlay_type < /tmp/overlay.type
@@ -59,22 +59,31 @@ if [ "${overlay_type}" = "squashfs" ]; then
     	exit 1
     fi
     > /tmp/readonly_rootfs.downloaded
+    if [ -e /tmp/${stage1_rootfs} ]; then
+        info "Mounting squashfs"
+        mount -t squashfs -o ro /tmp/${stage1_rootfs} ${stage1_ro}
+        if [ $? != 0 ]; then
+            warn "failed to mount SquashFS image"
+            exit 1
+        fi
+    else
+        warn "image not available /tmp/${stage1_rootfs}"
+    fi
 fi
 
-# TODO: couldn't dmsquash-overlay-root handle this?
-if [ -e /tmp/${stage1_rootfs} ]; then
-    info "Mounting squashfs"
-    mount -t squashfs /tmp/${stage1_rootfs} ${stage1_ro}
-else
-    warn "image not available /tmp/${stage1_rootfs}"
-    #nfs_to_var $netroot $netif
-    #[ -z "$server" ] && die "Required parameter 'server' is missing"
-    #mount_nfs $netroot ${stage1_ro} $netif && { [ -e /dev/root ] || ln -s null /dev/root ; [ -e /dev/nfs ] || ln -s null /dev/nfs; }
-    #[ -f $newroot/etc/fstab ] && cat $newroot/etc/fstab > /dev/null
+if [ "${overlay_type}" = "nfs" ]; then
+    if [ ! -z "${overlay_server}" ]; then 
+        info "Mounting NFSROOT read-only"
+        mount -t ${overlay_protocol} -o defaults,ro ${overlay_server} ${stage1_ro}
+        if [ $? != 0 ]; then
+            warn "failed to mount NFSROOT read-only image"
+            exit 1
+        fi
+    else
+        die "Required parameter 'overlay_server' is missing" 
+    fi
 fi
 
-#mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay ${stage1_rootfs}
-info "Mounting overlayfs: mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot"
 mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot
 # maybe required by SuSE - inject new exit_if_exists
 echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
