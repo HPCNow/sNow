@@ -33,4 +33,6 @@ install()
     #    inst_script "$moddir/overlay-generator.sh" $systemdutildir/system-generators/dracut-overlay-generator
     #fi
     inst_hook pre-pivot 90 "$moddir/overlayroot.sh"
+    # requires by SuSE?
+    dracut_need_initqueue
 }

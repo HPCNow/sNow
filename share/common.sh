@@ -1440,9 +1440,10 @@ function generate_pxe_image()
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
+            install_software "dracut-network dracut-tools"
             ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
             dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
     esac
@@ -1537,10 +1538,18 @@ function generate_rootfs()
         replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     fi
     systemctl enable first_boot
+    # Identify remote file systems
+    local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
+    local exclude_remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print "--exclude="$7}}' | tr '\n' ' ')
     # Transfer required files
-    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
+    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages ${exclude_remotefs_mount_points} / ${mount_point}/
     # Create required directory structure
     mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
+    # create remote file system mount points
+    for remotefs in ${remotefs_mount_points}; do 
+        mkdir -p ${mount_point}${remotefs}
+    done
+    unset remotefs
     # set required permissions
     chown root:lock ${mount_point}/var/lock
     # Update fstab
@@ -1613,7 +1622,7 @@ function generate_rootfs_squashfs()
     # Setup the first boot hooks
     #first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Generate the squasfs image
-    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot
+    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot -comp xz
     # Setup squashfs support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}

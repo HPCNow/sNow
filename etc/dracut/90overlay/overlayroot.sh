@@ -76,3 +76,7 @@ fi
 #mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay ${stage1_rootfs}
 info "Mounting overlayfs: mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot"
 mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot
+# maybe required by SuSE - inject new exit_if_exists
+echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
+# force udevsettle to break
+> $hookdir/initqueue/work

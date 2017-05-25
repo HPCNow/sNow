@@ -77,3 +77,5 @@ netroot=overlayfs
 
 
 echo '[ -e $NEWROOT/proc ]' > /initqueue-finished/overlayroot.sh
+echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/finished/overlayroot.sh
+
