@@ -88,8 +88,10 @@ if [ -n "${overlay_rootfs}" ]; then
                         exit 1
                     fi
                     cp -p ${stage1}/fetch_mount/${file_name} ${stage1_rootfs}
+                    umount ${stage1}/fetch_mount
+                    rmdir ${stage1}/fetch_mount
                 else
-                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage1_rootfs}
+                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage1}/rootfs
                     if [ $? != 0 ]; then
                         warn "failed to mount NFSROOT read-only image"
                         exit 1

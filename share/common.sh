@@ -1628,6 +1628,8 @@ function generate_rootfs_squashfs()
     local image=$1
     # path to the PXE config file
     local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
     # raw rootfs image
     local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
     # set mount point for the rootfs
