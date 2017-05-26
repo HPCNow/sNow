@@ -1082,6 +1082,14 @@ function set_node()
                     error_exit "Option image missing"
                 fi
                 ;;
+            -R|--image_rootfs)
+                if [[ -n "$2" ]]; then
+                    local image_rootfs="$2"
+                    shift
+                else
+                    error_exit "Option image_rootfs missing"
+                fi
+                ;;
             -t|--template)
                 if [[ -n "$2" ]]; then
                     local template="$2"
@@ -1183,11 +1191,17 @@ function set_snow_json()
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\" = {} ")
     fi
     # setup the defaults
-    if [[ -n "$cluster" ]]; then
-        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"$cluster\"")
+    if [[ -n "${cluster}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"${cluster}\"")
     fi
-    if [[ -n "$image" ]]; then
+    if [[ -n "${image}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image\" = \"${image}\"")
+    fi
+    if [[ -n "${image_rootfs}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image_rootfs\" = \"${image_rootfs}\"")
+    fi
+    if [[ -n "${image_type}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image_type\" = \"${image_type}\"")
     fi
     if [[ -n "$template" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"template\" = \"${template}\"")
@@ -1201,10 +1215,10 @@ function set_snow_json()
     if [[ -n "${console_options}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"console_options\" = \"${console_options}\"")
     fi
-    if [[ -n "$memory" ]]; then
+    if [[ -n "${memory}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"memory\" = \"${memory}\"")
     fi
-    if [[ -n "$cpus" ]]; then
+    if [[ -n "${cpus}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cpus\" = \"${cpus}\"")
     fi
     if [[ -n "${disk_size}" ]]; then
@@ -1305,6 +1319,8 @@ function boot_copy()
             image=$3
             if [[ -z "${image}" ]]; then
                 image=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image\"")
+                image_rootfs=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image_rootfs\"")
+                image_type=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image_type\"")
                 if [[ "${image}" == "null" ]]; then
                     image=${DEFAULT_BOOT}
                 fi
@@ -1314,12 +1330,20 @@ function boot_copy()
             if [[ ! -f ${image_pxe} ]] ; then
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
-            if [[ ! -f ${image_pxe} ]] ; then
+            if [[ ! -f ${image_config} ]] ; then
                 warning_message "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
             fi
+            if [[ "${image_rootfs}" == "null" || -z "${image_rootfs}" ]]; then
+                image_rootfs="${IMAGE_ROOTFS}"
+            fi
+            if [[ "${image_type}" == "null" || -z "${image_type}" ]]; then
+                image_type="${IMAGE_TYPE}"
+            fi
             cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__IMAGE_ROOTFS__|${image_rootfs}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__IMAGE_TYPE__|${image_type}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         fi
         if [[ "${console_options}" == "null" ]]; then
             console_options=${DEFAULT_CONSOLE_OPTIONS}
@@ -1327,6 +1351,8 @@ function boot_copy()
         sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         last_deploy="$(date)"
         set_snow_json
+        unset image_rootfs
+        unset image_type
         unset install_repo
         unset console_options
     done
@@ -1500,19 +1526,19 @@ function enable_readonly_root()
             replace_text $prefix/etc/hosts "^::1" " "
             echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
             echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
-            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lib/gssproxy" >> /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
-            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
+            echo "files    /var/run/gssproxy.pid" > $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy" >> $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > $prefix/etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> $prefix/etc/rwtab.d/tmpdirs
         ;;
         suse|sle[sd]|opensuse)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
             echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
             echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
-            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lib/gssproxy/rcache" >> /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
-            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
+            echo "files    /var/run/gssproxy.pid" > $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy/rcache" >> $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > $prefix/etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> $prefix/etc/rwtab.d/tmpdirs
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1570,6 +1596,8 @@ function generate_rootfs_nfs()
     local image=$1
     # path to the PXE config file
     local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
     # raw rootfs image
     local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
     # set mount point for the rootfs
@@ -1591,7 +1619,8 @@ function generate_rootfs_nfs()
     # Setup NFSROOT support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/nfsroot ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
-    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=nfs:${NFS_SERVER}:${mount_point},ro" > ${image_config}
+    echo "IMAGE_TYPE=nfsroot" >> ${image_config}
 }
 
 function generate_rootfs_squashfs()
@@ -1626,7 +1655,9 @@ function generate_rootfs_squashfs()
     # Setup squashfs support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
-    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+    #echo "IMAGE_ROOTFS=__OVERLAY__PROTOCOL__://__OVERLAY_SERVER__/images/__IMAGE__/rootfs.squashfs" > ${image_config}
+    echo "IMAGE_ROOTFS=nfs://${NFS_SERVER}:${SNOW_CONF}/boot/images/${image}/rootfs.squashfs" > ${image_config}
+    echo "IMAGE_TYPE=squashfs" >> ${image_config}
 }
 
 function generate_rootfs_stateless()
@@ -1700,6 +1731,7 @@ function clone_node()
     local node=$1
     local image=$2
     local image_type=$3
+    local image_desc="$4"
     if [[ -z "$node" ]]; then
         error_exit "ERROR: no node name to clone is provided"
     fi
@@ -1710,11 +1742,6 @@ function clone_node()
         error_exit "ERROR: no type of image is provided"
     fi
     # Check if snow CLI is executed in the same golden node or from the snow server
-    if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
-        warning_msg "This will overwrite the image $image"
-    else
-        warning_msg "This will clone $node and generate the image $image."
-    fi
     if [[ "$(uname -n)" == "$node" ]]; then
         if [[ -e ${SNOW_CONF}/boot/images/$image ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image
@@ -1722,11 +1749,22 @@ function clone_node()
         get_server_distribution $node
         generate_pxe_image $image
         generate_rootfs $image
-        #set_image_type $image ${image_type}
     else
+        # Check if the image already exist
+        if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
+            if [[ "$5" != "force" ]]; then
+                error_exit "The image ${image} already exist, please use 'force' option to overwrite the image or remove it first with: snow remove image ${image}."
+            else
+                warning_msg "This will overwrite the image $image"
+                rm -fr ${SNOW_CONF}/boot/images/${image}/
+            fi
+        else
+            warning_msg "This will clone $node and generate the image $image."
+        fi
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
+        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
         if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
@@ -1751,7 +1789,7 @@ function clone_image()
             error_msg "The image ${new_image} already exist. Please remove it before to create a new one."
         fi
         cp -pr ${SNOW_CONF}/boot/images/${old_image} ${SNOW_CONF}/boot/images/${new_image}
-        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe
+        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/config
         mv ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe
         if [[ ! -z "${new_description}" ]]; then
             echo "${new_description}" > ${SNOW_CONF}/boot/images/${new_image}/description
