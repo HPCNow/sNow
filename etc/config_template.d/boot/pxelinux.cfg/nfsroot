@@ -1,8 +1,7 @@
 # default is label '__IMAGE__'
-# boots a Linux kernel and mounts rootfs.gz as a root file system on a 512MiB ramdisk
+# boots a Linux kernel and mounts root file system from NFS as read-only, writable and mutable files are handled in /etc/rwtab
 default __IMAGE__
 
 label   __IMAGE__
     kernel images/__IMAGE__/vmlinuz
         append initrd=images/__IMAGE__/initrd.img root=__IMAGE_ROOTFS__ ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__
-        #append initrd=images/__IMAGE__/initrd.img root=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/images/__IMAGE__/rootfs,ro ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__
