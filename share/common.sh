@@ -532,6 +532,18 @@ function generate_nodes_json()
 
 function init()
 {
+    # Check if the system has been initiate before
+    if [[ -e ${SNOW_TOOL}/etc/nodes.json ]]; then
+        warning_msg "sNow! configuration had been initiated before."
+        warning_msg "Please, do not run this command in a production environment"
+        warning_msg "Do you want to proceed? (y/N)"
+        read -t 20 -u 3 answer
+        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            info_msg "Initiating sNow! configuration"
+        else
+            error_exit "Well done. It's better to be sure."
+        fi
+    fi
     # Check for snow.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
