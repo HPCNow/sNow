@@ -1,0 +1,8 @@
+#
+# Before to update this file, consider to perform the following actions:
+#
+# 1. Add the hosts to /sNow/snow-configspace/system_files/etc/static_hosts
+# 2. scp /sNow/snow-configspace/system_files/etc/static_hosts deploy01:/etc/static_hosts
+# 3. ssh deploy01 "systemctl restart dnsmasq"
+# Where deploy01 is the domain which plays the deploy role.
+#
