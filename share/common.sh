@@ -1082,6 +1082,14 @@ function set_node()
                     error_exit "Option image missing"
                 fi
                 ;;
+            -R|--image_rootfs)
+                if [[ -n "$2" ]]; then
+                    local image_rootfs="$2"
+                    shift
+                else
+                    error_exit "Option image_rootfs missing"
+                fi
+                ;;
             -t|--template)
                 if [[ -n "$2" ]]; then
                     local template="$2"
@@ -1183,11 +1191,17 @@ function set_snow_json()
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\" = {} ")
     fi
     # setup the defaults
-    if [[ -n "$cluster" ]]; then
-        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"$cluster\"")
+    if [[ -n "${cluster}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cluster\" = \"${cluster}\"")
     fi
-    if [[ -n "$image" ]]; then
+    if [[ -n "${image}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image\" = \"${image}\"")
+    fi
+    if [[ -n "${image_rootfs}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image_rootfs\" = \"${image_rootfs}\"")
+    fi
+    if [[ -n "${image_type}" ]]; then
+        nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"image_type\" = \"${image_type}\"")
     fi
     if [[ -n "$template" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"template\" = \"${template}\"")
@@ -1201,10 +1215,10 @@ function set_snow_json()
     if [[ -n "${console_options}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"console_options\" = \"${console_options}\"")
     fi
-    if [[ -n "$memory" ]]; then
+    if [[ -n "${memory}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"memory\" = \"${memory}\"")
     fi
-    if [[ -n "$cpus" ]]; then
+    if [[ -n "${cpus}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"cpus\" = \"${cpus}\"")
     fi
     if [[ -n "${disk_size}" ]]; then
@@ -1305,6 +1319,8 @@ function boot_copy()
             image=$3
             if [[ -z "${image}" ]]; then
                 image=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image\"")
+                image_rootfs=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image_rootfs\"")
+                image_type=$(echo ${nodes_json} | jq -r ".\"${node_type}\".\"${node}\".\"image_type\"")
                 if [[ "${image}" == "null" ]]; then
                     image=${DEFAULT_BOOT}
                 fi
@@ -1314,12 +1330,20 @@ function boot_copy()
             if [[ ! -f ${image_pxe} ]] ; then
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
-            if [[ ! -f ${image_pxe} ]] ; then
+            if [[ ! -f ${image_config} ]] ; then
                 warning_message "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
             fi
+            if [[ "${image_rootfs}" == "null" || -z "${image_rootfs}" ]]; then
+                image_rootfs="${IMAGE_ROOTFS}"
+            fi
+            if [[ "${image_type}" == "null" || -z "${image_type}" ]]; then
+                image_type="${IMAGE_TYPE}"
+            fi
             cp -p ${image_pxe} ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__IMAGE_ROOTFS__|${image_rootfs}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
+            sed -i "s|__IMAGE_TYPE__|${image_type}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         fi
         if [[ "${console_options}" == "null" ]]; then
             console_options=${DEFAULT_CONSOLE_OPTIONS}
@@ -1327,6 +1351,8 @@ function boot_copy()
         sed -i "s|__CONSOLE_OPTIONS__|${console_options}|g" ${SNOW_CONF}/boot/pxelinux.cfg/${node_hash}
         last_deploy="$(date)"
         set_snow_json
+        unset image_rootfs
+        unset image_type
         unset install_repo
         unset console_options
     done
@@ -1434,13 +1460,16 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            dracut --add "nfs network base ssh-client dm rdma" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
+            dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
-            dracut --add "nfs network base ssh-client dm" --add-drivers "nfs nfsv4 squashfs" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
-            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz.img
+            install_software "dracut-network dracut-tools"
+            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
+            dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
     esac
@@ -1470,11 +1499,17 @@ function first_boot_hooks()
         mkdir -p ${hooks_path}/first_boot
     fi
     if [[ ! -e /usr/local/bin/first_boot ]]; then
-        cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
         cp -p ${hooks_path}/first_boot/first_boot /usr/local/bin/first_boot
         chmod 700 /usr/local/bin/first_boot
     fi
-    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    if [[ -d /lib/systemd/system ]]; then
+        cp -p ${hooks_path}/first_boot/first_boot.service  /lib/systemd/system/
+        replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
+    if [[ -d /usr/lib/systemd/system ]]; then
+        cp -p ${hooks_path}/first_boot/first_boot.service  /usr/lib/systemd/system/
+        replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
     systemctl enable first_boot
 } 1>>$LOGFILE 2>&1
 
@@ -1491,19 +1526,19 @@ function enable_readonly_root()
             replace_text $prefix/etc/hosts "^::1" " "
             echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
             echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
-            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lib/gssproxy" >> /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
-            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
+            echo "files    /var/run/gssproxy.pid" > $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy" >> $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > $prefix/etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> $prefix/etc/rwtab.d/tmpdirs
         ;;
         suse|sle[sd]|opensuse)
             error_exit "Read-only NFSROOT image not yet supported for this distribution"
             echo "files    /etc/aliases.db" > $prefix/etc/rwtab.d/postfix
             echo "dirs     /var/lib/postfix" >> $prefix/etc/rwtab.d/postfix
-            echo "files    /var/run/gssproxy.pid" > /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lib/gssproxy/rcache" >> /etc/rwtab.d/gssproxy
-            echo "dirs     /var/lock" > /etc/rwtab.d/tmpdirs
-            echo "dirs     /var/lib/rpm" >> /etc/rwtab.d/tmpdirs
+            echo "files    /var/run/gssproxy.pid" > $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lib/gssproxy/rcache" >> $prefix/etc/rwtab.d/gssproxy
+            echo "dirs     /var/lock" > $prefix/etc/rwtab.d/tmpdirs
+            echo "dirs     /var/lib/rpm" >> $prefix/etc/rwtab.d/tmpdirs
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -1522,12 +1557,25 @@ function generate_rootfs()
     # Run hooks:
     hooks ${hooks_path}
     # Setup the first boot hooks
-    replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    if [[ -d /lib/systemd/system ]]; then
+        replace_text /lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
+    if [[ -d /usr/lib/systemd/system ]]; then
+        replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
+    fi
     systemctl enable first_boot
+    # Identify remote file systems
+    local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
+    local exclude_remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print "--exclude="$7}}' | tr '\n' ' ')
     # Transfer required files
-    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages / ${mount_point}/
+    rsync -aHAXv --progress --exclude=/proc/* --exclude=/sys/* --exclude=/sNow/* --exclude=/tmp/* --exclude=/dev/* --exclude=/var/log/messages ${exclude_remotefs_mount_points} / ${mount_point}/
     # Create required directory structure
     mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
+    # create remote file system mount points
+    for remotefs in ${remotefs_mount_points}; do 
+        mkdir -p ${mount_point}${remotefs}
+    done
+    unset remotefs
     # set required permissions
     chown root:lock ${mount_point}/var/lock
     # Update fstab
@@ -1548,6 +1596,8 @@ function generate_rootfs_nfs()
     local image=$1
     # path to the PXE config file
     local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
     # raw rootfs image
     local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
     # set mount point for the rootfs
@@ -1569,7 +1619,8 @@ function generate_rootfs_nfs()
     # Setup NFSROOT support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/nfsroot ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
-    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=nfs:${NFS_SERVER}:${mount_point},ro" > ${image_config}
+    echo "IMAGE_TYPE=nfsroot" >> ${image_config}
 }
 
 function generate_rootfs_squashfs()
@@ -1577,6 +1628,8 @@ function generate_rootfs_squashfs()
     local image=$1
     # path to the PXE config file
     local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
     # raw rootfs image
     local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
     # set mount point for the rootfs
@@ -1584,27 +1637,29 @@ function generate_rootfs_squashfs()
     # create the squashfs rootfs working dir
     mkdir -p ${mount_point}
     # Extract raw rootfs into the squashfs working dir
-    tar -C ${mount_point} -zxf ${image_rootfs}
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
     # Update fstab
     bkp ${mount_point}/etc/fstab
     cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
     echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    #echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    #echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/tmp    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
-    echo "none        /var/log    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
     setup_networkfs ${mount_point}
     # Run hooks:
-    hooks ${SNOW_CONF}/boot/images/$image
+    #hooks ${SNOW_CONF}/boot/images/$image
     # Setup the first boot hooks
-    first_boot_hooks ${SNOW_CONF}/boot/images/$image
+    #first_boot_hooks ${SNOW_CONF}/boot/images/$image
     # Generate the squasfs image
-    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot
+    mksquashfs ${mount_point} ${SNOW_CONF}/boot/images/${image}/rootfs.squashfs -e boot -comp xz
     # Setup squashfs support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/stateless ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
-    sed -i "s|__NFS_SERVER__|${NFS_SERVER}|g" ${image_pxe}
+    #echo "IMAGE_ROOTFS=__OVERLAY__PROTOCOL__://__OVERLAY_SERVER__/images/__IMAGE__/rootfs.squashfs" > ${image_config}
+    echo "IMAGE_ROOTFS=nfs://${NFS_SERVER}:${SNOW_CONF}/boot/images/${image}/rootfs.squashfs" > ${image_config}
+    echo "IMAGE_TYPE=squashfs" >> ${image_config}
 }
 
 function generate_rootfs_stateless()
@@ -1678,6 +1733,7 @@ function clone_node()
     local node=$1
     local image=$2
     local image_type=$3
+    local image_desc="$4"
     if [[ -z "$node" ]]; then
         error_exit "ERROR: no node name to clone is provided"
     fi
@@ -1688,11 +1744,6 @@ function clone_node()
         error_exit "ERROR: no type of image is provided"
     fi
     # Check if snow CLI is executed in the same golden node or from the snow server
-    if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
-        warning_msg "This will overwrite the image $image"
-    else
-        warning_msg "This will clone $node and generate the image $image."
-    fi
     if [[ "$(uname -n)" == "$node" ]]; then
         if [[ -e ${SNOW_CONF}/boot/images/$image ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image
@@ -1700,11 +1751,22 @@ function clone_node()
         get_server_distribution $node
         generate_pxe_image $image
         generate_rootfs $image
-        #set_image_type $image ${image_type}
     else
+        # Check if the image already exist
+        if [[ -f ${SNOW_CONF}/boot/images/$image/rootfs.tar.gz ]]; then
+            if [[ "$5" != "force" ]]; then
+                error_exit "The image ${image} already exist, please use 'force' option to overwrite the image or remove it first with: snow remove image ${image}."
+            else
+                warning_msg "This will overwrite the image $image"
+                rm -fr ${SNOW_CONF}/boot/images/${image}/
+            fi
+        else
+            warning_msg "This will clone $node and generate the image $image."
+        fi
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
+        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
         if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
@@ -1729,7 +1791,7 @@ function clone_image()
             error_msg "The image ${new_image} already exist. Please remove it before to create a new one."
         fi
         cp -pr ${SNOW_CONF}/boot/images/${old_image} ${SNOW_CONF}/boot/images/${new_image}
-        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe
+        sed -i "s|${old_image}|${new_image}|g" ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/config
         mv ${SNOW_CONF}/boot/images/${new_image}/${old_image}.pxe ${SNOW_CONF}/boot/images/${new_image}/${new_image}.pxe
         if [[ ! -z "${new_description}" ]]; then
             echo "${new_description}" > ${SNOW_CONF}/boot/images/${new_image}/description
