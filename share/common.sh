@@ -648,7 +648,8 @@ function init()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
-    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf > $SNOW_CONF/system_files/etc/static_hosts
+    cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
+    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
     generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
     if [[ ! -z ${NET_LLF[2]} ]]; then
