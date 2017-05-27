@@ -123,6 +123,9 @@
 * Included /etc/resolv.conf to avoid potential issues related with DNS service not available while mounting NFS or cluster file systems in the boot time
 
 ### Minor fixes
+* Fix issue 5 - update snow.conf permissions to 600 after snow init.
+* Fix issue 122 - 'snow show nodes' prints also the host name
+* Fix issue 66 - included warning message in /etc/hosts
 
 ### Known Issues
 * Included NFSROOT option in overlayfs but it doesn't allow to apply live changes in ro NFS image due a bug in OverlayFS. Remount is required to enable changes performed in NFS image.
