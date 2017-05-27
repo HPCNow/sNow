@@ -110,3 +110,19 @@
 * Fix issue 115 - replaced error message with an error exit when trying to add nodes that already exist in the database. 
 * Fix issue 115 - moved interactive question in node remove outside the loop
 * Fix issue 123 - included NTP configuration in compute nodes
+
+## 1.1.7
+
+### New Features and changes
+* Fixed path divergency in SuSE for /usr/lib/systemd/system in dracut
+* Stateless based on SquashFS + OverlayFS working for (Open)SuSE and RHEL/CentOS
+* Included image_rootfs and image_type in the database.
+
+### Major fixes
+* Remote file systems are excluded during the image generation. mksquasfs uses xz compression. Improvements in dracut support for SuSE
+* Included /etc/resolv.conf to avoid potential issues related with DNS service not available while mounting NFS or cluster file systems in the boot time
+
+### Minor fixes
+
+### Known Issues
+* Included NFSROOT option in overlayfs but it doesn't allow to apply live changes in ro NFS image due a bug in OverlayFS. Remount is required to enable changes performed in NFS image.
