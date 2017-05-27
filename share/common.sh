@@ -1058,6 +1058,7 @@ function show_nodes()
             if [[ "${node_query}" == "null" ]]; then
                 error_msg "The node $node does not exist in the database."
             else
+                echo "\"${node}\":" 1>&3
                 echo "${node_query}" | jq '.' 1>&3
             fi
         done
