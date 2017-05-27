@@ -553,6 +553,7 @@ function init()
     else
         error_exit "The snow.conf is not yet available."
     fi
+    chmod 600 ${SNOW_CONF}/system_files/etc/snow.conf
     # Check for active-domains.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
