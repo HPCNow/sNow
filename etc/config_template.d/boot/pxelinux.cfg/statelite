@@ -1,7 +1,0 @@
-# default is label '__IMAGE__'
-# boots a Linux kernel and mounts rootfs.gz as a root file system on a 512MiB ramdisk
-default __IMAGE__
-
-label   __IMAGE__
-    kernel images/__IMAGE__/vmlinuz
-        append initrd=images/__IMAGE__/rootfs.gz root=/dev/ram0 load_ramdisk=1 ramdisk_size=4194304 rw ip=dhcp netdevice=eth0 __CONSOLE_OPTIONS__

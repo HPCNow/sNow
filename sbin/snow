@@ -7,7 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="1.1.6"
+readonly SNOW_VERSION="1.1.7"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -34,6 +34,8 @@ readonly opt2=$2
 readonly opt3=$3
 readonly opt4=$4
 readonly opt5=$5
+readonly opt6=$6
+readonly opt7=$7
 declare -A CLUSTERS
 PDSH_RCMD_TYPE=ssh
 HAS_EE=false
@@ -132,7 +134,7 @@ case $opt1 in
             #    spinner $!             "Cloning $opt3"
             #    ;;
             node)
-                clone_node $opt3 $opt4 $opt5 $opt6 && error_check 0 "System cloned " || error_check 1 "System cloned " &
+                clone_node $opt3 $opt4 $opt5 "$opt6" "$opt7" && error_check 0 "System cloned " || error_check 1 "System cloned " &
                 spinner $!             "Cloning $opt3"
                 ;;
             template)
