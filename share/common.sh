@@ -1781,10 +1781,10 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
-        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
-        if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
+        if [[ ! -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
+        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
     fi
 }
 

@@ -38,7 +38,7 @@ if [ -n "${overlay_rootfs}" ]; then
     # Iniciate the network
     info "Setting up network configuration"
     dhclient ${netif}
-    sleep 5
+    sleep 2
 
     # Create the directories and mount the writable file system based on tmpfs (stateless)
     info "Creating mount point directories"
@@ -132,6 +132,41 @@ if [ -n "${overlay_rootfs}" ]; then
         fi
     fi
 
+    if [ "${overlay_type}" = "beegfs" ]; then
+        if [ ! -z "${overlay_server}" ]; then 
+            info "Mounting BeeGFS-root read-only"
+            image_path="${overlay_server%/*}"
+            mount -o ro -t ${overlay_protocol} beegfs_nodev ${stage1_ro} -ocfgFile=/etc/anotherconfig.conf
+            /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
+            modprobe beegfs
+            mkdir /sNow
+            mount -o ro -t beegfs beegfs_nodev /sNow -ocfgFile=/etc/beegfs/beegfs-client.conf
+            mount -o bind ${overlay_rootfs} ${stage1_ro}
+            if [ $? != 0 ]; then
+                warn "failed to mount BeeGFS root read-only image"
+                exit 1
+            fi
+        else
+            die "Required parameter 'overlay_server' is missing" 
+        fi
+    fi
+
+    if [ "${overlay_type}" = "lustre" ]; then
+        if [ ! -z "${overlay_server}" ]; then 
+            info "Mounting Lustre-root read-only"
+            modprobe lnet
+            modprobe lustre
+            mount.lustre -o ro ${overlay_server} ${stage1_ro}
+            if [ $? != 0 ]; then
+                warn "failed to mount Lustre-root read-only image"
+                exit 1
+            fi
+        else
+            die "Required parameter 'overlay_server' is missing" 
+        fi
+    fi
+
+    sleep 2
     mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
