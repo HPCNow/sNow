@@ -1932,7 +1932,7 @@ function avail_templates()
 
 function avail_images()
 {
-    local images=$(find $SNOW_CONF/boot/images/ -type d | sed -e "s|$SNOW_CONF/boot/images/||g")
+    local images=$(find $SNOW_CONF/boot/images/* -type d -prune | sed -e "s|$SNOW_CONF/boot/images/||g")
     printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
     printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
     for img in $images; do

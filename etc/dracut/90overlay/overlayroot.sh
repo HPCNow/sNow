@@ -136,12 +136,14 @@ if [ -n "${overlay_rootfs}" ]; then
         if [ ! -z "${overlay_server}" ]; then 
             info "Mounting BeeGFS-root read-only"
             image_path="${overlay_server%/*}"
-            mount -o ro -t ${overlay_protocol} beegfs_nodev ${stage1_ro} -ocfgFile=/etc/anotherconfig.conf
+            source /etc/default/beegfs-client
             /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
             modprobe beegfs
-            mkdir /sNow
-            mount -o ro -t beegfs beegfs_nodev /sNow -ocfgFile=/etc/beegfs/beegfs-client.conf
-            mount -o bind ${overlay_rootfs} ${stage1_ro}
+            sleep 5
+            mkdir -p ${stage1_rw}/sNow
+            mount -t beegfs beegfs_nodev ${stage1_rw}/sNow -ocfgFile=/etc/beegfs/beegfs-client.conf,_netdev,ro
+            stage1_ro=${stage1_rw}${overlay_rootfs}
+            sleep 5
             if [ $? != 0 ]; then
                 warn "failed to mount BeeGFS root read-only image"
                 exit 1
@@ -167,6 +169,7 @@ if [ -n "${overlay_rootfs}" ]; then
     fi
 
     sleep 2
+    info "mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot"
     mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
