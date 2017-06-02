@@ -9,7 +9,7 @@
 #   overlay_opts=ro
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 #. /lib/url-lib.sh
 #. /lib/nfs-lib.sh
@@ -28,12 +28,19 @@ newroot="${3:-/sysroot}"
 
 if [ -n "${overlay_rootfs}" ]; then
     # Define directories to be used for overlayfs
+    mount --make-private /run
+    stage0=/run/stage-0
+    stage0_ro=${stage0}/ro
+    stage0_rw=${stage0}/rw
+    stage0_rw_upper=${stage0_rw}/upper
+    stage0_rw_work=${stage0_rw}/work
+    stage0_rootfs=${stage0_rw}/rootfs
     stage1=/run/stage-1
     stage1_ro=${stage1}/ro
     stage1_rw=${stage1}/rw
     stage1_rw_upper=${stage1}/rw/upper
     stage1_rw_work=${stage1}/rw/work
-    stage1_rootfs=${stage1}/rootfs
+    stage1_rootfs=${stage1}/rw/rootfs
 
     # Iniciate the network
     info "Setting up network configuration"
@@ -42,13 +49,16 @@ if [ -n "${overlay_rootfs}" ]; then
 
     # Create the directories and mount the writable file system based on tmpfs (stateless)
     info "Creating mount point directories"
+    mkdir -p ${stage0_ro} ${stage0_rw} ${stage0_rootfs}
     mkdir -p ${stage1_ro} ${stage1_rw} ${stage1_rootfs}
     info "Mounting tmpfs as writable layer"
-    mount -t tmpfs tmpfs-root ${stage1_rw}
+    mount -n -t tmpfs tmpfs-root ${stage0_rw}
+    mount --make-private ${stage0_rw}
     if [ $? != 0 ]; then
         warn "failed to create tmpfs"
         exit 1
     fi
+    mkdir -p ${stage0_rw_upper} ${stage0_rw_work}
     mkdir -p ${stage1_rw_upper} ${stage1_rw_work}
 
     if [ "${overlay_type}" = "squashfs" ]; then
@@ -56,42 +66,42 @@ if [ -n "${overlay_rootfs}" ]; then
             http|https|ftp|tftp) 
                 [ -e /tmp/readonly_rootfs.downloaded ] && exit 0
                 info "Fetching ${overlay_rootfs}"
-                stage1_rootfs=${stage1_rootfs}/rootfs.squashfs
-                curl -s ${overlay_rootfs} -o ${stage1_rootfs}
+                stage0_rootfs=${stage0_rootfs}/rootfs.squashfs
+                curl -s ${overlay_rootfs} -o ${stage0_rootfs}
                 if [ $? != 0 ]; then
                 	warn "failed to download overlay image: error $?"
                 	exit 1
                 fi
                 > /tmp/readonly_rootfs.downloaded
-                #fetch_curl ${overlay_rootfs} ${stage1_rootfs}
+                #fetch_curl ${overlay_rootfs} ${stage0_rootfs}
                 ;;
             beegfs)
                 die "Protocol yet not supported: ${overlay_protocol}"
-                #mount_beegfs ${overlay_rootfs} ${stage1_rootfs}
-                #fetch_beegfs ${overlay_rootfs} ${stage1_rootfs}
+                #mount_beegfs ${overlay_rootfs} ${stage0_rootfs}
+                #fetch_beegfs ${overlay_rootfs} ${stage0_rootfs}
                 ;;
             lustre)
                 die "Protocol yet not supported: ${overlay_protocol}"
-                #mount_lustre ${overlay_rootfs} ${stage1_rootfs}
-                #fetch_lustre ${overlay_rootfs} ${stage1_rootfs}
+                #mount_lustre ${overlay_rootfs} ${stage0_rootfs}
+                #fetch_lustre ${overlay_rootfs} ${stage0_rootfs}
                 ;;
             nfs)
                 info "Mounting NFSROOT read-only"
                 file_path="${overlay_server%/*}"
                 file_name="${overlay_server##*/}"
-                stage1_rootfs=${stage1_rootfs}/${file_name}
+                stage0_rootfs=${stage0_rootfs}/${file_name}
                 if [ "${overlay_fetch}" = "yes" ]; then
-                    mkdir -p ${stage1}/fetch_mount
-                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage1}/fetch_mount
+                    mkdir -p ${stage0}/fetch_mount
+                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage0}/fetch_mount
                     if [ $? != 0 ]; then
                         warn "failed to mount NFSROOT read-only image"
                         exit 1
                     fi
-                    cp -p ${stage1}/fetch_mount/${file_name} ${stage1_rootfs}
-                    umount ${stage1}/fetch_mount
-                    rmdir ${stage1}/fetch_mount
+                    cp -p ${stage0}/fetch_mount/${file_name} ${stage0_rootfs}
+                    umount ${stage0}/fetch_mount
+                    rmdir ${stage0}/fetch_mount
                 else
-                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage1}/rootfs
+                    mount -t ${overlay_protocol} -o defaults,ro ${file_path} ${stage0}/rw/rootfs
                     if [ $? != 0 ]; then
                         warn "failed to mount NFSROOT read-only image"
                         exit 1
@@ -100,29 +110,33 @@ if [ -n "${overlay_rootfs}" ]; then
                 ;;
             torrent)
                 die "Protocol yet not supported: ${overlay_protocol}"
-                #fetch_torrent ${overlay_rootfs} ${stage1_rootfs}
+                #fetch_torrent ${overlay_rootfs} ${stage0_rootfs}
                 ;;
             *)
                 die "Protocol not supported: ${overlay_protocol}"
                 ;;
         esac
         # Mounting SquashFS image
-        if [ -e ${stage1_rootfs} ]; then
+        if [ -e ${stage0_rootfs} ]; then
+            stage0_ro_rootfs_path=${stage0_ro}
             info "Mounting squashfs"
-            mount -t squashfs -o ro ${stage1_rootfs} ${stage1_ro}
+            mount -t squashfs -o ro ${stage0_rootfs} ${stage0_ro}
+            mount --make-private ${stage0_ro}
             if [ $? != 0 ]; then
                 warn "failed to mount SquashFS image"
                 exit 1
             fi
         else
-            warn "Image is not available ${stage1_rootfs}"
+            warn "Image is not available ${stage0_rootfs}"
         fi
     fi
 
     if [ "${overlay_type}" = "nfs" ]; then
         if [ ! -z "${overlay_server}" ]; then 
+            stage0_ro_rootfs_path=${stage0_ro}
             info "Mounting NFSROOT read-only"
-            mount -t ${overlay_protocol} -o defaults,ro ${overlay_server} ${stage1_ro}
+            mount -t ${overlay_protocol} -o defaults,ro ${overlay_server} ${stage0_ro}
+            mount --make-private ${stage0_ro}
             if [ $? != 0 ]; then
                 warn "failed to mount NFSROOT read-only image"
                 exit 1
@@ -136,18 +150,22 @@ if [ -n "${overlay_rootfs}" ]; then
         if [ ! -z "${overlay_server}" ]; then 
             info "Mounting BeeGFS-root read-only"
             image_path="${overlay_server%/*}"
+            stage0_ro_rootfs_path=${stage0_ro}${overlay_rootfs}
+            stage0_ro=${stage0_ro}/sNow
             source /etc/default/beegfs-client
+            #sed -i "s|logStdFile         = /var/log/beegfs-client.log|logStdFile         = ${stage0_rw}/beegfs-client.log|g" /etc/beegfs/beegfs-helperd.conf
+            #sed -i "s|logStdFile         = /var/log/beegfs-client.log|logStdFile         = /dev/null|g" /etc/beegfs/beegfs-helperd.conf
             /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
             modprobe beegfs
             sleep 5
-            mkdir -p ${stage1_rw}/sNow
-            mount -t beegfs beegfs_nodev ${stage1_rw}/sNow -ocfgFile=/etc/beegfs/beegfs-client.conf,_netdev,ro
-            stage1_ro=${stage1_rw}${overlay_rootfs}
-            sleep 5
+            mkdir -p ${stage0_ro}
+            mount -n -t beegfs beegfs_nodev ${stage0_ro} -ocfgFile=/etc/beegfs/beegfs-client.conf,_netdev,ro
             if [ $? != 0 ]; then
                 warn "failed to mount BeeGFS root read-only image"
                 exit 1
             fi
+            sleep 5
+            mount --make-private ${stage0_ro}
         else
             die "Required parameter 'overlay_server' is missing" 
         fi
@@ -155,10 +173,12 @@ if [ -n "${overlay_rootfs}" ]; then
 
     if [ "${overlay_type}" = "lustre" ]; then
         if [ ! -z "${overlay_server}" ]; then 
+            stage0_ro_rootfs_path=${stage0_ro}
             info "Mounting Lustre-root read-only"
             modprobe lnet
             modprobe lustre
-            mount.lustre -o ro ${overlay_server} ${stage1_ro}
+            mount.lustre -o ro ${overlay_server} ${stage0_ro}
+            mount --make-private ${stage0_ro}
             if [ $? != 0 ]; then
                 warn "failed to mount Lustre-root read-only image"
                 exit 1
@@ -168,9 +188,26 @@ if [ -n "${overlay_rootfs}" ]; then
         fi
     fi
 
-    sleep 2
-    info "mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot"
-    mount -t overlay -o lowerdir=${stage1_ro},upperdir=${stage1_rw_upper},workdir=${stage1_rw_work} overlay $newroot
+    #info "mount -n -t overlay -o lowerdir=${stage0_ro_rootfs_path},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot"
+    #mount -t overlay -o lowerdir=${stage0_ro},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot
+    exit 1
+    mount -n -t overlay -o lowerdir=${stage0_ro_rootfs_path},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot
+    if [ $? != 0 ]; then
+        warn "failed to mount OverlayFS root file system"
+        exit 1
+    fi
+    #info "mount --make-private $newroot"
+    mount --make-private $newroot
+    #modprobe -d $newroot overlay
+    #modprobe -d $newroot beegfs
+    #info "mkdir -p ${newroot}${stage0_ro} ${newroot}${stage0_rw}"
+    mkdir -p ${newroot}${stage0_ro} ${newroot}${stage0_rw}
+    #info "mount --move ${stage0_ro} ${newroot}${stage0_ro}"
+    mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro}/sNow to ${newroot}${stage0_ro}/sNow"
+    #info "mount --move ${stage0_rw} ${newroot}${stage0_rw}"
+    mount --move ${stage0_rw} ${newroot}${stage0_rw} || info "Failed to move ${stage0_rw} to ${newroot}${stage0_rw}"
+    #info "cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log"
+    cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
     # force udevsettle to break
