@@ -1578,6 +1578,7 @@ function generate_rootfs()
     if [[ -d /usr/lib/systemd/system ]]; then
         replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     fi
+    mkdir -p ${hooks_path}/first_boot
     systemctl enable first_boot
     # Identify remote file systems
     local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
@@ -1636,6 +1637,38 @@ function generate_rootfs_nfs()
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
     echo "IMAGE_ROOTFS=nfs:${NFS_SERVER}:${mount_point},ro" > ${image_config}
     echo "IMAGE_TYPE=nfsroot" >> ${image_config}
+}
+
+function generate_rootfs_beegfs()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
+    enable_readonly_root ${mount_point}
+    replace_text ${mount_point}/etc/beegfs/beegfs-client.conf "^connClientPortUDP" "connClientPortUDP             = 8100" 
+    # Setup BeeGFSROOT support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/beegfsroot ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=${mount_point}" > ${image_config}
+    echo "IMAGE_TYPE=beegfsroot" >> ${image_config}
 }
 
 function generate_rootfs_squashfs()
@@ -1846,6 +1879,9 @@ function set_image_type()
         case ${image_type} in
             nfsroot)
                 generate_rootfs_nfs $image
+            ;;
+            beegfsroot)
+                generate_rootfs_beegfs $image
             ;;
             stateless)
                 generate_rootfs_squashfs $image

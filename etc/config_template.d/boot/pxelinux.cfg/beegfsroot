@@ -4,4 +4,4 @@ default __IMAGE__
 
 label   __IMAGE__
     kernel images/__IMAGE__/vmlinuz
-        append initrd=images/__IMAGE__/initrd.img overlay_rootfs=__IMAGE_ROOTFS__ overlay_type=__IMAGE_TYPE__ overlay_opts=ro ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__ rd.info
+        append initrd=images/__IMAGE__/initrd.img beegfs_rootfs=__IMAGE_ROOTFS__ ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__ rd.info
