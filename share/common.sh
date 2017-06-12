@@ -1475,7 +1475,7 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
             dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz

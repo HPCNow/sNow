@@ -35,7 +35,7 @@ if [ -n "${beegfs_rootfs}" ]; then
         /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
         modprobe beegfs
         sleep 5
-        mount -n -t beegfs beegfs_nodev ${mount_point} -ocfgFile=/etc/beegfs/beegfs-client.conf,_netdev,ro
+        mount -n -t beegfs beegfs_nodev ${mount_point} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
         if [ $? != 0 ]; then
             warn "Failed to mount BeeGFS root read-only image"
             exit 1
@@ -45,6 +45,7 @@ if [ -n "${beegfs_rootfs}" ]; then
         die "Required parameter 'beegfs_rootfs' is missing" 
     fi
     newroot="${mount_point}${beegfs_rootfs}"
+    mount -o bind ${newroot} /sysroot
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/beegfsfsroot.sh
     # force udevsettle to break
