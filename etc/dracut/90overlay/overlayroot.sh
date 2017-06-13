@@ -150,16 +150,15 @@ if [ -n "${overlay_rootfs}" ]; then
         if [ ! -z "${overlay_server}" ]; then 
             info "Mounting BeeGFS-root read-only"
             image_path="${overlay_server%/*}"
+            stage0_ro=${stage0_ro}/beegfs
             stage0_ro_rootfs_path=${stage0_ro}${overlay_rootfs}
-            stage0_ro=${stage0_ro}/sNow
             source /etc/default/beegfs-client
-            #sed -i "s|logStdFile         = /var/log/beegfs-client.log|logStdFile         = ${stage0_rw}/beegfs-client.log|g" /etc/beegfs/beegfs-helperd.conf
-            #sed -i "s|logStdFile         = /var/log/beegfs-client.log|logStdFile         = /dev/null|g" /etc/beegfs/beegfs-helperd.conf
             /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
             modprobe beegfs
             sleep 5
             mkdir -p ${stage0_ro}
-            mount -n -t beegfs beegfs_nodev ${stage0_ro} -ocfgFile=/etc/beegfs/beegfs-client.conf,_netdev,ro
+            sed -e "s|^connClientPortUDP             = 8004|connClientPortUDP             = 8100|g" /etc/beegfs/beegfs-client.conf > /etc/beegfs/beegfs-client-rootfs.conf
+            mount -n -t beegfs beegfs_nodev ${stage0_ro} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
             if [ $? != 0 ]; then
                 warn "failed to mount BeeGFS root read-only image"
                 exit 1
@@ -188,25 +187,16 @@ if [ -n "${overlay_rootfs}" ]; then
         fi
     fi
 
-    #info "mount -n -t overlay -o lowerdir=${stage0_ro_rootfs_path},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot"
     #mount -t overlay -o lowerdir=${stage0_ro},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot
-    exit 1
     mount -n -t overlay -o lowerdir=${stage0_ro_rootfs_path},upperdir=${stage0_rw_upper},workdir=${stage0_rw_work} overlay $newroot
     if [ $? != 0 ]; then
         warn "failed to mount OverlayFS root file system"
         exit 1
     fi
-    #info "mount --make-private $newroot"
     mount --make-private $newroot
-    #modprobe -d $newroot overlay
-    #modprobe -d $newroot beegfs
-    #info "mkdir -p ${newroot}${stage0_ro} ${newroot}${stage0_rw}"
     mkdir -p ${newroot}${stage0_ro} ${newroot}${stage0_rw}
-    #info "mount --move ${stage0_ro} ${newroot}${stage0_ro}"
-    mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro}/sNow to ${newroot}${stage0_ro}/sNow"
-    #info "mount --move ${stage0_rw} ${newroot}${stage0_rw}"
+    mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro} to ${newroot}${stage0_ro}"
     mount --move ${stage0_rw} ${newroot}${stage0_rw} || info "Failed to move ${stage0_rw} to ${newroot}${stage0_rw}"
-    #info "cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log"
     cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
