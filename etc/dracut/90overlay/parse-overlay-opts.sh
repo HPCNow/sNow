@@ -44,6 +44,9 @@ case "${overlay_rootfs}" in
     nfs://*)
         overlay_protocol=nfs
         ;;
+    nfsv4://*)
+        overlay_protocol=nfsv4
+        ;;
     http://*) 
         overlay_protocol=http
         ;;

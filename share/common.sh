@@ -1475,15 +1475,15 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
@@ -1578,6 +1578,7 @@ function generate_rootfs()
     if [[ -d /usr/lib/systemd/system ]]; then
         replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     fi
+    mkdir -p ${hooks_path}/first_boot
     systemctl enable first_boot
     # Identify remote file systems
     local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
@@ -1636,6 +1637,37 @@ function generate_rootfs_nfs()
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
     echo "IMAGE_ROOTFS=nfs:${NFS_SERVER}:${mount_point},ro" > ${image_config}
     echo "IMAGE_TYPE=nfsroot" >> ${image_config}
+}
+
+function generate_rootfs_beegfs()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
+    enable_readonly_root ${mount_point}
+    # Setup BeeGFSROOT support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/beegfsroot ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=${mount_point#${SNOW_PATH}}" > ${image_config}
+    echo "IMAGE_TYPE=beegfsroot" >> ${image_config}
 }
 
 function generate_rootfs_squashfs()
@@ -1781,10 +1813,10 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
-        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
-        if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
+        if [[ ! -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
+        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
     fi
 }
 
@@ -1846,6 +1878,9 @@ function set_image_type()
         case ${image_type} in
             nfsroot)
                 generate_rootfs_nfs $image
+            ;;
+            beegfsroot)
+                generate_rootfs_beegfs $image
             ;;
             stateless)
                 generate_rootfs_squashfs $image
@@ -1932,7 +1967,7 @@ function avail_templates()
 
 function avail_images()
 {
-    local images=$(find $SNOW_CONF/boot/images/ -type d | sed -e "s|$SNOW_CONF/boot/images/||g")
+    local images=$(find $SNOW_CONF/boot/images/* -type d -prune | sed -e "s|$SNOW_CONF/boot/images/||g")
     printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
     printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
     for img in $images; do
