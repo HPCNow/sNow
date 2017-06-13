@@ -1476,14 +1476,14 @@ function generate_pxe_image()
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
             ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
@@ -1663,11 +1663,10 @@ function generate_rootfs_beegfs()
     echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
     setup_networkfs ${mount_point}
     enable_readonly_root ${mount_point}
-    replace_text ${mount_point}/etc/beegfs/beegfs-client.conf "^connClientPortUDP" "connClientPortUDP             = 8100" 
     # Setup BeeGFSROOT support for PXE
     cp -p ${SNOW_CONF}/boot/pxelinux.cfg/beegfsroot ${image_pxe}
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
-    echo "IMAGE_ROOTFS=${mount_point}" > ${image_config}
+    echo "IMAGE_ROOTFS=${mount_point#${SNOW_PATH}}" > ${image_config}
     echo "IMAGE_TYPE=beegfsroot" >> ${image_config}
 }
 

@@ -29,25 +29,24 @@ if [ -n "${beegfs_rootfs}" ]; then
     # Create the directories and mount the writable file system based on tmpfs (stateless)
     info "Creating mount point directories"
     mkdir -p ${mount_point}
-    if [ ! -z "${beegfs_mgmt}" ]; then 
-        info "Mounting BeeGFS-root read-only"
-        source /etc/default/beegfs-client
-        /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
-        modprobe beegfs
-        sleep 5
-        mount -n -t beegfs beegfs_nodev ${mount_point} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
-        if [ $? != 0 ]; then
-            warn "Failed to mount BeeGFS root read-only image"
-            exit 1
-        fi
-        sleep 5
-    else
-        die "Required parameter 'beegfs_rootfs' is missing" 
+    info "Mounting BeeGFS-root read-only"
+    source /etc/default/beegfs-client
+    /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
+    modprobe beegfs
+    sleep 5
+    sed -e "s|^connClientPortUDP             = 8004|connClientPortUDP             = 8100|g" /etc/beegfs/beegfs-client.conf > /etc/beegfs/beegfs-client-rootfs.conf
+    mount -n -t beegfs beegfs_nodev ${mount_point} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
+    if [ $? != 0 ]; then
+        warn "Failed to mount BeeGFS root read-only image"
+        exit 1
     fi
+    sleep 5
     newroot="${mount_point}${beegfs_rootfs}"
     mount -o bind ${newroot} /sysroot
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/beegfsfsroot.sh
     # force udevsettle to break
     > $hookdir/initqueue/work
+else
+    die "Required parameter 'beegfs_rootfs' is missing" 
 fi
