@@ -1,0 +1,17 @@
+#!/bin/bash
+cat <<EOF > /etc/apt/sources.list
+
+# 
+
+# deb cdrom:[Debian GNU/Linux 8.7.1 _Jessie_ - Official amd64 DVD Binary-1 20170116-11:01]/ jessie contrib main
+
+deb http://ftp.fr.debian.org/debian/ jessie main contrib non-free
+deb-src http://ftp.fr.debian.org/debian/ jessie main contrib non-free
+
+deb http://security.debian.org/ jessie/updates main contrib non-free
+deb-src http://security.debian.org/ jessie/updates main contrib non-free
+
+# jessie-updates, previously known as 'volatile'
+deb http://ftp.fr.debian.org/debian/ jessie-updates main contrib non-free
+deb-src http://ftp.fr.debian.org/debian/ jessie-updates main contrib non-free
+EOF
