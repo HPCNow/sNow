@@ -6,6 +6,8 @@
 #SHORT_DESCRIPTION: Installs LDAP master server.
 prefix=$1
 
+set -xv
+
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
     source /usr/share/xen-tools/common.sh
@@ -40,46 +42,48 @@ LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
 if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
-    installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin
+    installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin ssl-cert
     if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
         mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
         cp -pr /sNow/snow-configspace/system_files/etc/ldap ${prefix}/etc/ldap
     else
-        mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
-        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap.dist/
-        cp -pr ${prefix}/etc/ldap.dist ${prefix}/etc/ldap
-        #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
+        cp -pr ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
+        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap/
         #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
+        # Check available options with: debconf-show slapd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
-        slapd slapd/no_configuration boolean false
         slapd slapd/password1 password $LDAP_ADMIN_PASSWORD
         slapd slapd/password2 password $LDAP_ADMIN_PASSWORD
-        slapd shared/organization string $LDAP_ORGANIZATION
-        slapd slapd/domain string $LDAP_BASE
-        slapd slapd/backend select HDB
         slapd slapd/allow_ldap_v2 boolean false
+        slapd slapd/backend select HDB
         slapd slapd/purge_database boolean false
+        slapd shared/organization string $LDAP_ORGANIZATION
+        slapd slapd/no_configuration boolean false
+        slapd slapd/domain string $DOMAIN
         slapd slapd/move_old_database boolean true
 EOF
-        chroot ${prefix} /usr/bin/dpkg-reconfigure -f noninteractive slapd >/dev/null 2>&1
+        chroot ${prefix} /usr/sbin/dpkg-reconfigure -f noninteractive slapd >/dev/null 2>&1
+        killall slapd
+        sleep 5
 
         # LDAP BASE
         sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" /etc/ldap/ldap.conf
         # LDAP config password setup
-        if [[ -n "$LDAP_CONFIG_PASSWORD" ]]; then
-            password_hash=$(chroot ${prefix} /usr/sbin/slappasswd -s "${LDAP_CONFIG_PASSWORD}")
-            sed_safe_password_hash=${password_hash//\//\\\/}
-            chroot ${prefix} /usr/sbin/slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
-            sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" ${prefix}/tmp/config.ldif
-            rm -rf ${prefix}/etc/ldap/slapd.d/*
-            chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
-            rm ${prefix}/tmp/config.ldif
-        fi
+        #if [[ -n "$LDAP_CONFIG_PASSWORD" ]]; then
+        #    password_hash=$(chroot ${prefix} /usr/sbin/slappasswd -s "${LDAP_CONFIG_PASSWORD}")
+        #    sed_safe_password_hash=${password_hash//\//\\\/}
+        #    chroot ${prefix} /usr/sbin/slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
+        #    sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" ${prefix}/tmp/config.ldif
+        #    rm -rf ${prefix}/etc/ldap/slapd.d/*
+        #    chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
+        #    rm ${prefix}/tmp/config.ldif
+        #fi
 
         # ADDITIONAL LDAP SCHEMAS
         if [[ -n "$LDAP_ADDITIONAL_SCHEMAS" ]]; then
             IFS=","; declare -a schemas=($LDAP_ADDITIONAL_SCHEMAS); unset IFS
             for schema in "${schemas[@]}"; do
+                #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/${schema}.ldif
                 chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "/etc/ldap/schema/${schema}.ldif"
             done
         fi
@@ -93,23 +97,104 @@ EOF
                     LDAP_PPOLICY_DN_PREFIX="${LDAP_PPOLICY_DN_PREFIX:-cn=default,ou=policies}"
                     sed -i "s/\(olcPPolicyDefault: \)PPOLICY_DN/\1${LDAP_PPOLICY_DN_PREFIX}$dc_string/g" ${prefix}$module_file
                 fi
+                #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f ${module_file}
                 chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "$module_file"
             done
         fi
+
         # Prepopulate LDAP server
         if [[ -d "${prefix}/etc/ldap/prepopulate" ]]; then 
-            init_files=$(chroot ${prefix}/bin/ls /etc/ldap/prepopulate/*.ldif)
+            init_files=${prefix}/etc/ldap/prepopulate/*.ldif
             for file in $init_files; do
-                chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l "$file"
+                filename=$(basename $file)
+                sed -i "s|__LDAP_URI__|$LDAP_URI|g" "$file"
+                sed -i "s|__LDAP_BASE__|$LDAP_BASE|g" "$file"
+                chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/prepopulate/$filename
             done
         fi
     fi
+
     # Enable TLS support
-    if [[ -e /sNow/snow-configspace/system_files/etc/openldap/certs ]]; then 
-        mkdir -p ${prefix}/etc/openldap/certs
-        cp -pr /sNow/snow-configspace/system_files/etc/openldap/certs/* ${prefix}/etc/openldap/certs
-        chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/ssl.ldif
+    if [[ -e /sNow/snow-configspace/system_files/etc/ssl/slapd ]]; then 
+        mkdir -p ${prefix}/etc/ssl/slapd
+        cp -pr /sNow/snow-configspace/system_files/etc/ssl/slapd/* ${prefix}/etc/ssl/slapd
+    else
+        # Create dir for certificates
+        mkdir -p ${prefix}/etc/ssl/slapd
+        # Generate a private key for the certificate
+        chroot ${prefix} /usr/bin/certtool --generate-privkey > ${prefix}/etc/ssl/slapd/cakey.pem
+        # Create ca.info
+        echo "cn = $DOMAIN" > ${prefix}/etc/ssl/slapd/ca.info
+        echo "ca" >> ${prefix}/etc/ssl/slapd/ca.info
+        echo "cert_signing_key" >> ${prefix}/etc/ssl/slapd/ca.info
+        # Create CA certificate
+        chroot ${prefix} /usr/bin/certtool --generate-self-signed \
+            --load-privkey /etc/ssl/slapd/cakey.pem \
+            --template /etc/ssl/slapd/ca.info \
+            --outfile /etc/ssl/slapd/cacert.pem
+        # Generate private key for the server
+        chroot ${prefix} /usr/bin/certtool --generate-privkey \
+            --bits 2048 \
+            --outfile /etc/ssl/slapd/ldaps_slapd_key.pem
+        # Create template for server certificate
+        echo "organization = $LDAP_ORGANIZATION" > ${prefix}/etc/ssl/slapd/ldaps.info
+        echo "cn = $DOMAIN" >> ${prefix}/etc/ssl/slapd/ldaps.info
+        echo "tls_www_server" >> ${prefix}/etc/ssl/slapd/ldaps.info
+        echo "encryption_key" >> ${prefix}/etc/ssl/slapd/ldaps.info
+        echo "signing_key" >> ${prefix}/etc/ssl/slapd/ldaps.info
+        echo "expiration_days = 3650" >> ${prefix}/etc/ssl/slapd/ldaps.info
+        # Create the certificate
+        chroot ${prefix} /usr/bin/certtool --generate-certificate \
+            --load-privkey /etc/ssl/slapd/ldaps_slapd_key.pem \
+            --load-ca-certificate /etc/ssl/slapd/cacert.pem \
+            --load-ca-privkey /etc/ssl/slapd/cakey.pem \
+            --template /etc/ssl/slapd/ldaps.info \
+            --outfile /etc/ssl/slapd/ldaps_slapd_cert.pem
+        # Add TLS settings to the config
+        #chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/ssl.ldif
+        # systemctl does not work in chroot env.
+        chroot ${prefix} /etc/init.d/slapd start
+        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ssl.ldif
+        killall slapd
+        sleep 5
+        #cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
     fi
+    # Secure the keys
+    chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
     chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
     cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
+    chroot ${prefix} /bin/chgrp ssl-cert /etc/ssl/slapd/ldaps_slapd_key.pem
+    chroot ${prefix} /bin/chmod g+r /etc/ssl/slapd/ldaps_slapd_key.pem
+    chroot ${prefix} /bin/chmod o-r /etc/ssl/slapd/ldaps_slapd_key.pem
+    # Give apparmor access to cert files - Ubuntu
+    #sed -i "/\/usr\/sbin\/slapd mr,/ s/$/\n\n  \/etc\/ssl\/slapd\/ r,\n  \/etc\/ssl\/slapd\/* r,/" /etc/apparmor.d/usr.sbin.slapd
+    #service apparmor reload
+
+    #chroot ${prefix} /etc/init.d/slapd restart
+    # force TLS
+    chroot ${prefix} /etc/init.d/slapd start
+    chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
+    #chroot ${prefix} /etc/init.d/slapd stop
+    killall slapd
+    sleep 5
+    #chroot ${prefix} ldapmodify -Y EXTERNAL -H ldapi:/// -f ./forceTLS.ldif
+    # Backup existing ldap.config and create new one
+    cp -p ${prefix}/etc/ldap/ldap.conf ${prefix}/etc/ldap/ldap.conf.orig
+    echo "BASE $LDAP_BASE" > ${prefix}/etc/ldap/ldap.conf
+    echo "ldap:// ldaps:// ldapi://" >> ${prefix}/etc/ldap/ldap.conf
+    echo "TLS_CACERT /etc/ssl/slapd/cacert.pem" >> ${prefix}/etc/ldap/ldap.conf
+    echo "TLS_REQCERT demand" >> ${prefix}/etc/ldap/ldap.conf
+
+    # Setup ldapscripts
+    if [[ -e /sNow/snow-configspace/system_files/etc/ldapscripts ]]; then 
+        cp -pr /sNow/snow-configspace/system_files/etc/ldapscripts/* ${prefix}/etc/ldapscripts/
+    else
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#SERVER" "SERVER=\"ldap://localhost\""
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#SUFFIX" "SUFFIX=\"$LDAP_BASE\""
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#GSUFFIX" "GSUFFIX=\"ou=Group\""
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#USUFFIX" "USUFFIX=\"ou=People\""
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^BINDDN" "BINDDN=\"cn=admin,$LDAP_BASE\""
+        echo -n "${LDAP_ADMIN_PASSWORD}" > ${prefix}/etc/ldapscripts/ldapscripts.passwd
+        chmod 400 ${prefix}/etc/ldapscripts/ldapscripts.passwd
+    fi
 fi

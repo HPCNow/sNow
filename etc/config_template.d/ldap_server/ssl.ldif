@@ -1,10 +1,10 @@
 dn: cn=config
 changetype: modify
 add: olcTLSCACertificateFile
-olcTLSCACertificateFile: /etc/openldap/certs/ca-bundle.crt
+olcTLSCACertificateFile: /etc/ssl/slapd/cacert.pem
 -
 replace: olcTLSCertificateFile
-olcTLSCertificateFile: /etc/openldap/certs/server.crt
+olcTLSCertificateFile: /etc/ssl/slapd/ldaps_slapd_cert.pem
 -
 replace: olcTLSCertificateKeyFile
-olcTLSCertificateKeyFile: /etc/openldap/certs/server.key
+olcTLSCertificateKeyFile: /etc/ssl/slapd/ldaps_slapd_key.pem
