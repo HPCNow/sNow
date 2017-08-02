@@ -1910,7 +1910,7 @@ function avail_domains()
             os_status="down"
             host_allocated=""
             for snow_node in ${SNOW_NODES[*]}; do
-                hw_status_in_host="$(ssh -o ConnectTimeout=5 -p 21022 ${snow_node} /usr/sbin/xl list -l ${domain} | jq  -r '.[].domid')"
+                hw_status_in_host="$(ssh -o ConnectTimeout=5 ${snow_node} /usr/sbin/xl list -l ${domain} | jq  -r '.[].domid')"
                 if [[ "${hw_status_in_host}" > 0 ]]; then
                     hw_status="on"
                     host_allocated=${snow_node}
