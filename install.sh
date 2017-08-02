@@ -7,7 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="1.1.8"
+readonly SNOW_VERSION="1.1.9"
 readonly LOGFILE=/tmp/snow-install-$(uname -n).log
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
