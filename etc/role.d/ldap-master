@@ -4,6 +4,11 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #
 #SHORT_DESCRIPTION: Installs LDAP master server.
+
+# Influences: 
+# * https://wiki.debian.org/LDAP/PAM
+# * https://help.ubuntu.com/lts/serverguide/openldap-server.html
+# * https://weichbrodt.me/dokuwiki/tutorial:ldap:installopenldap
 prefix=$1
 
 set -xv
@@ -42,7 +47,7 @@ LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
 if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
-    installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin ssl-cert
+    installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin ssl-cert pwgen
     if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
         mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
         cp -pr /sNow/snow-configspace/system_files/etc/ldap ${prefix}/etc/ldap
@@ -55,7 +60,7 @@ if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then
         slapd slapd/password1 password $LDAP_ADMIN_PASSWORD
         slapd slapd/password2 password $LDAP_ADMIN_PASSWORD
         slapd slapd/allow_ldap_v2 boolean false
-        slapd slapd/backend select HDB
+        slapd slapd/backend select MDB
         slapd slapd/purge_database boolean false
         slapd shared/organization string $LDAP_ORGANIZATION
         slapd slapd/no_configuration boolean false
@@ -154,7 +159,9 @@ EOF
         #chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/ssl.ldif
         # systemctl does not work in chroot env.
         chroot ${prefix} /etc/init.d/slapd start
-        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ssl.ldif
+        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/access.ldif
+        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/tls.ldif
+        #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ssl.ldif
         killall slapd
         sleep 5
         #cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
@@ -163,9 +170,11 @@ EOF
     chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
     chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
     cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
-    chroot ${prefix} /bin/chgrp ssl-cert /etc/ssl/slapd/ldaps_slapd_key.pem
-    chroot ${prefix} /bin/chmod g+r /etc/ssl/slapd/ldaps_slapd_key.pem
-    chroot ${prefix} /bin/chmod o-r /etc/ssl/slapd/ldaps_slapd_key.pem
+    chroot ${prefix} /bin/chown root:ssl-cert /etc/ssl/slapd/*.pem
+    chroot ${prefix} /bin/chmod 640 /etc/ssl/slapd/*.pem
+    #chroot ${prefix} /bin/chgrp ssl-cert /etc/ssl/slapd/ldaps_slapd_key.pem
+    #chroot ${prefix} /bin/chmod g+r /etc/ssl/slapd/ldaps_slapd_key.pem
+    #chroot ${prefix} /bin/chmod o-r /etc/ssl/slapd/ldaps_slapd_key.pem
     # Give apparmor access to cert files - Ubuntu
     #sed -i "/\/usr\/sbin\/slapd mr,/ s/$/\n\n  \/etc\/ssl\/slapd\/ r,\n  \/etc\/ssl\/slapd\/* r,/" /etc/apparmor.d/usr.sbin.slapd
     #service apparmor reload
@@ -173,7 +182,7 @@ EOF
     #chroot ${prefix} /etc/init.d/slapd restart
     # force TLS
     chroot ${prefix} /etc/init.d/slapd start
-    chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
+    #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
     #chroot ${prefix} /etc/init.d/slapd stop
     killall slapd
     sleep 5
@@ -181,9 +190,10 @@ EOF
     # Backup existing ldap.config and create new one
     cp -p ${prefix}/etc/ldap/ldap.conf ${prefix}/etc/ldap/ldap.conf.orig
     echo "BASE $LDAP_BASE" > ${prefix}/etc/ldap/ldap.conf
-    echo "ldap:// ldaps:// ldapi://" >> ${prefix}/etc/ldap/ldap.conf
+    echo "URI ldap:// ldapi://" >> ${prefix}/etc/ldap/ldap.conf
     echo "TLS_CACERT /etc/ssl/slapd/cacert.pem" >> ${prefix}/etc/ldap/ldap.conf
-    echo "TLS_REQCERT demand" >> ${prefix}/etc/ldap/ldap.conf
+    echo "TLS_REQCERT ALLOW" >> ${prefix}/etc/ldap/ldap.conf
+    cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
 
     # Setup ldapscripts
     if [[ -e /sNow/snow-configspace/system_files/etc/ldapscripts ]]; then 
@@ -196,5 +206,6 @@ EOF
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^BINDDN" "BINDDN=\"cn=admin,$LDAP_BASE\""
         echo -n "${LDAP_ADMIN_PASSWORD}" > ${prefix}/etc/ldapscripts/ldapscripts.passwd
         chmod 400 ${prefix}/etc/ldapscripts/ldapscripts.passwd
+        cp -pr ${prefix}/etc/ldapscripts /sNow/snow-configspace/system_files/etc/
     fi
 fi
