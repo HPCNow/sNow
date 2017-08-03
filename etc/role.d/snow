@@ -122,7 +122,8 @@ if  [[ ! -z "$LDAP_SERVER" ]]; then
         installDebianPackage ${prefix} libnss-sss libpam-sss sssd-ldap sssd-tools sssd-common
         if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
-            #cp -p /etc/pki/tls/certs/ca-bundle.crt ${prefix}/etc/pki/tls/certs/ca-bundle.crt
+            mkdir -p ${prefix}/etc/ssl/slapd/
+            cp -p /sNow/snow-configspace/system_files/etc/ssl/slapd/cacert.pem ${prefix}/etc/ssl/slapd/cacert.pem
         else
             mkdir -p /sNow/snow-configspace/system_files/etc/sssd
             cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf

@@ -11,8 +11,6 @@
 # * https://weichbrodt.me/dokuwiki/tutorial:ldap:installopenldap
 prefix=$1
 
-set -xv
-
 #  Source our common functions - this will let us install a Debian package.
 if [[ -e /usr/share/xen-tools/common.sh ]]; then
     source /usr/share/xen-tools/common.sh
@@ -73,22 +71,11 @@ EOF
 
         # LDAP BASE
         sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" /etc/ldap/ldap.conf
-        # LDAP config password setup
-        #if [[ -n "$LDAP_CONFIG_PASSWORD" ]]; then
-        #    password_hash=$(chroot ${prefix} /usr/sbin/slappasswd -s "${LDAP_CONFIG_PASSWORD}")
-        #    sed_safe_password_hash=${password_hash//\//\\\/}
-        #    chroot ${prefix} /usr/sbin/slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
-        #    sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" ${prefix}/tmp/config.ldif
-        #    rm -rf ${prefix}/etc/ldap/slapd.d/*
-        #    chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
-        #    rm ${prefix}/tmp/config.ldif
-        #fi
 
         # ADDITIONAL LDAP SCHEMAS
         if [[ -n "$LDAP_ADDITIONAL_SCHEMAS" ]]; then
             IFS=","; declare -a schemas=($LDAP_ADDITIONAL_SCHEMAS); unset IFS
             for schema in "${schemas[@]}"; do
-                #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/${schema}.ldif
                 chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "/etc/ldap/schema/${schema}.ldif"
             done
         fi
@@ -102,7 +89,6 @@ EOF
                     LDAP_PPOLICY_DN_PREFIX="${LDAP_PPOLICY_DN_PREFIX:-cn=default,ou=policies}"
                     sed -i "s/\(olcPPolicyDefault: \)PPOLICY_DN/\1${LDAP_PPOLICY_DN_PREFIX}$dc_string/g" ${prefix}$module_file
                 fi
-                #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f ${module_file}
                 chroot ${prefix} /usr/sbin/slapadd -n0 -F /etc/ldap/slapd.d -l "$module_file"
             done
         fi
@@ -155,38 +141,30 @@ EOF
             --load-ca-privkey /etc/ssl/slapd/cakey.pem \
             --template /etc/ssl/slapd/ldaps.info \
             --outfile /etc/ssl/slapd/ldaps_slapd_cert.pem
-        # Add TLS settings to the config
-        #chroot ${prefix} /usr/sbin/slapadd -F /etc/ldap/slapd.d -l /etc/ldap/ssl.ldif
         # systemctl does not work in chroot env.
         chroot ${prefix} /etc/init.d/slapd start
+        # Add standard ACLs to LDAP to allow users to update the password and to authenticate via PAM
         chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/access.ldif
+        # Add TLS settings to the config
         chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/tls.ldif
-        #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ssl.ldif
         killall slapd
         sleep 5
-        #cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
     fi
     # Secure the keys
     chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
     chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
     cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
-    chroot ${prefix} /bin/chown root:ssl-cert /etc/ssl/slapd/*.pem
-    chroot ${prefix} /bin/chmod 640 /etc/ssl/slapd/*.pem
-    #chroot ${prefix} /bin/chgrp ssl-cert /etc/ssl/slapd/ldaps_slapd_key.pem
-    #chroot ${prefix} /bin/chmod g+r /etc/ssl/slapd/ldaps_slapd_key.pem
-    #chroot ${prefix} /bin/chmod o-r /etc/ssl/slapd/ldaps_slapd_key.pem
+    chroot ${prefix} /bin/chown root:ssl-cert /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
+    chroot ${prefix} /bin/chmod 640 /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
     # Give apparmor access to cert files - Ubuntu
     #sed -i "/\/usr\/sbin\/slapd mr,/ s/$/\n\n  \/etc\/ssl\/slapd\/ r,\n  \/etc\/ssl\/slapd\/* r,/" /etc/apparmor.d/usr.sbin.slapd
     #service apparmor reload
 
-    #chroot ${prefix} /etc/init.d/slapd restart
-    # force TLS
-    chroot ${prefix} /etc/init.d/slapd start
+    # force TLS - seems not to work
+    #chroot ${prefix} /etc/init.d/slapd start
     #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
-    #chroot ${prefix} /etc/init.d/slapd stop
-    killall slapd
+    #killall slapd
     sleep 5
-    #chroot ${prefix} ldapmodify -Y EXTERNAL -H ldapi:/// -f ./forceTLS.ldif
     # Backup existing ldap.config and create new one
     cp -p ${prefix}/etc/ldap/ldap.conf ${prefix}/etc/ldap/ldap.conf.orig
     echo "BASE $LDAP_BASE" > ${prefix}/etc/ldap/ldap.conf
