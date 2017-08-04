@@ -117,20 +117,21 @@ SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
 LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
 LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
 LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
+LDAP_ADMIN_PASSWORD="${LDAP_ADMIN_PASSWORD:-$MASTER_PASSWORD}"
 if  [[ ! -z "$LDAP_SERVER" ]]; then 
     if [[ "$LDAP_TLS" == "TRUE" || "$LDAP_PROTO" == "ldaps" ]]; then
         installDebianPackage ${prefix} libnss-sss libpam-sss sssd-ldap sssd-tools sssd-common sssd ca-certificates
         if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
             mkdir -p ${prefix}/etc/ssl/slapd/
-            cp -p /sNow/snow-configspace/system_files/etc/ssl/slapd/cacert.pem ${prefix}/etc/ssl/slapd/cacert.pem
         else
             mkdir -p /sNow/snow-configspace/system_files/etc/sssd
             cp -p /sNow/snow-tools/etc/config_template.d/ldap_client/sssd.conf /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             sed -i "s|__LDAP_URI__|$LDAP_URI|g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             sed -i "s|__LDAP_BASE__|$LDAP_BASE|g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+            sed -i "s|__LDAP_ADMIN_PASSWORD__|$LDAP_ADMIN_PASSWORD|g" /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             chmod 755 /sNow/snow-configspace/system_files/etc/sssd
-            chmod 644 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
+            chmod 600 /sNow/snow-configspace/system_files/etc/sssd/sssd.conf
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
         fi
         chown root:root ${prefix}/etc/sssd/sssd.conf

@@ -20,4 +20,3 @@ olcTLSCertificateKeyFile: /etc/ssl/slapd/ldaps_slapd_key.pem
 -
 add: olcTLSProtocolMin
 olcTLSProtocolMin: 3.3
-
