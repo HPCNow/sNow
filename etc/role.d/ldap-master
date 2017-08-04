@@ -31,7 +31,7 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     get_os_distro
     architecture_identification
 fi
-
+set -xv
 # LDAP Server Setup
 SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)
@@ -70,7 +70,7 @@ EOF
         sleep 5
 
         # LDAP BASE
-        sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" /etc/ldap/ldap.conf
+        sed -i "s|^#BASE.*|BASE ${SNOW_LDAP_BASE}|g" ${prefix}/etc/ldap/ldap.conf
 
         # ADDITIONAL LDAP SCHEMAS
         if [[ -n "$LDAP_ADDITIONAL_SCHEMAS" ]]; then
@@ -144,11 +144,17 @@ EOF
         # systemctl does not work in chroot env.
         chroot ${prefix} /etc/init.d/slapd start
         # Add standard ACLs to LDAP to allow users to update the password and to authenticate via PAM
+        sleep 5
+        sed -i "s|__LDAP_BASE__|$LDAP_BASE|g" ${prefix}/etc/ldap/access.ldif
         chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/access.ldif
-        # Add TLS settings to the config
-        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/tls.ldif
         killall slapd
         sleep 5
+        # Add TLS settings to the config
+        chroot ${prefix} /etc/init.d/slapd start
+        sleep 5
+        chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/tls.ldif
+        sleep 5
+        killall slapd
     fi
     # Secure the keys
     chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
@@ -161,9 +167,9 @@ EOF
     #service apparmor reload
 
     # force TLS - seems not to work
-    #chroot ${prefix} /etc/init.d/slapd start
-    #chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
-    #killall slapd
+    chroot ${prefix} /etc/init.d/slapd start
+    chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/force_tls.ldif
+    killall slapd
     sleep 5
     # Backup existing ldap.config and create new one
     cp -p ${prefix}/etc/ldap/ldap.conf ${prefix}/etc/ldap/ldap.conf.orig
@@ -182,6 +188,7 @@ EOF
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#GSUFFIX" "GSUFFIX=\"ou=Group\""
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#USUFFIX" "USUFFIX=\"ou=People\""
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^BINDDN" "BINDDN=\"cn=admin,$LDAP_BASE\""
+        replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#LDAPBINOPTS=\"-ZZ\"" "LDAPBINOPTS=\"-ZZ\""
         echo -n "${LDAP_ADMIN_PASSWORD}" > ${prefix}/etc/ldapscripts/ldapscripts.passwd
         chmod 400 ${prefix}/etc/ldapscripts/ldapscripts.passwd
         cp -pr ${prefix}/etc/ldapscripts /sNow/snow-configspace/system_files/etc/

@@ -4,18 +4,19 @@ delete: olcAccess
 olcAccess: {0}
 -
 add: olcAccess
-olcAccess: {0}to attrs=userPassword,shadowLastChange
-  by dn="cn=admin,__LDAP_BASE__" write
-  by self write
-  by anonymous auth
+olcAccess: {0}to attrs=userPassword,shadowLastChange 
+  by dn="cn=admin,__LDAP_BASE__" write 
+  by self write 
+  by anonymous auth 
   by * none
 -
 delete: olcAccess
 olcAccess: {2}
 -
 add: olcAccess
-olcAccess: {2}to *
-  by dn="cn=admin,__LDAP_BASE__" manage
-  by self write
-  by anonymous auth
+olcAccess: {2}to * 
+  by dn="cn=admin,__LDAP_BASE__" manage 
+  by self write 
+  by anonymous auth 
   by users read
+

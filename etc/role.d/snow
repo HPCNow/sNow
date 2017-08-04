@@ -119,7 +119,7 @@ LDAP_URI="${SITE_LDAP_URI:-$SNOW_LDAP_URI}"
 LDAP_TLS="${SITE_LDAP_TLS:-TRUE}"
 if  [[ ! -z "$LDAP_SERVER" ]]; then 
     if [[ "$LDAP_TLS" == "TRUE" || "$LDAP_PROTO" == "ldaps" ]]; then
-        installDebianPackage ${prefix} libnss-sss libpam-sss sssd-ldap sssd-tools sssd-common
+        installDebianPackage ${prefix} libnss-sss libpam-sss sssd-ldap sssd-tools sssd-common sssd ca-certificates
         if [[ -e /sNow/snow-configspace/system_files/etc/sssd/sssd.conf ]]; then 
             cp -pr /sNow/snow-configspace/system_files/etc/sssd ${prefix}/etc/
             mkdir -p ${prefix}/etc/ssl/slapd/
