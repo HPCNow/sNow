@@ -21,5 +21,6 @@ function setup_ntp_client()
             chmod 644 /sNow/snow-configspace/system_files/etc/ntp.conf
             cp -p /sNow/snow-configspace/system_files/etc/ntp.conf /etc/
         fi
+        systemctl enable ntpd
     fi
 } 1>>$LOGFILE 2>&1
