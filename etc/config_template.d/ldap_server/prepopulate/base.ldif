@@ -1,0 +1,8 @@
+dn: ou=People,__LDAP_BASE__
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,__LDAP_BASE__
+objectClass: organizationalUnit
+ou: Group 
+

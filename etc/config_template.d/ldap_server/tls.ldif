@@ -1,0 +1,22 @@
+dn: cn=config
+changetype: modify
+add: olcTLSCipherSuite
+olcTLSCipherSuite: NORMAL
+-
+add: olcTLSCRLCheck
+olcTLSCRLCheck: none
+-
+add: olcTLSVerifyClient
+olcTLSVerifyClient: never
+-
+add: olcTLSCACertificateFile
+olcTLSCACertificateFile: /etc/ssl/slapd/cacert.pem
+-
+add: olcTLSCertificateFile
+olcTLSCertificateFile: /etc/ssl/slapd/ldaps_slapd_cert.pem
+-
+add: olcTLSCertificateKeyFile
+olcTLSCertificateKeyFile: /etc/ssl/slapd/ldaps_slapd_key.pem
+-
+add: olcTLSProtocolMin
+olcTLSProtocolMin: 3.3
