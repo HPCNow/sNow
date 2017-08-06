@@ -113,6 +113,8 @@ function install_xen()
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
             bkp /etc/sysctl.conf
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+            bkp /etc/xen/xl.conf
+            replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
         ;;
         ubuntu)
             # Following suggestions from Debian : https://wiki.debian.org/Xen
@@ -129,6 +131,8 @@ function install_xen()
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
             bkp /etc/sysctl.conf
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+            bkp /etc/xen/xl.conf
+            replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
         ;;
         centos)
             echo "sNow! Xen Support not yet available for RHEL and CentOS"

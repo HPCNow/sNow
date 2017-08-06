@@ -2065,7 +2065,7 @@ function boot()
                 warning_msg "The domain ${domain} is already runnning"
             fi
         else
-            error_msg "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
+            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
         local image=$2
