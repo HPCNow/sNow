@@ -129,3 +129,31 @@
 
 ### Known Issues
 * Included NFSROOT option in overlayfs but it doesn't allow to apply live changes in ro NFS image due a bug in OverlayFS. Remount is required to enable changes performed in NFS image.
+
+## 1.1.8
+
+### New Features and changes
+* "snow list domains" command also includes the hosts where the domains are allocated
+
+### Minor fixes
+* Fix issue related with user enviroment under interactive job session
+
+## 1.1.9
+
+### New Features and changes
+* list domains provides High Availability and service locality information
+
+## 1.1.10
+
+### New Features and changes
+* LDAP master role generates certificates and populates the DB
+* LDAP DB has been migrated from HDB to MDB (new standart)
+* Improved privacy and security in default LDAP role
+
+### Minor fixes
+* Fix issue 123: automatic start of NTPD at boot time
+* Fix recurrent issue 3: dom0 dedicated memory and preventing dom0 memory ballooning
+* Fix issue 131: no exit after trying to boot a non-deployed domain
+
+### Major fixes
+* Fix broken compatibility in LDAP deployment due new standarts
