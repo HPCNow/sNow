@@ -96,13 +96,13 @@ function install_xen()
 {
     case $OS in
         debian)
+            apt-get -y update
+            install_software "cpufrequtils xen-system xen-tools"
             # Following suggestions from Debian : https://wiki.debian.org/Xen
             if [[ -f /etc/default/cpufrequtils ]]; then
                 bkp /etc/default/cpufrequtils
                 sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             fi
-            apt-get -y update
-            install_software "xen-linux-system xen-tools"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub
@@ -117,10 +117,10 @@ function install_xen()
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
         ;;
         ubuntu)
-            # Following suggestions from Debian : https://wiki.debian.org/Xen
-            sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             apt-get -y update
             install_software "cpufrequtils xen-system xen-tools"
+            # Following suggestions from Debian : https://wiki.debian.org/Xen
+            sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub

@@ -230,7 +230,14 @@ function install_snow_dependencies()
 {
     case $OS in
         debian)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            if [[ "${OS_RELEASE}" == "8."* ]]; then
+                pkgs="$pkgs python-software-properties"
+            elif [[ "${OS_RELEASE}" == "9."* ]]; then
+                pkgs="$pkgs software-properties-common"
+            else
+                error_msg "OS releases not supported"
+            fi
             if is_master && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi
