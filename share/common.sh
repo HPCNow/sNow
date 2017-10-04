@@ -1901,22 +1901,31 @@ function set_image_type()
 function avail_domains()
 {
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
-    printf "%-20s  %-10s  %-40s  %-20s\n" "Domain" "HW status" "OS status" "Roles" 1>&3
-    printf "%-20s  %-10s  %-40s  %-20s\n" "------" "---------" "---------" "-----" 1>&3
-    #for snow_node in ${SNOW_NODES[@]}; do
+    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "Domain" "HW status" "OS status" "Roles" "Host" 1>&3
+    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "____" 1>&3
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then
-            hw_status="$(xl list ${domain} &>/dev/null && echo "on" || echo "off")"
-            if [[ "$hw_status" == "on" ]]; then
-                os_status="$(ssh -o ConnectTimeout=5 ${domain} uptime -p || echo 'down')"
-            else
-                os_status="down"
-            fi
+            hw_status="off"
+            os_status="down"
+            host_allocated=""
+            for snow_node in ${SNOW_NODES[*]}; do
+                hw_status_in_host="$(ssh -o ConnectTimeout=5 ${snow_node} /usr/sbin/xl list -l ${domain} | jq  -r '.[].domid')"
+                if [[ "${hw_status_in_host}" > 0 ]]; then
+                    hw_status="on"
+                    host_allocated=${snow_node}
+                    os_status="$(ssh -o ConnectTimeout=5 ${domain} uptime -p || echo 'down')"
+                fi
+            done
             roles=$(gawk -v domain=${domain}  '{if($1 == domain){print $2}}' ${SNOW_DOMAINS})
-            printf "%-20s  %-10s  %-40s  %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" 1>&3
+            printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "${domain}" "${hw_status}" "${os_status}" "${roles}" "${host_allocated}" 1>&3
         fi
     done
+    unset hw_status
+    unset hw_status_in_host
+    unset os_status
+    unset host_allocated
+    unset roles
 }
 
 function avail_roles()
@@ -2056,7 +2065,7 @@ function boot()
                 warning_msg "The domain ${domain} is already runnning"
             fi
         else
-            error_msg "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
+            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
         local image=$2
