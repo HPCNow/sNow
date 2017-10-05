@@ -7,7 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="1.1.10"
+readonly SNOW_VERSION="${1:-1.1.11}"
 readonly LOGFILE=/tmp/snow-install-$(uname -n).log
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
@@ -230,7 +230,14 @@ function install_snow_dependencies()
 {
     case $OS in
         debian)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            if [[ "${OSVERSION}" == "8."* ]]; then
+                pkgs="$pkgs python-software-properties"
+            elif [[ "${OSVERSION}" == "9."* ]]; then
+                pkgs="$pkgs software-properties-common"
+            else
+                error_msg "OS releases not supported"
+            fi
             if is_master && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi
