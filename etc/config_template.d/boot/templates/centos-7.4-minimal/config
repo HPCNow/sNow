@@ -1,0 +1,2 @@
+INSTALL_REPO=http://mirror.centos.org/centos/7.4.1708/os/x86_64/
+INSTALL_PROXY=http://__PROXY_SERVER__:__PROXY_PORT__
