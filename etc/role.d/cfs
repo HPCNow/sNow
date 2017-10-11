@@ -40,12 +40,14 @@ if [[ "$NFS_CLIENT" == "TRUE" ]]; then
 fi
                                                     
 # Check for BeeGFS mount points in the snow.conf
+BEEGFS_MGMTD=$(gawk '{if($2 ~ /beegfs-mgmtd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
 if [[ "$BEEGFS_CLIENT" == "TRUE" ]]; then
     wget -q http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb8.list -P ${prefix}/etc/apt/sources.list.d/
     wget -q http://www.beegfs.com/release/latest-stable/gpg/DEB-GPG-KEY-beegfs -O- | chroot ${prefix} /usr/bin/apt-key add -
     chroot ${prefix} /usr/bin/apt-get update 
-    installDebianPackage ${prefix} beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client linux-kernel-headers
+    installDebianPackage ${prefix} beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client build-essential linux-kernel-headers linux-headers-$(uname -r)
+    chroot ${prefix} /opt/beegfs/sbin/beegfs-setup-client -m ${BEEGFS_MGMTD}
     for i in {1..100}; do
         if [[ ! -z ${MOUNT_BEEGFS[$i]} ]]; then
             mkdir -p $(echo ${MOUNT_BEEGFS[$i]} | gawk '{print $1}')

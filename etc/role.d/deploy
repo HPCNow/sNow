@@ -40,6 +40,7 @@ mkdir -p ${prefix}/srv/tftp
 
 # Setup DNSMASQ
 SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+TFTP_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 installDebianPackage ${prefix} dnsmasq
 if [[ ! -f $SNOW_CONF/system_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
@@ -115,6 +116,7 @@ if [[ ! -f $SNOW_CONF/boot/templates/postconfig.sh ]]; then
             sed -i "s|__SNOW_HOME__|$SNOW_HOME|g" $file
             sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
             sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file 
+            sed -i "s|__TFTP_SERVER__|$TFTP_SERVER|g" $file 
         done 
     done
 fi

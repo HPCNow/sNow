@@ -7,7 +7,8 @@ function setup_ldap_client()
 {
     case $OS in
         debian|ubuntu)
-            pkgs="libpam-ldap sssd-ldap sssd-tools sssd-common"
+            #pkgs="libpam-ldap sssd-ldap sssd-tools sssd-common"
+            pkgs="sssd-ldap sssd-tools sssd-common"
             echo "session required          pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/common-session
         ;;
         rhel|redhat|centos)
