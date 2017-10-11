@@ -22,6 +22,8 @@ less
 libdb
 libibverbs
 libibverbs-devel
+libX11
+libX11-devel
 locate
 lsb
 lsof
