@@ -28,6 +28,21 @@ function setup_ganglia_client()
     cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf /etc/ganglia/gmond.conf
     chown root:root /etc/ganglia/gmond.conf
     chmod 640 /etc/ganglia/gmond.conf
-    systemctl enable gmond.service
-    systemctl start gmond.service
+    case $OS in
+        debian|ubuntu)
+            systemctl enable ganglia-monitor.service
+            systemctl start ganglia-monitor.service
+        ;;
+        rhel|redhat|centos)
+            systemctl enable gmond.service
+            systemctl start gmond.service
+        ;;
+        suse|sle[sd]|opensuse)
+            systemctl enable gmond.service
+            systemctl start gmond.service
+        ;;
+        *)
+            warning_msg "This distribution is not supported. Ganglia may not work."
+        ;;
+    esac
 } 1>>$LOGFILE 2>&1

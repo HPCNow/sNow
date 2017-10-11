@@ -96,46 +96,82 @@ function shelp()
 
     Function List:
 
-        * init                                      | setup the system according to the parameters defined in snow.conf and active-domains.conf
-        * config                                    | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-        * update tools                              | updates the sNow! Tools
-        * update configspace                        | updates configuration files from private git
-        * update template                           | updates the sNow! image used to create new domains
-        * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
-        * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
-        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_proxy, install_repo, console_options
-        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_proxy, install_repo, console_options
-        * clone template <old> <new> <description>  | creates a new template based on an existing one
-        * clone image <old> <new> <description>     | creates a new image based on an existing one
-        * clone node <node> <image> <type>          | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
-        * remove domain <domain>                    | removes an existing domain deployed with sNow!
-        * remove node <node>                        | removes an existing node from sNow! configuration
-        * remove template <template>                | removes an existing template
-        * remove image <image>                      | removes an existing image
-        * list domains                              | list the current domains (services) and their status
-        * list roles                                | list the available roles for domains (services)
-        * list nodes                                | list the available compute nodes and their status
-        * list templates                            | list the templates installed in the system
-        * list images                               | list the images generated or downloaded
-        * chroot <image>                            | provides chroot environment inside a read-only nfsroot image
-        * show nodes <node>                         | shows the node(s) configuration.
-        * boot <domain>                             | boot specific domain
-        * boot <node> <image>                       | boot specific node with optional image
-        * boot domains                              | boot all the domains (all services not available under sNow! HA)
-        * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-        * reboot <domain|node>                      | reboot specific domain or node
-        * shutdown <domain|node>                    | shutdown specific domain or node (equivalent to systemctl poweroff)
-        * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
-        * reset <domain|node>                       | force to reboot specific domain or node
-        * poweroff <domain|node>                    | initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
-        * console <domain|node>                     | console access to specific domain or node
-        * version                                   | shows the version of sNow!
-        * help                                      | prints this message
+    * init
+            setup the system according to the parameters defined in snow.conf and active-domains.conf
+    * config
+            shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
+    * update tools
+            updates the sNow! Tools
+    * update configspace
+            updates configuration files from private git
+    * update template
+            updates the sNow! image used to create new domains
+    * update firewall
+            updates the default sNow! firewall rules (only for sNow! with public IP address)
+    * deploy <domain|node> <template> <force>
+            deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
+    * add node <node> [--option value]
+            adds a new node in the sNow! database. Available options: cluster, image, template, install_proxy, install_repo, console_options
+    * set node <node> [--option value]
+            sets parameters in the node description. Available options: cluster, image, template, install_proxy, install_repo, console_options
+    * clone template <old> <new> <description>
+            creates a new template based on an existing one
+    * clone image <old> <new> <description>
+            creates a new image based on an existing one
+    * clone node <node> <image> <type>
+            creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
+    * remove domain <domain>
+            removes an existing domain deployed with sNow!
+    * remove node <node>
+            removes an existing node from sNow! configuration
+    * remove template <template>
+            removes an existing template
+    * remove image <image>
+            removes an existing image
+    * list domains
+            list the current domains (services) and their status
+    * list roles
+            list the available roles for domains (services)
+    * list nodes
+            list the available compute nodes and their status
+    * list templates
+            list the templates installed in the system
+    * list images
+            list the images generated or downloaded
+    * chroot <image>
+            provides chroot environment inside a read-only nfsroot image
+    * show nodes <node
+            shows the node(s) configuration.
+    * boot <domain>
+            boot specific domain
+    * boot <node> <image>
+            boot specific node with optional image
+    * boot domains
+            boot all the domains (all services not available under sNow! HA)
+    * boot cluster <cluster>
+            boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+    * reboot <domain|node>
+            reboot specific domain or node
+    * shutdown <domain|node>
+            shutdown specific domain or node (equivalent to systemctl poweroff)
+    * shutdown cluster <cluster>
+            shutdown all the compute nodes of the selected cluster
+    * destroy <domain|node>
+            force to stop specific domain or node simulating a power button press
+    * reset <domain|node>
+            force to reboot specific domain or node
+    * poweroff <domain|node>
+            initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
+    * console <domain|node>
+            console access to specific domain or node
+    * version
+            shows the version of sNow!
+    * help
+            prints this message
 
     Examples:
 
-        snow update tools
+        snow list roles
         snow deploy ldap01
     " 1>&3
 }
@@ -274,6 +310,8 @@ function get_os_distro()
         # OS release and Service pack discovery
         local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
         local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version_major=$(echo ${dist_version} | cut -d. -f1)
+        local dist_version_minor=$(echo ${dist_version} | cut -d. -f2-5)
         # Special case redhatenterpriseserver
         if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
             lsb_dist='redhat'
@@ -284,7 +322,9 @@ function get_os_distro()
         if [[ -z "${lsb_dist}" ]]; then
             lsb_dist=$(uname -s)
         else
-            export OSVERSION=${dist_version}
+            export OS_VERSION=${dist_version}
+            export OS_VERSION_MAJOR=${dist_version_major}
+            export OS_VERSION_MINOR=${dist_version_minor}
         fi
         export OS=$lsb_dist
     else
@@ -1475,15 +1515,15 @@ function generate_pxe_image()
         ;;
         rhel|redhat|centos)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm rdma" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
         ;;
         suse|sle[sd]|opensuse)
             install_software "dracut-network dracut-tools"
-            ln -sf ${SNOW_TOOL}/etc/dracut/90overlay /usr/lib/dracut/modules.d/
-            dracut --add "overlay nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
+            ln -sf ${SNOW_TOOL}/etc/dracut/* /usr/lib/dracut/modules.d/
+            dracut --add "overlay beegfsroot nfs network base ssh-client dm" --add-drivers "overlay nfs nfsv4 squashfs loop" -f ${SNOW_CONF}/boot/images/$image/initrd.img $(uname -r)
             cp -p /boot/vmlinuz-$(uname -r) ${SNOW_CONF}/boot/images/$image/vmlinuz
             chmod 644 ${SNOW_CONF}/boot/images/$image/initrd.img
         ;;
@@ -1578,6 +1618,7 @@ function generate_rootfs()
     if [[ -d /usr/lib/systemd/system ]]; then
         replace_text /usr/lib/systemd/system/first_boot.service "Environment=\"HOOKS_PATH=" "Environment=\"HOOKS_PATH=${hooks_path}\""
     fi
+    mkdir -p ${hooks_path}/first_boot
     systemctl enable first_boot
     # Identify remote file systems
     local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
@@ -1636,6 +1677,37 @@ function generate_rootfs_nfs()
     sed -i "s|__IMAGE__|$image|g" ${image_pxe}
     echo "IMAGE_ROOTFS=nfs:${NFS_SERVER}:${mount_point},ro" > ${image_config}
     echo "IMAGE_TYPE=nfsroot" >> ${image_config}
+}
+
+function generate_rootfs_beegfs()
+{
+    local image=$1
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
+    enable_readonly_root ${mount_point}
+    # Setup BeeGFSROOT support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/beegfsroot ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=${mount_point#${SNOW_PATH}}" > ${image_config}
+    echo "IMAGE_TYPE=beegfsroot" >> ${image_config}
 }
 
 function generate_rootfs_squashfs()
@@ -1781,10 +1853,10 @@ function clone_node()
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
         set_image_type $image ${image_type}
-        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
-        if [[ -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
+        if [[ ! -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
+        echo "${image_desc}" > ${SNOW_CONF}/boot/images/$image/description
     fi
 }
 
@@ -1847,6 +1919,9 @@ function set_image_type()
             nfsroot)
                 generate_rootfs_nfs $image
             ;;
+            beegfsroot)
+                generate_rootfs_beegfs $image
+            ;;
             stateless)
                 generate_rootfs_squashfs $image
             ;;
@@ -1867,7 +1942,7 @@ function avail_domains()
 {
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "Domain" "HW status" "OS status" "Roles" "Host" 1>&3
-    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "____" 1>&3
+    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "----" 1>&3
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then
@@ -1941,7 +2016,7 @@ function avail_templates()
 
 function avail_images()
 {
-    local images=$(find $SNOW_CONF/boot/images/ -type d | sed -e "s|$SNOW_CONF/boot/images/||g")
+    local images=$(find $SNOW_CONF/boot/images/* -type d -prune | sed -e "s|$SNOW_CONF/boot/images/||g")
     printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
     printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
     for img in $images; do
