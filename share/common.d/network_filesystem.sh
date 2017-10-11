@@ -20,17 +20,17 @@ function install_beegfs_client()
     local prefix=$1
     case $OS in
         debian|ubuntu)
-            add_repo http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb8.list
+            add_repo http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb${OS_VERSION_MAJOR}.list
             add_repo_key http://www.beegfs.com/release/beegfs_${BEEGFS_VERSION}/gpg/DEB-GPG-KEY-beegfs
             pkgs="beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client build-essential linux-kernel-headers linux-headers-$(uname -r)"
         ;;
         rhel|redhat|centos)
-            add_repo http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-rhel7.repo
+            add_repo http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-rhel${OS_VERSION_MAJOR}.repo
             add_repo_key http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/gpg/RPM-GPG-KEY-beegfs
             pkgs="beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client kernel-devel kernel-header"
         ;;
         suse|sle[sd]|opensuse)
-            add_repo http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-suse12.repo
+            add_repo http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-suse${OS_VERSION_MAJOR}.repo
             add_repo_key http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/gpg/RPM-GPG-KEY-beegfs
             pkgs="beegfs-utils beegfs-opentk-lib beegfs-helperd beegfs-client"
         ;;

@@ -22,7 +22,7 @@ fi
 
 PYLIB=`python -c "import distutils.sysconfig; print distutils.sysconfig.get_python_lib(prefix='${SNOW_SOFT}/installation'); "`
 export PYTHONPATH=$PYLIB:$PYTHONPATH                                  # eb command needs to find easybuild package
-export EASYBUILD_PREFIX=${SNOW_SOFT}/$OS/$OSVERSION/$ARCHITECTURE        # sets (install|build|source|repository)path
+export EASYBUILD_PREFIX=${SNOW_SOFT}/$OS/$OS_VERSION/$ARCHITECTURE        # sets (install|build|source|repository)path
 export EASYBUILD_INSTALLPATH=$EASYBUILD_PREFIX                        # path to install the modules and binaries
 export EASYBUILD_SOURCEPATH=${SNOW_SOFT}/sources                         # not just the default as shared by all architectures
 export EASYBUILD_TMP_LOGDIR=${SNOW_SOFT}/tmp                             # so in shared filesystem not host local

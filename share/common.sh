@@ -96,46 +96,82 @@ function shelp()
 
     Function List:
 
-        * init                                      | setup the system according to the parameters defined in snow.conf and active-domains.conf
-        * config                                    | shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
-        * update tools                              | updates the sNow! Tools
-        * update configspace                        | updates configuration files from private git
-        * update template                           | updates the sNow! image used to create new domains
-        * update firewall                           | updates the default sNow! firewall rules (only for sNow! with public IP address)
-        * deploy <domain|node> <template> <force>   | deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
-        * add node <node> [--option value]          | adds a new node in the sNow! database. Available options: cluster, image, template, install_proxy, install_repo, console_options
-        * set node <node> [--option value]          | sets parameters in the node description. Available options: cluster, image, template, install_proxy, install_repo, console_options
-        * clone template <old> <new> <description>  | creates a new template based on an existing one
-        * clone image <old> <new> <description>     | creates a new image based on an existing one
-        * clone node <node> <image> <type>          | creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
-        * remove domain <domain>                    | removes an existing domain deployed with sNow!
-        * remove node <node>                        | removes an existing node from sNow! configuration
-        * remove template <template>                | removes an existing template
-        * remove image <image>                      | removes an existing image
-        * list domains                              | list the current domains (services) and their status
-        * list roles                                | list the available roles for domains (services)
-        * list nodes                                | list the available compute nodes and their status
-        * list templates                            | list the templates installed in the system
-        * list images                               | list the images generated or downloaded
-        * chroot <image>                            | provides chroot environment inside a read-only nfsroot image
-        * show nodes <node>                         | shows the node(s) configuration.
-        * boot <domain>                             | boot specific domain
-        * boot <node> <image>                       | boot specific node with optional image
-        * boot domains                              | boot all the domains (all services not available under sNow! HA)
-        * boot cluster <cluster>                    | boot all the compute nodes of the selected cluster (by default 20 nodes at once)
-        * reboot <domain|node>                      | reboot specific domain or node
-        * shutdown <domain|node>                    | shutdown specific domain or node (equivalent to systemctl poweroff)
-        * shutdown cluster <cluster>                | shutdown all the compute nodes of the selected cluster
-        * destroy <domain|node>                     | force to stop specific domain or node simulating a power button press
-        * reset <domain|node>                       | force to reboot specific domain or node
-        * poweroff <domain|node>                    | initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
-        * console <domain|node>                     | console access to specific domain or node
-        * version                                   | shows the version of sNow!
-        * help                                      | prints this message
+    * init
+            setup the system according to the parameters defined in snow.conf and active-domains.conf
+    * config
+            shows the sNow! configuration based on the changes applied in snow.conf and domains.conf
+    * update tools
+            updates the sNow! Tools
+    * update configspace
+            updates configuration files from private git
+    * update template
+            updates the sNow! image used to create new domains
+    * update firewall
+            updates the default sNow! firewall rules (only for sNow! with public IP address)
+    * deploy <domain|node> <template> <force>
+            deploy specific domain/node (optional: with specific template or force to deploy existing domain/node)
+    * add node <node> [--option value]
+            adds a new node in the sNow! database. Available options: cluster, image, template, install_proxy, install_repo, console_options
+    * set node <node> [--option value]
+            sets parameters in the node description. Available options: cluster, image, template, install_proxy, install_repo, console_options
+    * clone template <old> <new> <description>
+            creates a new template based on an existing one
+    * clone image <old> <new> <description>
+            creates a new image based on an existing one
+    * clone node <node> <image> <type>
+            creates an image to boot the compute nodes diskless. Available types (nfsroot, stateless).
+    * remove domain <domain>
+            removes an existing domain deployed with sNow!
+    * remove node <node>
+            removes an existing node from sNow! configuration
+    * remove template <template>
+            removes an existing template
+    * remove image <image>
+            removes an existing image
+    * list domains
+            list the current domains (services) and their status
+    * list roles
+            list the available roles for domains (services)
+    * list nodes
+            list the available compute nodes and their status
+    * list templates
+            list the templates installed in the system
+    * list images
+            list the images generated or downloaded
+    * chroot <image>
+            provides chroot environment inside a read-only nfsroot image
+    * show nodes <node
+            shows the node(s) configuration.
+    * boot <domain>
+            boot specific domain
+    * boot <node> <image>
+            boot specific node with optional image
+    * boot domains
+            boot all the domains (all services not available under sNow! HA)
+    * boot cluster <cluster>
+            boot all the compute nodes of the selected cluster (by default 20 nodes at once)
+    * reboot <domain|node>
+            reboot specific domain or node
+    * shutdown <domain|node>
+            shutdown specific domain or node (equivalent to systemctl poweroff)
+    * shutdown cluster <cluster>
+            shutdown all the compute nodes of the selected cluster
+    * destroy <domain|node>
+            force to stop specific domain or node simulating a power button press
+    * reset <domain|node>
+            force to reboot specific domain or node
+    * poweroff <domain|node>
+            initiate a soft-shutdown of the OS via ACPI for domain(s) or node(s)
+    * console <domain|node>
+            console access to specific domain or node
+    * version
+            shows the version of sNow!
+    * help
+            prints this message
 
     Examples:
 
-        snow update tools
+        snow list roles
         snow deploy ldap01
     " 1>&3
 }
@@ -274,6 +310,8 @@ function get_os_distro()
         # OS release and Service pack discovery
         local lsb_dist=$(lsb_release -si 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
         local dist_version=$(lsb_release -sr 2>&1 | tr '[:upper:]' '[:lower:]' | tr -d '[[:space:]]')
+        local dist_version_major=$(echo ${dist_version} | cut -d. -f1)
+        local dist_version_minor=$(echo ${dist_version} | cut -d. -f2-5)
         # Special case redhatenterpriseserver
         if [[ "${lsb_dist}" == "redhatenterpriseserver" ]]; then
             lsb_dist='redhat'
@@ -284,7 +322,9 @@ function get_os_distro()
         if [[ -z "${lsb_dist}" ]]; then
             lsb_dist=$(uname -s)
         else
-            export OSVERSION=${dist_version}
+            export OS_VERSION=${dist_version}
+            export OS_VERSION_MAJOR=${dist_version_major}
+            export OS_VERSION_MINOR=${dist_version_minor}
         fi
         export OS=$lsb_dist
     else
@@ -1902,7 +1942,7 @@ function avail_domains()
 {
     local domains_cfg=$(find $SNOW_TOOL/etc/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "Domain" "HW status" "OS status" "Roles" "Host" 1>&3
-    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "____" 1>&3
+    printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "----" 1>&3
     for domain_cfg in ${domains_cfg}; do
         domain=$(cat ${domain_cfg} | sed -e "s|'||g" | gawk '{if($1 ~ /^name/){print $3}}')
         if [[ ! -z $domain ]]; then

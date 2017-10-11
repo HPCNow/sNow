@@ -1,6 +1,0 @@
-default sNow
-# install
-label sNow
-menu label ^1) Install debian 8.8.0 amd64 minimal
-kernel templates/debian-8.8-x86_64-minimal/vmlinuz
-append initrd=templates/debian-8.8-x86_64-minimal/initrd.gz auto=true interface=auto hostname=unassigned-hostname domain=unassigned-domain priority=critical preseed/url=tftp://10.80.61.254/templates/debian-8.8-x86_64-minimal/debian-8.8-x86_64-minimal.cfg __CONSOLE_OPTIONS__
