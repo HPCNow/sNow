@@ -24,7 +24,7 @@ installkernel()
 install()
 {
     inst /etc/resolv.conf
-    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash dirname awk rmmod hostname
+    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash dirname awk rmmod cut sed host tail
     # make this conditional on a cmdline flag / config option
     inst_multiple -o checkisomd5
     # BeeGFS

@@ -193,8 +193,10 @@ if [ -n "${overlay_rootfs}" ]; then
     mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro} to ${newroot}${stage0_ro}"
     mount --move ${stage0_rw} ${newroot}${stage0_rw} || info "Failed to move ${stage0_rw} to ${newroot}${stage0_rw}"
     cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
-    # workaround to systemd-machine-id-commit https://github.com/systemd/systemd/issues/729
-    hostname > /etc/hostname
+    # Workaround to systemd-machine-id-commit + overlayfs bug: https://github.com/systemd/systemd/issues/729
+    ip_addr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
+    hostname=$(host ${ip_addr} | cut -d ' ' -f 5 | sed -r 's/((.*)[^\.])\.?/\1/g' )
+    echo $hostname > ${newroot}/etc/hostname
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
     # force udevsettle to break
