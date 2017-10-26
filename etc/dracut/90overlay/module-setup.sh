@@ -1,7 +1,6 @@
 #!/bin/bash
 # module-setup.sh for overlay
 
-
 # called by dracut
 check()
 {
@@ -25,7 +24,7 @@ installkernel()
 install()
 {
     inst /etc/resolv.conf
-    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash dirname awk rmmod
+    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash dirname awk rmmod hostname
     # make this conditional on a cmdline flag / config option
     inst_multiple -o checkisomd5
     # BeeGFS

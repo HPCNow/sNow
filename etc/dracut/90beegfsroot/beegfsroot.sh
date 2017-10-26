@@ -47,6 +47,6 @@ if [ -n "${beegfs_rootfs}" ]; then
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/beegfsfsroot.sh
     # force udevsettle to break
     > $hookdir/initqueue/work
-else
-    die "Required parameter 'beegfs_rootfs' is missing" 
+#else
+#    die "Required parameter 'beegfs_rootfs' is missing" 
 fi

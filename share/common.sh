@@ -1638,7 +1638,6 @@ function generate_rootfs()
     bkp ${mount_point}/etc/fstab
     # Patch the network
     patch_network_configuration
-    # Create the tarball
     tar -cf /dev/shm/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
     pigz -9 /dev/shm/rootfs.tar
@@ -1747,6 +1746,42 @@ function generate_rootfs_squashfs()
     #echo "IMAGE_ROOTFS=__OVERLAY__PROTOCOL__://__OVERLAY_SERVER__/images/__IMAGE__/rootfs.squashfs" > ${image_config}
     echo "IMAGE_ROOTFS=nfs://${NFS_SERVER}:${SNOW_CONF}/boot/images/${image}/rootfs.squashfs" > ${image_config}
     echo "IMAGE_TYPE=squashfs" >> ${image_config}
+}
+
+function generate_rootfs_overlayfs()
+{
+    # image name
+    local image=$1
+    # overlayfs protocol
+    local overlay_type=$2
+    # path to the PXE config file
+    local image_pxe=${SNOW_CONF}/boot/images/${image}/${image}.pxe
+    # path to the image config rile
+    local image_config=${SNOW_CONF}/boot/images/${image}/config
+    # raw rootfs image
+    local image_rootfs=${SNOW_CONF}/boot/images/${image}/rootfs.tar.gz
+    # set mount point for the rootfs
+    local mount_point=${SNOW_CONF}/boot/images/${image}/rootfs
+    # create the nfsroot image
+    mkdir -p ${mount_point}
+    # Extract raw rootfs into the nfsroot folder
+    # Create the tarball - removing --acls option to accelerate the tarball creation in non-posix CFS -- 25 Oct 2017
+    #tar -C ${mount_point} --acls -p -s --numeric-owner -zxf ${image_rootfs}
+    tar -C ${mount_point} -p -s --numeric-owner -zxf ${image_rootfs}
+    # Update fstab
+    bkp ${mount_point}/etc/fstab
+    cp -p ${mount_point}/etc/fstab ${mount_point}/etc/fstab.orig
+    echo "proc        /proc       proc    defaults    0 0"  > ${mount_point}/etc/fstab
+    echo "none        /tmp        tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "tmpfs       /dev/shm    tmpfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    echo "sysfs       /sys        sysfs   defaults    0 0" >> ${mount_point}/etc/fstab
+    setup_networkfs ${mount_point}
+    # Setup OverlayFSROOT support for PXE
+    cp -p ${SNOW_CONF}/boot/pxelinux.cfg/overlayfsroot ${image_pxe}
+    sed -i "s|__IMAGE__|$image|g" ${image_pxe}
+    sed -i "s|__OVERLAY_TYPE__|${overlay_type}|g" ${image_pxe}
+    echo "IMAGE_ROOTFS=${mount_point#${SNOW_PATH}}" > ${image_config}
+    echo "IMAGE_TYPE=overlayfsroot" >> ${image_config}
 }
 
 function generate_rootfs_stateless()
@@ -1925,9 +1960,8 @@ function set_image_type()
             stateless)
                 generate_rootfs_squashfs $image
             ;;
-            statelite)
-                generate_rootfs_lite $image
-                generate_rootfs_unionfs $image
+            overlayfsroot)
+                generate_rootfs_overlayfs $image beegfs
             ;;
             *)
                 error_exit "Error: ${image_type} is not supported"

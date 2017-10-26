@@ -50,6 +50,8 @@ function install_beegfs_client()
         chroot ${prefix} /bin/systemctl enable beegfs-helperd.service
         chroot ${prefix} /bin/systemctl enable beegfs-client.service
     fi
+    bkp ${prefix}/etc/beegfs/beegfs-mounts.conf
+    rm -f ${prefix}/etc/beegfs/beegfs-mounts.conf
     for i in {1..100}; do
         if [[ ! -z ${MOUNT_BEEGFS[$i]} ]]; then
             mkdir -p $(echo ${MOUNT_BEEGFS[$i]} | gawk '{print $1}')
