@@ -13,9 +13,4 @@ Filename=$PWD/cleanup-fluent-$HOSTNAME-*.sh
 if [ -f $FileName ]; then
     /bin/sh  $FileName
 fi
-#Star-CCM+ Job Epilog
-Filename=/projects/uoa00240/STAR-CCM+9.04.009-R8/star/bin/kill_starccm+
-if [ -x $FileName ]; then
-    $FileName
-fi
 exit 0
