@@ -1620,6 +1620,8 @@ function generate_rootfs()
     fi
     mkdir -p ${hooks_path}/first_boot
     systemctl enable first_boot
+    # disable network.service as it's not longer required for diskless 
+    systemctl disable network.service
     # Identify remote file systems
     local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
     local exclude_remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print "--exclude="$7}}' | tr '\n' ' ')
@@ -1856,6 +1858,8 @@ function clone_node()
     local image=$2
     local image_type=$3
     local image_desc="$4"
+    # OverlayFS type must be defined as option
+    #local overlayfs_type=$5
     if [[ -z "$node" ]]; then
         error_exit "ERROR: no node name to clone is provided"
     fi
@@ -1887,7 +1891,7 @@ function clone_node()
         fi
         check_host_status ${node}${NET_MGMT[5]}
         ssh $node $0 clone node $@
-        set_image_type $image ${image_type}
+        set_image_type $image ${image_type} ${overlayfs_type}
         if [[ ! -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
         fi
@@ -1961,7 +1965,8 @@ function set_image_type()
                 generate_rootfs_squashfs $image
             ;;
             overlayfsroot)
-                generate_rootfs_overlayfs $image beegfs
+                local overlayfs_type=$3
+                generate_rootfs_overlayfs $image ${overlayfs_type}
             ;;
             *)
                 error_exit "Error: ${image_type} is not supported"

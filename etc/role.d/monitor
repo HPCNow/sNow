@@ -56,6 +56,7 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
             sed -i "s|port = .*|port = ${PORT}|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             sed -i "s|mute = .*|mute = yes|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             sed -i "s|deaf = .*|deaf = no|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
+            sed -i 's|name = "unspecified"|name = "sNow"|g' $SNOW_CONF/system_files/etc/ganglia/gmond.conf
             sed -i "s|name = \"sNow Domains\"|name = \"${cluster}\"|g" ${prefix}/etc/ganglia/gmond_${cluster}.conf
             cp -p ${prefix}/etc/init.d/ganglia-monitor ${prefix}/etc/init.d/ganglia-monitor-${cluster}
             sed -i "s|ganglia-monitor|ganglia-monitor-${cluster}|g" ${prefix}/etc/init.d/ganglia-monitor-${cluster}
@@ -83,6 +84,5 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
         chroot ${prefix} /usr/sbin/update-rc.d ganglia-monitor remove
         chroot ${prefix} /bin/chmod -x /etc/init.d/ganglia-monitor
         chroot ${prefix} /usr/sbin/update-rc.d ganglia-monitor-domains defaults
-
     fi
 fi
