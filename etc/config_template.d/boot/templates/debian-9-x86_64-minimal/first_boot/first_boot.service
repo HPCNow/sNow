@@ -1,0 +1,13 @@
+[Unit]
+Description=First boot of nodes managed by sNow!
+After=network.target rpcbind.service sNow.mount
+
+[Service]
+Type=oneshot
+Environment="HOOKS_PATH=__HOOKS_PATH__"
+ExecStartPre=/bin/sleep 30
+ExecStart=/usr/local/bin/first_boot start
+ExecStop=/usr/local/bin/first_boot stop
+
+[Install]
+WantedBy=multi-user.target

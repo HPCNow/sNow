@@ -1,0 +1,7 @@
+# default is label '__IMAGE__'
+# boots a Linux kernel and mounts root as read-only file system image. OverlayFS on tmpfs provides a writable layer to manage the cluster.
+default __IMAGE__
+
+label   __IMAGE__
+    kernel images/__IMAGE__/vmlinuz
+        append initrd=images/__IMAGE__/initrd.img overlay_rootfs=__IMAGE_ROOTFS__ overlay_type=__OVERLAY_TYPE__ overlay_opts=ro overlay_fetch=no ip=dhcp netdevice=eth0 rd.neednet=1 __CONSOLE_OPTIONS__ rd.info

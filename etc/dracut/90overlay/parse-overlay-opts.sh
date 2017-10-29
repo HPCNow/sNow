@@ -34,38 +34,40 @@ overlay_opts=${overlay_opts:-${default_overlay_opts}}
 overlay_fetch=${overlay_fetch:-${default_overlay_fetch}}
 
 # Evaluate protocol used
-case "${overlay_rootfs}" in
-    beegfs://*)
-        overlay_protocol=lustre
-        ;;
-    lustre://*)
-        overlay_protocol=lustre
-        ;;
-    nfs://*)
-        overlay_protocol=nfs
-        ;;
-    nfsv4://*)
-        overlay_protocol=nfsv4
-        ;;
-    http://*) 
-        overlay_protocol=http
-        ;;
-    https://*)
-        overlay_protocol=https
-        ;;
-    ftp://*)
-        overlay_protocol=ftp
-        ;;
-    torrent://*)
-        overlay_protocol=torrent
-        ;;
-    tftp://*)
-        overlay_protocol=tftp
-        ;;
-    *)
-        warn "Protocol not supported: ${overlay_rootfs}"
-        ;;
-esac
+if [ "${overlay_type}" = "squashfs" ]; then
+    case "${overlay_rootfs}" in
+        beegfs://*)
+            overlay_protocol=beegfs
+            ;;
+        lustre://*)
+            overlay_protocol=lustre
+            ;;
+        nfs://*)
+            overlay_protocol=nfs
+            ;;
+        nfsv4://*)
+            overlay_protocol=nfsv4
+            ;;
+        http://*) 
+            overlay_protocol=http
+            ;;
+        https://*)
+            overlay_protocol=https
+            ;;
+        ftp://*)
+            overlay_protocol=ftp
+            ;;
+        torrent://*)
+            overlay_protocol=torrent
+            ;;
+        tftp://*)
+            overlay_protocol=tftp
+            ;;
+        *)
+            warn "Protocol not supported: ${overlay_rootfs}"
+            ;;
+    esac
+fi
 
 if [ -n "${overlay_rootfs}" ]; then
     # Write the argument values out to temporary files under /tmp

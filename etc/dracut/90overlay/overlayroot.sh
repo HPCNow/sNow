@@ -147,27 +147,22 @@ if [ -n "${overlay_rootfs}" ]; then
     fi
 
     if [ "${overlay_type}" = "beegfs" ]; then
-        if [ ! -z "${overlay_server}" ]; then 
-            info "Mounting BeeGFS-root read-only"
-            image_path="${overlay_server%/*}"
-            stage0_ro=${stage0_ro}/beegfs
-            stage0_ro_rootfs_path=${stage0_ro}${overlay_rootfs}
-            source /etc/default/beegfs-client
-            /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
-            modprobe beegfs
-            sleep 5
-            mkdir -p ${stage0_ro}
-            sed -e "s|^connClientPortUDP             = 8004|connClientPortUDP             = 8100|g" /etc/beegfs/beegfs-client.conf > /etc/beegfs/beegfs-client-rootfs.conf
-            mount -n -t beegfs beegfs_nodev ${stage0_ro} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
-            if [ $? != 0 ]; then
-                warn "failed to mount BeeGFS root read-only image"
-                exit 1
-            fi
-            sleep 5
-            mount --make-private ${stage0_ro}
-        else
-            die "Required parameter 'overlay_server' is missing" 
+        info "Mounting BeeGFS-root read-only"
+        stage0_ro=${stage0_ro}/beegfs
+        stage0_ro_rootfs_path=${stage0_ro}${overlay_rootfs}
+        source /etc/default/beegfs-client
+        /opt/beegfs/sbin/beegfs-helperd cfgFile=/etc/beegfs/beegfs-helperd.conf pidFile=/var/run/beegfs-helperd.pid
+        modprobe beegfs
+        sleep 5
+        mkdir -p ${stage0_ro}
+        sed -e "s|^connClientPortUDP             = 8004|connClientPortUDP             = 8100|g" /etc/beegfs/beegfs-client.conf > /etc/beegfs/beegfs-client-rootfs.conf
+        mount -n -t beegfs beegfs_nodev ${stage0_ro} -ocfgFile=/etc/beegfs/beegfs-client-rootfs.conf,_netdev,ro
+        if [ $? != 0 ]; then
+            warn "failed to mount BeeGFS root read-only image"
+            exit 1
         fi
+        sleep 5
+        mount --make-private ${stage0_ro}
     fi
 
     if [ "${overlay_type}" = "lustre" ]; then
@@ -198,6 +193,10 @@ if [ -n "${overlay_rootfs}" ]; then
     mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro} to ${newroot}${stage0_ro}"
     mount --move ${stage0_rw} ${newroot}${stage0_rw} || info "Failed to move ${stage0_rw} to ${newroot}${stage0_rw}"
     cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
+    # Workaround to systemd-machine-id-commit + overlayfs bug: https://github.com/systemd/systemd/issues/729
+    ip_addr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
+    hostname=$(host ${ip_addr} | cut -d ' ' -f 5 | sed -r 's/((.*)[^\.])\.?/\1/g' )
+    echo $hostname > ${newroot}/etc/hostname
     # maybe required by SuSE - inject new exit_if_exists
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
     # force udevsettle to break

@@ -21,6 +21,19 @@ function setup_ntp_client()
             chmod 644 /sNow/snow-configspace/system_files/etc/ntp.conf
             cp -p /sNow/snow-configspace/system_files/etc/ntp.conf /etc/
         fi
-        systemctl enable ntpd
+        case $OS in
+            debian|ubuntu)
+                systemctl enable ntp
+            ;;
+            rhel|redhat|centos)
+                systemctl enable ntpd
+            ;;
+            suse|sle[sd]|opensuse)
+                systemctl enable ntpd
+            ;;
+            *)
+                warning_msg "This distribution is not supported. NTP client may not work."
+            ;;
+        esac
     fi
 } 1>>$LOGFILE 2>&1
