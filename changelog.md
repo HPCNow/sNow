@@ -157,3 +157,36 @@
 
 ### Major fixes
 * Fix broken compatibility in LDAP deployment due new standarts
+
+## 1.1.11
+
+### New Features and changes
+* New domain role for BeeGFS server deployment 
+* BeeGFS native client support 
+* BeeGFS stateless image support - tested in CentOS 7.x
+* Lustre stateless image support - tested in CentOS 7.x
+* Support for debian preseed deployment (partially fix issue #84 - deploy with ubuntu is still missing)
+* New deployment template for Debian 8.x
+* New deployment template for Debian 9.x
+* New deployment template for CentOS 7.4
+* Included GRES requirement in interactive
+* updated cpu-id-map to include skylake architecture
+
+### Minor fixes
+* Fix delay issue listing images.
+* Minor fix in OS release detection in install.sh
+* Included libx11-devel and openssl-devel to meet the OS packages requirements for some applications
+* Clean-up slurm job epilog and prolog
+* Fixed issue 125: Included DNS search list to snow.conf
+* Updated README files (fix issue #140)
+* sNow! CLI help more human readable (fix issue #126)
+* Fixed issue #139: check if snow CLI is executed by root
+* Fixed issue #138: style issue in the "snow list domains" output
+
+### Major fixes
+* Fixed delay issues in diskless boot. 
+* Fixed issues with stateless shutdowns due network stop before unmounting CFS. 
+* Fixed ganglia configuration per cluster nodes.
+
+### Known Issues
+* Diskless based on OverlayFSroot over BeeGFS is fixed, but bug in systemd-machine-id-commit still affects old kernels < 4.2. There is a workaround to systemd-machine-id-commit + overlayfs bug (hostname) but not fully tested.
