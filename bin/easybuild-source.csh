@@ -26,7 +26,7 @@ endif
 setenv PYLIB `python -c "import distutils.sysconfig; print distutils.sysconfig.get_python_lib(prefix='${SNOW_SOFT}/installation'); "`
 #setenv PYTHONPATH "$PYLIB:$PYTHONPATH"                                  # eb command needs to find easybuild package
 setenv PYTHONPATH "$PYLIB"                                  # eb command needs to find easybuild package
-setenv EASYBUILD_PREFIX "$SNOW_SOFT/$OS/$OSVERSION/$ARCHITECTURE"        # sets (install|build|source|repository)path
+setenv EASYBUILD_PREFIX "$SNOW_SOFT/$OS/$OS_VERSION/$ARCHITECTURE"        # sets (install|build|source|repository)path
 setenv EASYBUILD_INSTALLPATH "$EASYBUILD_PREFIX"                        # path to install the modules and binaries
 setenv EASYBUILD_SOURCEPATH "$SNOW_SOFT/sources"                         # not just the default as shared by all architectures
 setenv EASYBUILD_TMP_LOGDIR "$SNOW_SOFT/tmp"                             # so in shared filesystem not host local

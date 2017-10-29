@@ -1,0 +1,2 @@
+INSTALL_REPO=http://deb.debian.org
+INSTALL_PROXY=http://__PROXY_SERVER__:__PROXY_PORT__

@@ -302,10 +302,13 @@ TIMEZONE=Europe/Madrid
 #
 # Network parameters and services required by sNow! (mandatory)
 # The DNS servers are used by the role deploy to setup the internal DNS.
+# The DNS search list (DNS_SEARCH_LIST) allows to search across multiple domains.
+# This option is currently limited to six domains with a total of 256 characters.
 #
 
 DNS_SERVERS=8.8.8.8,8.8.4.4
 DOMAIN=in.hpcnow.com
+#DNS_SEARCH_LIST="mycluster.mydomain.org mydomain.net someotherdomain.com"
 
 #             [ DHCP options ]
 #
