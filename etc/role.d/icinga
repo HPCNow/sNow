@@ -40,7 +40,7 @@ if  [[ ! -z "$ICINGA_SERVER" ]]; then
     echo "deb http://packages.icinga.com/debian icinga-jessie main" >> ${prefix}/etc/apt/sources.list.d/icinga.list
     echo "deb-src http://packages.icinga.com/debian icinga-jessie main" >> ${prefix}/etc/apt/sources.list.d/icinga.list
     chroot ${prefix} /usr/bin/apt-get update
-    installDebianPackage ${prefix} icinga2 monitoring-plugins vim-icinga2 vim-addon-manager icingaweb2
+    installDebianPackage ${prefix} icinga2 monitoring-plugins vim-icinga2 vim-addon-manager icingaweb2 icingacli
     chroot ${prefix} /usr/bin/vim-addon-manager -w install icinga2
     # Setup PHP timezone
     if [[ -e $SNOW_CONF/system_files/etc/icinga2/php.ini ]]; then 
