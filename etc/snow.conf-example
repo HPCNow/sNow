@@ -435,3 +435,7 @@ LDAP_CONFIG_PASSWORD="whatever"
 #LDAP_PPOLICY_DN_PREFIX=cn=default,ou=policies
 #LDAP_ADDITIONAL_SCHEMAS=collective,corba,duaconf,dyngroup,java,misc,openldap,pmi,ppolicy
 #LDAP_ADDITIONAL_MODULES=memberof,ppolicy
+
+#            [ ElasticSearch Configuration ]
+# set elasticsearch cluster name:
+ES_CLUSTER_NAME="HPCNow"

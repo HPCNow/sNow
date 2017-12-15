@@ -1,0 +1,67 @@
+#!/bin/bash
+# Configure the new image for sNow! HPC suite
+# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website : www.hpcnow.com/snow
+#
+#SHORT_DESCRIPTION: Installs Grafana as open platform for analytics and monitoring.
+
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
+
+##############     EVALUATE WHO PROVIDES THE SERVICE (SITE, SNOW or BOTH)     ###############
+# Setup New Serivce Client
+# get the IP of the server offering this service
+SNOW_GRAFANA_SERVER=$(gawk '{if($2 ~ /grafana/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+# If the site is offering the server already and sNow! is also deploying the server,
+# then we asume that sNow server will act as a proxy or relay server (usefull to avoid DOS of performance degradation)
+# Otherwise, we will use the only available service.
+if  [[ ! -z "$SNOW_GRAFANA_SERVER" ]]; then 
+    GRAFANA_SERVER=$SNOW_GRAFANA_SERVER
+fi
+
+##############     EVALUATE IF THE SERVER IS AVAILABLE/EXPECTED OR NOT     ###############
+if  [[ ! -z "$GRAFANA_SERVER" ]]; then 
+    # Install the required packages
+    echo "deb https://packagecloud.io/grafana/stable/debian/ jessie main" > ${prefix}/etc/apt/sources.list.d/grafana.list
+    curl https://packagecloud.io/gpg.key | chroot ${prefix} /usr/bin/apt-key add -
+    installDebianPackage ${prefix} grafana fontconfig freetype* urw-fonts
+    chroot ${prefix} systemctl enable grafana-server.service
+    chroot ${prefix} grafana-cli plugins install grafana-piechart-panel
+    chroot ${prefix} grafana-cli plugins install digrich-bubblechart-panel
+    chroot ${prefix} grafana-cli plugins install natel-plotly-panel
+    chroot ${prefix} grafana-cli plugins install savantly-heatmap-panel
+    chroot ${prefix} grafana-cli plugins install neocat-cal-heatmap-panel
+    # Check if the configuration file already exists
+    if [[ -e /sNow/snow-configspace/system_files/etc/grafana/grafana.ini ]]; then 
+        # Transfer the existing configuration files to the final destination
+        cp -pr /sNow/snow-configspace/system_files/etc/grafana /etc/
+    else
+        # Parse the default configuration file provided by the OS distribution or your advanced 
+        # configuration template located in etc/config_template.d/grafana
+        cp -pr ${SNOW_TOOL}/etc/config_template.d/grafana ${prefix}/etc/
+        sed -i 's|__NEW_SERVICE_PARAMETER__|$NEW_SERVICE_PARAMETER|g' ${prefix}/etc/grafana/grafana.ini
+        cp -p ${prefix}/etc/grafana/grafana.ini /sNow/snow-configspace/system_files/etc/grafana/grafana.ini
+        # Execute the required commands inside the deployed system with chroot ${prefix}
+        chroot ${prefix} /usr/bin/whatever_command $NEW_VARIABLE
+    fi
+fi

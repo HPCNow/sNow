@@ -1373,7 +1373,7 @@ function boot_copy()
                 error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
             fi
             if [[ ! -f ${template_pxe} ]] ; then
-                warning_message "The following file does not exist: ${template_config}"
+                warning_msg "The following file does not exist: ${template_config}"
             else
                 source ${template_config}
             fi
@@ -1403,7 +1403,7 @@ function boot_copy()
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
             if [[ ! -f ${image_config} ]] ; then
-                warning_message "The following file does not exist: ${image_config}"
+                warning_msg "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
             fi
