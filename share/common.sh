@@ -650,7 +650,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,async,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"

@@ -349,12 +349,17 @@ DHCP_NIC=eth0
 
 # If NFS is your main shared file system, then the following two lines become
 # mandatory, as they define the mount points for $SNOW_PATH and $HOME
-MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_PATH}        ${SNOW_PATH}   nfs    bg,tcp,defaults 0 0"
-MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,defaults 0 0"
+MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_PATH}        ${SNOW_PATH}   nfs    bg,tcp,noatime,nodiratime,defaults 0 0"
+MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,noatime,nodiratime,defaults 0 0"
 
 # If you are using a different shared file system, then the $SNOW_PATH and
 # $HOME must be available in the sNow! management nodes and some node(s) must
 # re-export those file systems through NFS. 
+#
+# NFS Performance considerations:
+# * Consider to increase the number of NFS daemons (RPCNFSDCOUNT) in the server
+# * Consider to include FS-Cache option in the clients (fsc)
+# * Consider to disable async in the ${SNOW_PATH} exports (highly recommended if you don't trust the hardware)
 
 #             [ Slurm Configuration ]
 #
