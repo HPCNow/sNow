@@ -115,6 +115,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         ubuntu)
             apt-get -y update
@@ -133,6 +134,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         centos)
             echo "sNow! Xen Support not yet available for RHEL and CentOS"
