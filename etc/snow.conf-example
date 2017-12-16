@@ -406,10 +406,10 @@ SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket
 SLURM_NODES[3]="NodeName=skl[01-99] RealMemory=512000  Sockets=4  CoresPerSocket=24 ThreadsPerCore=1 State=UNKNOWN" 
 # The following lines define four simple partitions which meet most of the
 # requirements in small HPC centers
-SLURM_PARTITION[1]="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=100 MaxTime=6:00:00   PreemptMode=off"
-SLURM_PARTITION[2]="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=FORCE:1 Priority=75  MaxTime=72:00:00  PreemptMode=off"
-SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  Shared=NO      Priority=50  MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
-SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES Shared=FORCE:1 Priority=25  MaxTime=168:00:00 PreemptMode=suspend"
+SLURM_PARTITION[1]="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  OverSubscribe=FORCE:1 Priority=100 PriorityTier=5 MaxTime=6:00:00   PreemptMode=off"
+SLURM_PARTITION[2]="PartitionName=medium  Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  OverSubscribe=FORCE:1 Priority=75  PriorityTier=1 MaxTime=72:00:00  PreemptMode=off"
+SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  OverSubscribe=NO      Priority=50  PriorityTier=3 MaxTime=24:00:00  PreemptMode=requeue    GraceTime=120"
+SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES OverSubscribe=FORCE:1 Priority=25  PriorityTier=2 MaxTime=168:00:00 PreemptMode=suspend"
 
 #             [ Torque Configuration ]
 # sNow! allows to install a torque master domain and also build the required packages to 
