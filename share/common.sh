@@ -490,12 +490,29 @@ function mask2cidr()
     echo "$nbits"
 }
 
+function valid_ip()
+{
+    local ip=$1
+    local stat=1
+
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
 function last_ip_in_range()
 {
     local ip=$1
     local net=$(echo $ip | cut -d '/' -f 1);
     local prefix=$(echo $ip | cut -d '/' -f 2);
-    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if valid_ip ${prefix}; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
@@ -522,7 +539,7 @@ function generate_hostlist()
     local host_extension=$2
     local net=$(echo $ip | cut -d '/' -f 1);
     local prefix=$(echo $ip | cut -d '/' -f 2);
-    if [[ $prefix =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if valid_ip $prefix; then
         cidr=$(mask2cidr $prefix)
     else
         cidr=$prefix
@@ -633,7 +650,7 @@ function init()
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,async,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
@@ -1356,7 +1373,7 @@ function boot_copy()
                 error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
             fi
             if [[ ! -f ${template_pxe} ]] ; then
-                warning_message "The following file does not exist: ${template_config}"
+                warning_msg "The following file does not exist: ${template_config}"
             else
                 source ${template_config}
             fi
@@ -1386,7 +1403,7 @@ function boot_copy()
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
             if [[ ! -f ${image_config} ]] ; then
-                warning_message "The following file does not exist: ${image_config}"
+                warning_msg "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
             fi
@@ -2011,7 +2028,7 @@ function avail_roles()
 {
     local roles="$1"
     if [[ -z $roles ]]; then
-        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g")
+        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g" | sort)
     fi
     printf "%-25s    %-80s\n" "Role Name" " Description" 1>&3
     printf "%-25s    %-80s\n" "-------------" " -----------" 1>&3
