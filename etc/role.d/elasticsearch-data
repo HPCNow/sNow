@@ -29,47 +29,51 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
 fi
 
 # Get the IP of the server offering this service
-SNOW_ELASTICSEARCH_MASTER=$(gawk '{if($2 ~ /elasticserver-data/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_ELASTICSEARCH_MASTER=$(gawk '{if($2 ~ /elasticsearch-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
 if  [[ ! -z "$SNOW_ELASTICSEARCH_MASTER" && ! -z "$SITE_ELASTICSEARCH_MASTER" ]]; then 
     ELASTICSEARCH_MASTER=$SNOW_ELASTICSEARCH_MASTER
 else
     ELASTICSEARCH_MASTER="${SITE_ELASTICSEARCH_MASTER:-$SNOW_ELASTICSEARCH_MASTER}"
 fi
+ES_NODES=$(gawk 'BEGIN{i=0}{if($2 ~ /elasticsearch-data/){es_nodes[i++]=$1}}END{nodes="[\""es_nodes[0]"\""; for (j = 1; j < i; j++){nodes=nodes", \""es_nodes[j]"\""}; print nodes"]"}' $SNOW_TOOL/etc/domains.conf)
+MINIMUM_ES_MASTER_NODES=$(gawk 'BEGIN{i=0}{if($2 ~ /elasticsearch-master|elasticsearch-data/){i++}}END{printf "%d\n", (i/2)+1}' $SNOW_TOOL/etc/domains.conf)
 
-if  [[ ! -z "$ELASTICSEARCH_MASTER" ]]; then 
+if  [[ ! -z "${ELASTICSEARCH_MASTER}" ]]; then 
     # Install the required packages
     wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | ${prefix}/usr/bin/apt-key add -
     echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" > ${prefix}/etc/apt/sources.list.d/elastic-5.x.list
+    chroot ${prefix} /usr/bin/apt-get update
     installDebianPackage ${prefix} elasticsearch
+
+    # Setup kernel parameters
+    replace_text ${prefix}/etc/sysctl.conf "^vm.max_map_count" "vm.max_map_count=262144"
+    replace_text ${prefix}/etc/sysctl.conf "^net.ipv6.conf.all.disable_ipv6" "net.ipv6.conf.all.disable_ipv6=1"
+    replace_text ${prefix}/etc/sysctl.conf "^net.ipv6.conf.default.disable_ipv6" "net.ipv6.conf.default.disable_ipv6=1"
+ 
+    # Setup limits for user elasticsearch
+    replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft nofile" "elasticsearch soft nofile 65536"
+    replace_text ${prefix}/etc/sysctl.conf "^elasticsearch hard nofile" "elasticsearch hard nofile 65536"
+    replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft memlock" "elasticsearch soft memlock unlimited"
+    replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft memlock" "elasticsearch soft memlock unlimited"
     # Check if the configuration file already exists
-    if [[ -e /sNow/snow-configspace/system_files/etc/elasticsearch/elasticsearch.yml]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/elasticsearch/elasticsearch.yml ]]; then 
         # Transfer the existing file to the final destination
+        replace_text /sNow/snow-configspace/system_files/etc/elasticsearch/elasticsearch.yml "^discovery.zen.ping.unicast.hosts" "discovery.zen.ping.unicast.hosts: ${ES_NODES}"
         cp -p /sNow/snow-configspace/system_files/etc/elasticsearch/elasticsearch.yml ${prefix}/etc/elasticsearch/elasticsearch.yml
     else
-        # set elasticsearch nodes 
-        #ES_NODES='["es-node-01", "es-node-03"]'
-        # Setup kernel parameters
-        replace_text ${prefix}/etc/sysctl.conf "^vm.max_map_count" "vm.max_map_count=262144"
-        replace_text ${prefix}/etc/sysctl.conf "^net.ipv6.conf.all.disable_ipv6" "net.ipv6.conf.all.disable_ipv6=1"
-        replace_text ${prefix}/etc/sysctl.conf "^net.ipv6.conf.default.disable_ipv6" "net.ipv6.conf.default.disable_ipv6=1"
-        sysctl -p
- 
-        # Setup limits for user elasticsearch
-        replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft nofile" "elasticsearch soft nofile 65536"
-        replace_text ${prefix}/etc/sysctl.conf "^elasticsearch hard nofile" "elasticsearch hard nofile 65536"
-        replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft memlock" "elasticsearch soft memlock unlimited"
-        replace_text ${prefix}/etc/sysctl.conf "^elasticsearch soft memlock" "elasticsearch soft memlock unlimited"
- 
         # stop elasticsearch and backup config
-        chroot ${prefix} systemctl stop elasticsearch
-        bkp /etc/elasticsearch/elasticsearch.yml
+        chroot ${prefix} /bin/systemctl stop elasticsearch
+        bkp ${prefix}/etc/elasticsearch/elasticsearch.yml
  
         # Setup ElasticSearch configuration
-        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^cluster.name" "cluster.name: $ES_CLUSTER_NAME"
-        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^node.name" "node.name: $ES_NODE_NAME"
+        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^cluster.name" "cluster.name: ${ES_CLUSTER_NAME}"
+        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^node.name" "node.name: $hostname"
         replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^network.host" "network.host: 0.0.0.0"
-        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^discovery.zen.ping.unicast.hosts" "discovery.zen.ping.unicast.hosts: $ES_NODES"
+        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^discovery.zen.minimum_master_nodes" "discovery.zen.minimum_master_nodes: ${MINIMUM_ES_MASTER_NODES}"
+        replace_text ${prefix}/etc/elasticsearch/elasticsearch.yml "^discovery.zen.ping.unicast.hosts" "discovery.zen.ping.unicast.hosts: ${ES_NODES}"
+        mkdir -p /sNow/snow-configspace/system_files/etc/elasticsearch
+        cp -p ${prefix}/etc/elasticsearch/elasticsearch.yml /sNow/snow-configspace/system_files/etc/elasticsearch/elasticsearch.yml
         # enable elasticsearch
-        chroot ${prefix} systemctl enable elasticsearch
+        chroot ${prefix} /bin/systemctl enable elasticsearch
     fi
 fi

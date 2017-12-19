@@ -2028,7 +2028,7 @@ function avail_roles()
 {
     local roles="$1"
     if [[ -z $roles ]]; then
-        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g")
+        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g" | sort)
     fi
     printf "%-25s    %-80s\n" "Role Name" " Description" 1>&3
     printf "%-25s    %-80s\n" "-------------" " -----------" 1>&3
