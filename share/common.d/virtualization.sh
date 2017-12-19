@@ -115,6 +115,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         ubuntu)
             apt-get -y update
@@ -133,6 +134,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         centos)
             echo "sNow! Xen Support not yet available for RHEL and CentOS"
@@ -159,4 +161,33 @@ function install_xen()
 function setup_xen()
 {
     install_xen
+} 1>>$LOGFILE 2>&1
+
+
+function install_singularity()
+{
+    case $OS in
+        debian|ubuntu)
+            pkgs="singularity-container"
+        ;;
+        rhel|redhat|centos)
+            pkgs="singularity"
+        ;;
+        suse|sle[sd]|opensuse)
+            pkgs="singularity"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
+}
+
+function setup_singularity()
+{
+    if is_master; then
+        info_msg "Singularity is not supported in the master node"
+    else
+        install_singularity
+    fi
 } 1>>$LOGFILE 2>&1
