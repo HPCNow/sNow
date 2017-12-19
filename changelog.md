@@ -190,3 +190,24 @@
 
 ### Known Issues
 * Diskless based on OverlayFSroot over BeeGFS is fixed, but bug in systemd-machine-id-commit still affects old kernels < 4.2. There is a workaround to systemd-machine-id-commit + overlayfs bug (hostname) but not fully tested.
+
+## 1.1.12
+
+### New Features and changes
+* Included icinga2 role (web based setup not automated, so manual intervention is required after the deployment).
+* Included native support with Singularity based on HPCNow! repository
+
+### Minor fixes
+* Fix typo in warning_message -> warning_msg.
+* Fix missing config file in memtest and localboot images.
+* Slurm configuration template updated in order to pick up changes in the latest release
+* Updated NFS server configuration with async for /sNow. 
+* Default NFS mount options noatime and nodiratime in the clients. 
+* Included performance considerations notes in the snow.conf-example
+* Updated slurdmdb configuration in order to fix issues with user creation. 
+* SlurmDB user is root, in order to have consistency with SlurmCTLD user.
+* Updated the order of active-domains.conf-example to match the domain deployment order
+* Increased the number of loopback devices to 64 when virtualization technology selected it Xen
+
+### Major fixes
+* Fix memtest image url. 
