@@ -289,7 +289,7 @@ function eula()
         echo "[E] The local sNow! tools repository is corrupted. Please, test your connection to bitbucket."
     fi
     more  ${SNOW_TOOL}/eula.txt
-    if [[ "${SNOW_EULA} == "accepted" ]]; then
+    if [[ "${SNOW_EULA}" == "accepted" ]]; then
         echo "EULA accepted. The installation will proceed (unattended mode)."
     else
         echo "Do you accept the EULA? type Accept or Decline"
