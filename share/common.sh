@@ -603,20 +603,28 @@ function generate_nodes_json()
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
-function init()
+function init_check()
 {
+    local force=$1
     # Check if the system has been initiate before
     if [[ -e ${SNOW_TOOL}/etc/nodes.json ]]; then
-        warning_msg "sNow! configuration had been initiated before."
-        warning_msg "Please, do not run this command in a production environment"
-        warning_msg "Do you want to proceed? (y/N)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            info_msg "Initiating sNow! configuration"
-        else
-            error_exit "Well done. It's better to be sure."
+        if [[ "$force" != "yes" ]]; then
+            warning_msg "sNow! configuration had been initiated before."
+            warning_msg "Please, do not run this command in a production environment"
+            warning_msg "Do you want to proceed? (y/N)"
+            read -t 20 -u 3 answer
+            if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+                info_msg "Initiating sNow! configuration"
+            else
+                error_exit "Well done. It's better to be sure."
+            fi
         fi
     fi
+}
+
+function init_snow_conf()
+{
+    local force=$1
     # Check for snow.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
@@ -627,6 +635,11 @@ function init()
         error_exit "The snow.conf is not yet available."
     fi
     chmod 600 ${SNOW_CONF}/system_files/etc/snow.conf
+}
+
+function init_active_domains_conf()
+{
+    local force=$1
     # Check for active-domains.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
@@ -636,7 +649,11 @@ function init()
     else
         error_exit "The active-domains.conf is not yet available."
     fi
+}
 
+function init_ha()
+{
+    local force=$1
     # If the system uses shared (and external) NFS to enable HA, then the following block will help to setup the required configuration in the
     # NFS server.
     if (! ${HA_NFSROOT}) ; then
@@ -660,6 +677,11 @@ function init()
             info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
     fi
+}
+
+function init_nfs_server()
+{
+    local force=$1
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
     if [[ "$(uname -n)" == "${NFS_SERVER}" ]]; then
         if [[ ! -f ${SNOW_CONF}/system_files/etc/exports.d/snow.exports ]]; then
@@ -677,11 +699,16 @@ function init()
         fi
         ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
+}
+
+function init_domains_conf()
+{
+    local force=$1
     # sNow! Domains configuration table
     if [[ ! -f ${SNOW_CONF}/system_files/etc/domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
     fi
-    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
+    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf || "$force" == "yes" ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
             local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
@@ -709,6 +736,11 @@ function init()
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
         warning_msg "Review the domains config file: ${SNOW_TOOL}/etc/domains.conf"
     fi
+}
+
+function init_hosts()
+{
+    local force=$1
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
     for i in ${!CLUSTERS[@]}
@@ -721,25 +753,40 @@ function init()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
-    cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
-    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    if [[ ! -z ${NET_LLF[2]} ]]; then
-        generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    # Generate new static_hosts if the file does not exist or if force is enabled
+    if [[ ! -e $SNOW_CONF/system_files/etc/static_hosts || "$force" == "yes" ]]; then
+        cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
+        gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf >> $SNOW_CONF/system_files/etc/static_hosts
+        generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        if [[ ! -z ${NET_LLF[2]} ]]; then
+            generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        fi
     fi
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
-
     # Generate /etc/ssh/ssh_known_hosts
-    bkp /etc/ssh/ssh_known_hosts
-    echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
-    cp -p /etc/ssh/ssh_known_hosts ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts
+    if [[ ! -e $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts || "$force" == "yes" ]]; then
+        bkp /etc/ssh/ssh_known_hosts
+        echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
+        cp -p /etc/ssh/ssh_known_hosts ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts
+    else
+        cp -p ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+    fi
     # Generate /etc/ssh/shosts.equiv
-    bkp /etc/ssh/shosts.equiv
-    echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
-    cp -p /etc/ssh/shosts.equiv ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv
+    if [[ ! -e $SNOW_CONF/system_files/etc/ssh/shosts.equiv || "$force" == "yes" ]]; then
+        bkp /etc/ssh/shosts.equiv
+        echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
+        cp -p /etc/ssh/shosts.equiv ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv
+    else
+        cp -p ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv /etc/ssh/shosts.equiv
+    fi
     bkp /root/.shosts
     cp /etc/ssh/shosts.equiv /root/.shosts
+}
+
+function init_ssh_config()
+{
+    local force=$1
     # Update /etc/ssh/ssh_config
     bkp /etc/ssh/ssh_config
     if ( ! $(grep "HostbasedAuthentication yes" /etc/ssh/ssh_config | grep -qv "^#") ); then
@@ -747,6 +794,22 @@ function init()
         echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
         echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
     fi
+}
+
+function init()
+{
+    local force_flag=$1
+    if [[ "${force_flag}" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        force="yes"
+    fi
+    init_check $force
+    init_snow_conf $force
+    init_active_domains_conf $force
+    init_ha $force
+    init_nfs_server $force
+    init_check_domains_conf $force
+    init_hosts $force
+    init_ssh_config $force
 } 1>>$LOGFILE 2>&1
 
 function update_tools()
