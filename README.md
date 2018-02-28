@@ -1,5 +1,5 @@
-<!--
-sNow! Cluster Manager provides all the required elements to deploy, manage an HPC cluster
+```
+sNow! Cluster Manager
 Copyright (C) 2008 Jordi Blasco
 
 This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 For more information, visit the official website: www.hpcnow.com/snow
--->
+```
 
-# README
-
+# sNow!
 [sNow!](https://hpcnow.github.io/snow-web/) is an open-source HPC suite which provides all the required elements to deploy, manage and customize a compute solution. With the sNow! default configuration, you will able to set up a completely functional HPC cluster from scratch in a very short time.
 
 The predefined configuration contains advanced features which significantly reduce additional complexities for the end user. In addition to that, sNow! allows you to integrate simple hook scripts to customize your system to your needs.
