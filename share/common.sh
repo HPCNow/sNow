@@ -799,7 +799,7 @@ function init_ssh_config()
 function init()
 {
     local force_flag=$1
-    if [[ "${force_flag}" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    if [[ "${force_flag}" == "force" || "${force_flag}" == "-f" ]]; then
         force="yes"
     fi
     init_check $force

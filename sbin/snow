@@ -94,7 +94,7 @@ fi
 #
 case $opt1 in
     init)
-        init
+        init $opt2
         ;;
     config)
         config
