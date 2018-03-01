@@ -254,16 +254,16 @@ case $opt1 in
     boot)
         case $opt2 in
             domains)  
-                boot_domains $opt3 && error_check 0 "Domains are UP " || error_check 1 "Domains are UP " &
+                boot_domains $opt3 && error_check 0 "Booting domains " || error_check 1 "Booting domains " &
                 spinner $!             'Booting domains'
                 ;;
             cluster)
-                boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Cluster booted " || error_check 1 "Cluster booted " &
-                spinner $!             "Booting cluster "
+                boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Booting cluster $opt3 " || error_check 1 "Booting cluster $opt3 " &
+                spinner $!             "Booting cluster $opt3 "
                 ;;
             *)
-                boot $opt2 $opt3 $opt4 && error_check 0 "Node(s) booted " || error_check 1 "Node(s) booted " &
-                spinner $!             "Booting node(s) "
+                boot $opt2 $opt3 $opt4 && error_check 0 "Booting node(s) $opt2 " || error_check 1 "Booting node(s) $opt2 " &
+                spinner $!             "Booting node(s) $opt2 "
                 ;;
         esac
         ;;
