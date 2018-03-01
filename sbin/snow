@@ -31,7 +31,6 @@ if [[ $(id -u) -ne 0 ]] ; then
     error_exit "sNow! Tools CLI must be run as root. Use: 'sudo su -' or prepend your command with sudo: 'sudo snow <options>'."
 fi
 #Logging
-#readonly LOGFILE=/sNow/log/snow.log
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow
@@ -59,8 +58,13 @@ if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
     export PDSH_RCMD_TYPE
 else
-    echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
-    exit 1
+    readonly LOGFILE=/sNow/log/snow.log
+    if [[ "$opt1" != "help|-help|--help|\?" ]]; then
+        echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
+        exit 1
+    else
+        echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
+    fi
 fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
