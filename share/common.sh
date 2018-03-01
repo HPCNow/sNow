@@ -2352,7 +2352,16 @@ function nshutdown()
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
     check_host_status $(node_list "${nodelist}")
-    pdsh -w ${nodelist} systemctl poweroff
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource stop ${nodelist}
+        else
+            pdsh -w ${nodelist} systemctl poweroff
+        fi
+    else
+        pdsh -w ${nodelist} systemctl poweroff
+    fi
 }  &>/dev/null
 
 function shutdown_domains()
