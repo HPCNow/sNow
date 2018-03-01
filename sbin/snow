@@ -59,11 +59,11 @@ if [[ -f ${CONFIG_FILE} ]]; then
     export PDSH_RCMD_TYPE
 else
     readonly LOGFILE=/sNow/log/snow.log
-    if [[ "$opt1" != "help|-help|--help|\?" ]]; then
+    if [[ "$opt1" =~ ^([h][e][l][p]|[-][h][e][l][p]|[-][-][h][e][l][p]|[\?])$ ]]; then
+        echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
+    else
         echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
         exit 1
-    else
-        echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
     fi
 fi
 
