@@ -2222,16 +2222,14 @@ function check_host_status()
     fi
 }
 
-function boot()
+function boot_domain()
 {
-    local nodelist=$1
-    if [ -z "${nodelist}" ]; then
-        error_exit "No domain or node to boot."
-    fi
-    get_server_distribution ${nodelist}
-    if ((${is_vm})); then
-        local domain=${nodelist}
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
+    local domain=$1
+    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource cleanup ${domain}
+            crm resource start ${domain}
+        else
             local is_up=$(xl list ${domain})
             if [[ "${is_up}" == "" ]]; then
                 sleep 1
@@ -2239,35 +2237,54 @@ function boot()
             else
                 warning_msg "The domain ${domain} is already runnning"
             fi
-        else
-            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
-        local image=$2
-        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-        local BLOCKN=${12:-$BLOCKN}
-        local BLOCKD=${4:-$BLOCKD}
-        if [ -z "$image" ]; then
-            boot_copy "${nodelist}" boot
-        else
-            boot_copy "${nodelist}" boot ${image}
-        fi
-        if ! [[ -f ${image_pxe} ]] ; then
-            error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
-        fi
-        for node in $(node_list "${nodelist}"); do
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
-        done
-        unset node
-        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-        info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
-        parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[5]}" \; \
-        sleep $BLOCKD \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
-        ::: $(node_list "${nodelist}")
-        info_msg "You can monitor the booting with: snow console <compute-node-name>"
-        error_check 0 "Boot started."
+        error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
+    fi
+}
+
+function boot_node()
+{
+    local nodelist=$1
+    local image=$2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local BLOCKN=${12:-$BLOCKN}
+    local BLOCKD=${4:-$BLOCKD}
+    if [ -z "$image" ]; then
+        boot_copy "${nodelist}" boot
+    else
+        boot_copy "${nodelist}" boot ${image}
+    fi
+    if ! [[ -f ${image_pxe} ]] ; then
+        error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+    fi
+    for node in $(node_list "${nodelist}"); do
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+    done
+    unset node
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
+    parallel -j $BLOCKN \
+    echo "{}${NET_MGMT[5]}" \; \
+    sleep $BLOCKD \; \
+    ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
+    ::: $(node_list "${nodelist}")
+    info_msg "You can monitor the booting with: snow console <compute-node-name>"
+    error_check 0 "Boot started."
+}
+
+function boot()
+{
+    local nodelist=$1
+    local image=$2
+    if [ -z "${nodelist}" ]; then
+        error_exit "No domain or node to boot."
+    fi
+    get_server_distribution ${nodelist}
+    if ((${is_vm})); then
+        boot_domain ${nodelist}
+    else
+        boot_node $nodelist $image
     fi
 }
 
@@ -2341,7 +2358,11 @@ function nshutdown()
 function shutdown_domains()
 {
     for domain in ${SELF_ACTIVE_DOMAINS}; do 
-        nshutdown ${domain}
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource stop ${domain}
+        else
+            nshutdown ${domain}
+        fi
     done
     unset domain
 }
