@@ -190,7 +190,7 @@ NET_LLF=( 'xllf0' '10.1.0.1' '10.1.1.1' '10.1.0.' '255.255.0.0' '-ib' )
 
 IPMI_TYPE=lanplus
 IPMI_USER=admin
-IPMI_PASSWORD=admin
+IPMI_PASSWORD='admin'
 
 #                 [ Boot delay ]
 #
@@ -337,7 +337,7 @@ DHCP_NIC=eth0
 #SITE_LDAP_BASE="dc=in,dc=hpcnow,dc=com"
 #SITE_MAIL_SERVER=smtp.gmail.com::587
 #SITE_MAIL_USER=
-#SITE_MAIL_PASSWORD=
+#SITE_MAIL_PASSWORD='my_password'
 #SITE_SYSLOG_SERVER=192.168.7.1
 
 #             [ Shared File System ]
@@ -370,7 +370,7 @@ MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,noa
 
 # The following parameters define the Slurm Database
 SLURMDBD_USER=slurm
-SLURMDBD_PASSWORD=whatever
+SLURMDBD_PASSWORD='whatever'
 #SLURMDBD_NAME=slurm_acct_db
 
 #             [ Slurm Accounting and Fair Share ]
@@ -430,8 +430,8 @@ SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]
 # LDAP Passwords
 # LDAP_ADMIN_PASSWORD: Ldap Admin password. Defaults to admin
 # LDAP_CONFIG_PASSWORD: Ldap Config password. Defaults to config
-LDAP_ADMIN_PASSWORD="whatever"
-LDAP_CONFIG_PASSWORD="whatever"
+LDAP_ADMIN_PASSWORD='whatever'
+LDAP_CONFIG_PASSWORD='whatever'
 
 # LDAP organization name. By default is the domain name defined with $DOMAIN
 #LDAP_ORGANIZATION="name of your site"
