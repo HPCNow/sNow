@@ -211,3 +211,22 @@
 
 ### Major fixes
 * Fix memtest image url. 
+
+
+## 1.1.13
+
+### New Features and changes
+* Included unattended installation in order to accomodate CI/CD
+* Included force option in snow init command
+* Included additional logic to manage boot/shutdown domains in HA mode
+* Boot function is now breakdown into boot_domain and boot_node
+* Default memory for domains is 2GB
+
+### Minor fixes
+* Fix conditional for domains shutdown/boot in HA mode
+* Merged /root/post-install.log into /root/snow-postinstall.log in Redhad/CentOS deployments
+* Fix issue 141: snow boot cluster says "cluster booted" when it only triggers the process.
+* Fix issue 135: Especial characters in the passwords defined in snow.conf could introduce some issues. It can be fixed by using single quotation marks. i.e. '$my_Str0Ng!! P455w@rD#'
+* Fix issue 145: Included additional logic to allow to execute ```snow help``` when the snow.conf is not available.
+
+### Major fixes
