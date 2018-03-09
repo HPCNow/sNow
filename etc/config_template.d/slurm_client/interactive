@@ -84,7 +84,7 @@ function parse_options()
                ;; 
             p)
                 # make sure -p is passed a valid partition
-                check_partitions
+                check_partitions $OPTARG
                 PARTITION=$OPTARG
                ;; 
             n)
