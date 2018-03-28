@@ -10,7 +10,7 @@
 * Fix permissions and owner for sssd.conf to be able to start the daemon
 * Fix: NET_LLF is optional
 * Fix enable public ssh instance in login role
-* Patch network config in centos with linkdelay=20 in order to fix issues with some 10Gb devices
+* Patch network config in CentOS with linkdelay=20 in order to fix issues with some 10Gb devices
 * Fix IPv6 issues related with RPCbind Server Activation Socket.
 
 
@@ -33,11 +33,11 @@
 * Improvements in nfsroot and squashfs support
 * Included show nodes feature
 * Included snow list roles function. The style of the role scripts are normalised
-* Included chroot enviroment function
+* Included chroot environment function
 * Included new functions to create raids and filesystems. Included an example of first_boot_hook
-* Improved eb_wrap and interactive. 
+* Improved eb_wrap and interactive.
 * Fairsharing is not longer default requirement. AccountingStorageEnforce=nojobs
-* Readahead operations disabled in the centos template in order to avoid performance issues in shared FS.
+* Readahead operations disabled in the CentOS template in order to avoid performance issues in shared FS.
 * Removed System Imager from deploy role, as not longer required
 * Included memtest as image
 * Removed boot_delay in the boot process as it's only required in deploy process
@@ -53,7 +53,7 @@
 
 ### Major fixes
 
-* Fix issue related with multicluster in ganglia monitoring
+* Fix issue related with multi-cluster in ganglia monitoring
 * Fix issue with minimal domain role deployment
 
 ## 1.1.2
@@ -82,7 +82,7 @@
 ### New Features and changes
 * Included Docker support in domain roles
 * included Docker Swarm roles (swarm-manager, swarm-worker) to accommodate docker based services.
-* Included torque master role. The support of Torque in sNow is not as mature as slurm.
+* Included torque master role. The support of Torque in sNow is not as mature as Slurm.
 
 ### Minor fixes
 * interactive CLI not longer requires a Slurm account
@@ -107,7 +107,7 @@
 * Fix issue 114 - snow add node populates the database as expected
 * Fix issue 111 - check if a node list is already defined in the database
 * Fix issue 118 - corrected squid3 path /var/spool/squid3
-* Fix issue 115 - replaced error message with an error exit when trying to add nodes that already exist in the database. 
+* Fix issue 115 - replaced error message with an error exit when trying to add nodes that already exist in the database.
 * Fix issue 115 - moved interactive question in node remove outside the loop
 * Fix issue 123 - included NTP configuration in compute nodes
 
@@ -136,7 +136,7 @@
 * "snow list domains" command also includes the hosts where the domains are allocated
 
 ### Minor fixes
-* Fix issue related with user enviroment under interactive job session
+* Fix issue related with user environment under interactive job session
 
 ## 1.1.9
 
@@ -147,7 +147,7 @@
 
 ### New Features and changes
 * LDAP master role generates certificates and populates the DB
-* LDAP DB has been migrated from HDB to MDB (new standart)
+* LDAP DB has been migrated from HDB to MDB (new standard)
 * Improved privacy and security in default LDAP role
 
 ### Minor fixes
@@ -156,21 +156,21 @@
 * Fix issue 131: no exit after trying to boot a non-deployed domain
 
 ### Major fixes
-* Fix broken compatibility in LDAP deployment due new standarts
+* Fix broken compatibility in LDAP deployment due new standards
 
 ## 1.1.11
 
 ### New Features and changes
-* New domain role for BeeGFS server deployment 
-* BeeGFS native client support 
+* New domain role for BeeGFS server deployment
+* BeeGFS native client support
 * BeeGFS stateless image support - tested in CentOS 7.x
 * Lustre stateless image support - tested in CentOS 7.x
-* Support for debian preseed deployment (partially fix issue #84 - deploy with ubuntu is still missing)
+* Support for Debian preseed deployment (partially fix issue #84 - deploy with ubuntu is still missing)
 * New deployment template for Debian 8.x
 * New deployment template for Debian 9.x
 * New deployment template for CentOS 7.4
 * Included GRES requirement in interactive
-* updated cpu-id-map to include skylake architecture
+* updated cpu-id-map to include Skylake architecture
 
 ### Minor fixes
 * Fix delay issue listing images.
@@ -184,8 +184,8 @@
 * Fixed issue #138: style issue in the "snow list domains" output
 
 ### Major fixes
-* Fixed delay issues in diskless boot. 
-* Fixed issues with stateless shutdowns due network stop before unmounting CFS. 
+* Fixed delay issues in diskless boot.
+* Fixed issues with stateless shutdowns due network stop before unmounting CFS.
 * Fixed ganglia configuration per cluster nodes.
 
 ### Known Issues
@@ -201,26 +201,26 @@
 * Fix typo in warning_message -> warning_msg.
 * Fix missing config file in memtest and localboot images.
 * Slurm configuration template updated in order to pick up changes in the latest release
-* Updated NFS server configuration with async for /sNow. 
-* Default NFS mount options noatime and nodiratime in the clients. 
+* Updated NFS server configuration with async for /sNow.
+* Default NFS mount options noatime and nodiratime in the clients.
 * Included performance considerations notes in the snow.conf-example
-* Updated slurdmdb configuration in order to fix issues with user creation. 
+* Updated slurdmdb configuration in order to fix issues with user creation.
 * SlurmDB user is root, in order to have consistency with SlurmCTLD user.
 * Updated the order of active-domains.conf-example to match the domain deployment order
-* Increased the number of loopback devices to 64 when virtualization technology selected it Xen
+* Increased the number of loopback devices to 64 when virtualisation technology selected it Xen
 
 ### Major fixes
-* Fix memtest image url. 
-
+* Fix memtest image url.
 
 ## 1.1.13
 
 ### New Features and changes
-* Included unattended installation in order to accomodate CI/CD
+* Included unattended installation in order to accommodate CI/CD
 * Included force option in snow init command
 * Included additional logic to manage boot/shutdown domains in HA mode
 * Boot function is now breakdown into boot_domain and boot_node
 * Default memory for domains is 2GB
+* merged /root/post-install.log into /root/snow-postinstall.log in Redhad/CentOS deployments
 
 ### Minor fixes
 * Fix conditional for domains shutdown/boot in HA mode
