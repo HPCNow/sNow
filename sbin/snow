@@ -1,13 +1,28 @@
 #!/bin/bash
 # This is the sNow! Command Line Interface 
-# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website: www.hpcnow.com/snow
 #
 #set -xv
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="1.1.12"
+readonly SNOW_VERSION="1.1.13"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -16,7 +31,6 @@ if [[ $(id -u) -ne 0 ]] ; then
     error_exit "sNow! Tools CLI must be run as root. Use: 'sudo su -' or prepend your command with sudo: 'sudo snow <options>'."
 fi
 #Logging
-#readonly LOGFILE=/sNow/log/snow.log
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
 SNOW_PATH=/sNow
@@ -44,8 +58,13 @@ if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
     export PDSH_RCMD_TYPE
 else
-    echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
-    exit 1
+    readonly LOGFILE=/sNow/log/snow.log
+    if [[ "$opt1" =~ ^([h][e][l][p]|[-][h][e][l][p]|[-][-][h][e][l][p]|[\?])$ ]]; then
+        echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
+    else
+        echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
+        exit 1
+    fi
 fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
@@ -79,7 +98,7 @@ fi
 #
 case $opt1 in
     init)
-        init
+        init $opt2
         ;;
     config)
         config
@@ -239,16 +258,16 @@ case $opt1 in
     boot)
         case $opt2 in
             domains)  
-                boot_domains $opt3 && error_check 0 "Domains are UP " || error_check 1 "Domains are UP " &
+                boot_domains $opt3 && error_check 0 "Booting domains " || error_check 1 "Booting domains " &
                 spinner $!             'Booting domains'
                 ;;
             cluster)
-                boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Cluster booted " || error_check 1 "Cluster booted " &
-                spinner $!             "Booting cluster "
+                boot_cluster $opt3 $opt4 $opt5 && error_check 0 "Booting cluster $opt3 " || error_check 1 "Booting cluster $opt3 " &
+                spinner $!             "Booting cluster $opt3 "
                 ;;
             *)
-                boot $opt2 $opt3 $opt4 && error_check 0 "Node(s) booted " || error_check 1 "Node(s) booted " &
-                spinner $!             "Booting node(s) "
+                boot $opt2 $opt3 $opt4 && error_check 0 "Booting node(s) $opt2 " || error_check 1 "Booting node(s) $opt2 " &
+                spinner $!             "Booting node(s) $opt2 "
                 ;;
         esac
         ;;
