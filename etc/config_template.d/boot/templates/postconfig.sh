@@ -52,7 +52,7 @@ else
 fi
 
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
-    LOGFILE=/root/post-install.log
+    LOGFILE=/root/snow-postinstall.log
     if [[ ! -f ${LOGFILE} ]]; then
         touch ${LOGFILE}
     fi

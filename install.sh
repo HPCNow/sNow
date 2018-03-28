@@ -7,8 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="${1:-1.1.11}"
-readonly LOGFILE=/tmp/snow-install-$(uname -n).log
+readonly SNOW_VERSION="${1:-1.1.13}"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -49,6 +48,7 @@ if [[ -z ${HPCNow_GID} ]];then
     HPCNow_GID=2000
 fi
 
+declare -A CLUSTERS
 # Allow to re-use existing or already customised snow.conf
 if [[ -f ./etc/snow.conf ]]; then
     echo "Loading sNow! configuration..."
@@ -57,6 +57,8 @@ elif [[ -f ./snow.conf ]]; then
     echo "Loading sNow! configuration..."
     source ./snow.conf
 fi
+
+readonly LOGFILE=/root/snow-install-$(uname -n).log
 
 # The sNow and HPCNow users can not be updated if you are login the same session.
 if [[ "${SUDO_USER}" == "${sNow_USER}" || "$SUDO_USER" == "$HPCNow_USER" ]]; then
@@ -106,6 +108,13 @@ if [[ -z "${NFS_SERVER}" ]]; then
     NFS_SERVER=$(uname -n)
 fi
 
+# In order to enable unattended installation, SNOW_EULA environment variable 
+# must be set to accepted. Otherwise, the installation will request the acceptance
+# of the EULA.
+if [[ -z "${SNOW_EULA}" ]]; then
+    SNOW_EULA=interactive
+fi
+
 # By default there is no HPCNow! support arranged.
 if [[ -z "${HPCNow_Support}" ]]; then
     HPCNow_Support=none
@@ -115,7 +124,6 @@ readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
 readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
 readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
-declare -A CLUSTERS
 
 
 if ! [[ -d ${SNOW_PATH} ]]; then
@@ -281,12 +289,16 @@ function eula()
         echo "[E] The local sNow! tools repository is corrupted. Please, test your connection to bitbucket."
     fi
     more  ${SNOW_TOOL}/eula.txt
-    echo "Do you accept the EULA? type Accept or Decline"
-    read input                                                 
+    if [[ "${SNOW_EULA}" == "accepted" ]]; then
+        echo "EULA accepted. The installation will proceed (unattended mode)."
+    else
+        echo "Do you accept the EULA? type Accept or Decline"
+        read input                                                 
 
-    if [[ "$input" != "Accept"  ]] ; then                                  
-        echo "The installation will not proceed"
-        exit 1
+        if [[ "$input" != "Accept"  ]]; then                                  
+            echo "The installation will not proceed"
+            exit 1
+        fi
     fi
     echo "--------------------------------------------------------------------------"
 }

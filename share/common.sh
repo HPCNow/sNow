@@ -1,6 +1,22 @@
 #!/bin/bash
-# These are the common functions which may be used by sNow! Command Line Interface
-# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+#
+# This file contains the common functions used by sNow! Command Line Interface
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website: www.hpcnow.com/snow
 #
 
@@ -587,20 +603,28 @@ function generate_nodes_json()
     echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
 }
 
-function init()
+function init_check()
 {
+    local force=$1
     # Check if the system has been initiate before
     if [[ -e ${SNOW_TOOL}/etc/nodes.json ]]; then
-        warning_msg "sNow! configuration had been initiated before."
-        warning_msg "Please, do not run this command in a production environment"
-        warning_msg "Do you want to proceed? (y/N)"
-        read -t 20 -u 3 answer
-        if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            info_msg "Initiating sNow! configuration"
-        else
-            error_exit "Well done. It's better to be sure."
+        if [[ "$force" != "yes" ]]; then
+            warning_msg "sNow! configuration had been initiated before."
+            warning_msg "Please, do not run this command in a production environment"
+            warning_msg "Do you want to proceed? (y/N)"
+            read -t 20 -u 3 answer
+            if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+                info_msg "Initiating sNow! configuration"
+            else
+                error_exit "Well done. It's better to be sure."
+            fi
         fi
     fi
+}
+
+function init_snow_conf()
+{
+    local force=$1
     # Check for snow.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/snow.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/snow.conf ${SNOW_TOOL}/etc/snow.conf
@@ -611,6 +635,11 @@ function init()
         error_exit "The snow.conf is not yet available."
     fi
     chmod 600 ${SNOW_CONF}/system_files/etc/snow.conf
+}
+
+function init_active_domains_conf()
+{
+    local force=$1
     # Check for active-domains.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
@@ -620,7 +649,11 @@ function init()
     else
         error_exit "The active-domains.conf is not yet available."
     fi
+}
 
+function init_ha()
+{
+    local force=$1
     # If the system uses shared (and external) NFS to enable HA, then the following block will help to setup the required configuration in the
     # NFS server.
     if (! ${HA_NFSROOT}) ; then
@@ -644,13 +677,18 @@ function init()
             info_msg "The common command 'exportfs -ra' will not work in this case."
         fi
     fi
+}
+
+function init_nfs_server()
+{
+    local force=$1
     #If the master is the NFS Server it will setup the ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
     if [[ "$(uname -n)" == "${NFS_SERVER}" ]]; then
         if [[ ! -f ${SNOW_CONF}/system_files/etc/exports.d/snow.exports ]]; then
             if [[ ! -d ${SNOW_CONF}/system_files/etc/exports.d ]]; then
                 mkdir -p ${SNOW_CONF}/system_files/etc/exports.d
             fi
-            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
+            echo "$SNOW_PATH            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,async,no_subtree_check,no_root_squash)" > ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             echo "$SNOW_HOME            ${NET_SNOW[3]}0/${NET_SNOW[4]}(rw,sync,no_subtree_check,no_root_squash)" >> ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
             warning_msg "Review the following exports file: ${SNOW_CONF}/system_files/etc/exports.d/snow.exports"
             warning_msg "Once you are done, execute: systemctl restart nfs-kernel-server"
@@ -661,11 +699,16 @@ function init()
         fi
         ln -sf ${SNOW_CONF}/system_files/etc/exports.d/snow.exports /etc/exports.d/snow.exports
     fi
+}
+
+function init_domains_conf()
+{
+    local force=$1
     # sNow! Domains configuration table
     if [[ ! -f ${SNOW_CONF}/system_files/etc/domains.conf ]]; then
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
     fi
-    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf ]]; then
+    if [[ ! -e ${SNOW_TOOL}/etc/domains.conf || "$force" == "yes" ]]; then
         cat ${SNOW_TOOL}/etc/domains.conf-example > ${SNOW_TOOL}/etc/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
             local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
@@ -693,6 +736,11 @@ function init()
         ln -s ${SNOW_CONF}/system_files/etc/domains.conf ${SNOW_TOOL}/etc/domains.conf
         warning_msg "Review the domains config file: ${SNOW_TOOL}/etc/domains.conf"
     fi
+}
+
+function init_hosts()
+{
+    local force=$1
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
     for i in ${!CLUSTERS[@]}
@@ -705,25 +753,40 @@ function init()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
-    cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
-    gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
-    if [[ ! -z ${NET_LLF[2]} ]]; then
-        generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+    # Generate new static_hosts if the file does not exist or if force is enabled
+    if [[ ! -e $SNOW_CONF/system_files/etc/static_hosts || "$force" == "yes" ]]; then
+        cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
+        gawk '{if ($1 !~ /^#/){printf "%-16s    %s\n", $4, $1}}' ${SNOW_CONF}/system_files/etc/domains.conf >> $SNOW_CONF/system_files/etc/static_hosts
+        generate_hostlist ${NET_COMP[2]}/${NET_COMP[4]} "${NET_COMP[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        generate_hostlist ${NET_MGMT[2]}/${NET_MGMT[4]} "${NET_MGMT[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        if [[ ! -z ${NET_LLF[2]} ]]; then
+            generate_hostlist ${NET_LLF[2]}/${NET_LLF[4]} "${NET_LLF[5]}" >> $SNOW_CONF/system_files/etc/static_hosts
+        fi
     fi
     cat /etc/hosts.base $SNOW_CONF/system_files/etc/static_hosts > /etc/hosts
-
     # Generate /etc/ssh/ssh_known_hosts
-    bkp /etc/ssh/ssh_known_hosts
-    echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
-    cp -p /etc/ssh/ssh_known_hosts ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts
+    if [[ ! -e $SNOW_CONF/system_files/etc/ssh/ssh_known_hosts || "$force" == "yes" ]]; then
+        bkp /etc/ssh/ssh_known_hosts
+        echo "$(echo ${host[*]} | sed 's/ /,/g') $(cat /etc/ssh/ssh_host_rsa_key.pub)" > /etc/ssh/ssh_known_hosts
+        cp -p /etc/ssh/ssh_known_hosts ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts
+    else
+        cp -p ${SNOW_CONF}/system_files/etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+    fi
     # Generate /etc/ssh/shosts.equiv
-    bkp /etc/ssh/shosts.equiv
-    echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
-    cp -p /etc/ssh/shosts.equiv ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv
+    if [[ ! -e $SNOW_CONF/system_files/etc/ssh/shosts.equiv || "$force" == "yes" ]]; then
+        bkp /etc/ssh/shosts.equiv
+        echo ${host[*]} | tr " " "\n" | sed 's/^/+/g' > /etc/ssh/shosts.equiv
+        cp -p /etc/ssh/shosts.equiv ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv
+    else
+        cp -p ${SNOW_CONF}/system_files/etc/ssh/shosts.equiv /etc/ssh/shosts.equiv
+    fi
     bkp /root/.shosts
     cp /etc/ssh/shosts.equiv /root/.shosts
+}
+
+function init_ssh_config()
+{
+    local force=$1
     # Update /etc/ssh/ssh_config
     bkp /etc/ssh/ssh_config
     if ( ! $(grep "HostbasedAuthentication yes" /etc/ssh/ssh_config | grep -qv "^#") ); then
@@ -731,6 +794,22 @@ function init()
         echo "    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts" >> /etc/ssh/ssh_config
         echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
     fi
+}
+
+function init()
+{
+    local force_flag=$1
+    if [[ "${force_flag}" == "force" || "${force_flag}" == "-f" ]]; then
+        force="yes"
+    fi
+    init_check $force
+    init_snow_conf $force
+    init_active_domains_conf $force
+    init_ha $force
+    init_nfs_server $force
+    init_check_domains_conf $force
+    init_hosts $force
+    init_ssh_config $force
 } 1>>$LOGFILE 2>&1
 
 function update_tools()
@@ -1373,7 +1452,7 @@ function boot_copy()
                 error_exit "No template $template available in ${SNOW_CONF}/boot/templates/"
             fi
             if [[ ! -f ${template_pxe} ]] ; then
-                warning_message "The following file does not exist: ${template_config}"
+                warning_msg "The following file does not exist: ${template_config}"
             else
                 source ${template_config}
             fi
@@ -1403,7 +1482,7 @@ function boot_copy()
                 error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
             fi
             if [[ ! -f ${image_config} ]] ; then
-                warning_message "The following file does not exist: ${image_config}"
+                warning_msg "The following file does not exist: ${image_config}"
             else
                 source ${image_config}
             fi
@@ -2028,7 +2107,7 @@ function avail_roles()
 {
     local roles="$1"
     if [[ -z $roles ]]; then
-        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g")
+        roles=$(find $SNOW_TOOL/etc/role.d -maxdepth 1 -type f ! -name 'README' | sed -e "s|$SNOW_TOOL/etc/role.d/||g" | sort)
     fi
     printf "%-25s    %-80s\n" "Role Name" " Description" 1>&3
     printf "%-25s    %-80s\n" "-------------" " -----------" 1>&3
@@ -2143,16 +2222,14 @@ function check_host_status()
     fi
 }
 
-function boot()
+function boot_domain()
 {
-    local nodelist=$1
-    if [ -z "${nodelist}" ]; then
-        error_exit "No domain or node to boot."
-    fi
-    get_server_distribution ${nodelist}
-    if ((${is_vm})); then
-        local domain=${nodelist}
-        if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
+    local domain=$1
+    if [[ -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource cleanup ${domain}
+            crm resource start ${domain}
+        else
             local is_up=$(xl list ${domain})
             if [[ "${is_up}" == "" ]]; then
                 sleep 1
@@ -2160,35 +2237,54 @@ function boot()
             else
                 warning_msg "The domain ${domain} is already runnning"
             fi
-        else
-            error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
         fi
     else
-        local image=$2
-        local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
-        local BLOCKN=${12:-$BLOCKN}
-        local BLOCKD=${4:-$BLOCKD}
-        if [ -z "$image" ]; then
-            boot_copy "${nodelist}" boot
-        else
-            boot_copy "${nodelist}" boot ${image}
-        fi
-        if ! [[ -f ${image_pxe} ]] ; then
-            error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
-        fi
-        for node in $(node_list "${nodelist}"); do
-            nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
-        done
-        unset node
-        echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
-        info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
-        parallel -j $BLOCKN \
-        echo "{}${NET_MGMT[5]}" \; \
-        sleep $BLOCKD \; \
-        ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
-        ::: $(node_list "${nodelist}")
-        info_msg "You can monitor the booting with: snow console <compute-node-name>"
-        error_check 0 "Boot started."
+        error_exit "The domain ${domain} needs to be deployed first. Execute: snow deploy ${domain}"
+    fi
+}
+
+function boot_node()
+{
+    local nodelist=$1
+    local image=$2
+    local nodes_json=$(cat ${SNOW_TOOL}/etc/nodes.json)
+    local BLOCKN=${12:-$BLOCKN}
+    local BLOCKD=${4:-$BLOCKD}
+    if [ -z "$image" ]; then
+        boot_copy "${nodelist}" boot
+    else
+        boot_copy "${nodelist}" boot ${image}
+    fi
+    if ! [[ -f ${image_pxe} ]] ; then
+        error_exit "No image $image available in ${SNOW_CONF}/boot/images/"
+    fi
+    for node in $(node_list "${nodelist}"); do
+        nodes_json=$(echo "${nodes_json}" | jq ".\"compute\".\"${node}\".\"image\" = \"${image}\"")
+    done
+    unset node
+    echo "${nodes_json}" > ${SNOW_TOOL}/etc/nodes.json
+    info_msg "Booting node(s) ${nodelist} with image ${image}... This will take a while, Please wait."
+    parallel -j $BLOCKN \
+    echo "{}${NET_MGMT[5]}" \; \
+    sleep $BLOCKD \; \
+    ipmitool -I $IPMI_TYPE -H "{}${NET_MGMT[5]}" -U $IPMI_USER -P $IPMI_PASSWORD power on \
+    ::: $(node_list "${nodelist}")
+    info_msg "You can monitor the booting with: snow console <compute-node-name>"
+    error_check 0 "Boot started."
+}
+
+function boot()
+{
+    local nodelist=$1
+    local image=$2
+    if [ -z "${nodelist}" ]; then
+        error_exit "No domain or node to boot."
+    fi
+    get_server_distribution ${nodelist}
+    if ((${is_vm})); then
+        boot_domain ${nodelist}
+    else
+        boot_node $nodelist $image
     fi
 }
 
@@ -2256,13 +2352,26 @@ function nshutdown()
         error_exit "ERROR: No domain(s) or node(s) to shutdown."
     fi
     check_host_status $(node_list "${nodelist}")
-    pdsh -w ${nodelist} systemctl poweroff
+    get_server_distribution ${nodelist}
+    if ((${is_vm})) ; then
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource stop ${nodelist}
+        else
+            pdsh -w ${nodelist} systemctl poweroff
+        fi
+    else
+        pdsh -w ${nodelist} systemctl poweroff
+    fi
 }  &>/dev/null
 
 function shutdown_domains()
 {
     for domain in ${SELF_ACTIVE_DOMAINS}; do 
-        nshutdown ${domain}
+        if (( "${#SNOW_NODES[@]}" > 1 )); then
+            crm resource stop ${domain}
+        else
+            nshutdown ${domain}
+        fi
     done
     unset domain
 }

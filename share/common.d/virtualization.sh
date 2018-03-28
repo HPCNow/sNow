@@ -1,9 +1,24 @@
 #!/bin/bash
-# These are the common functions which may be used by sNow! Command Line Interface 
-# Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
-# For more information, visit the official website : www.hpcnow.com/snow
 #
-
+# This file contains the common functions used by sNow! Command Line Interface
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website: www.hpcnow.com/snow
+#
 function install_docker()
 {
     case $OS in
@@ -115,6 +130,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         ubuntu)
             apt-get -y update
@@ -133,6 +149,7 @@ function install_xen()
             sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
             bkp /etc/xen/xl.conf
             replace_text /etc/xen/xl.conf "#autoballoon" "autoballoon=0"
+            replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         centos)
             echo "sNow! Xen Support not yet available for RHEL and CentOS"
@@ -159,4 +176,33 @@ function install_xen()
 function setup_xen()
 {
     install_xen
+} 1>>$LOGFILE 2>&1
+
+
+function install_singularity()
+{
+    case $OS in
+        debian|ubuntu)
+            pkgs="singularity-container"
+        ;;
+        rhel|redhat|centos)
+            pkgs="singularity"
+        ;;
+        suse|sle[sd]|opensuse)
+            pkgs="singularity"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
+}
+
+function setup_singularity()
+{
+    if is_master; then
+        info_msg "Singularity is not supported in the master node"
+    else
+        install_singularity
+    fi
 } 1>>$LOGFILE 2>&1

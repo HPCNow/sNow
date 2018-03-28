@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# This file contains recipes to deploy domains using sNow! CLI
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website: www.hpcnow.com/snow
+#
+#SHORT_DESCRIPTION: Installs standard HPC alert tool: Icinga.
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
+
+# Icinga Setup 
+SNOW_ICINGA_SERVER=$(gawk '{if($2 ~ /icinga/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_ICINGA_SERVER" && ! -z "$SITE_ICINGA_SERVER" ]]; then 
+    ICINGA_SERVER=$SNOW_ICINGA_SERVER
+else
+    ICINGA_SERVER="${SITE_ICINGA_SERVER:-$SNOW_ICINGA_SERVER}"
+fi
+
+if  [[ ! -z "$ICINGA_SERVER" ]]; then 
+    curl https://packages.icinga.com/icinga.key | chroot ${prefix} /usr/bin/apt-key add -
+    echo "deb http://packages.icinga.com/debian icinga-jessie main" >> ${prefix}/etc/apt/sources.list.d/icinga.list
+    echo "deb-src http://packages.icinga.com/debian icinga-jessie main" >> ${prefix}/etc/apt/sources.list.d/icinga.list
+    chroot ${prefix} /usr/bin/apt-get update
+    installDebianPackage ${prefix} icinga2 monitoring-plugins vim-icinga2 vim-addon-manager icingaweb2 icingacli
+    chroot ${prefix} /usr/bin/vim-addon-manager -w install icinga2
+    # Setup PHP timezone
+    if [[ -e $SNOW_CONF/system_files/etc/icinga2/php.ini ]]; then 
+        cp -p $SNOW_CONF/system_files/etc/icinga2/php.ini ${prefix}/etc/php5/apache2/php.ini
+    else
+        mkdir -p $SNOW_CONF/system_files/etc/icinga2
+        replace_text ${prefix}/etc/php5/apache2/php.ini "^date.timezone" "date.timezone = $TIMEZONE"
+        cp -p ${prefix}/etc/php5/apache2/php.ini $SNOW_CONF/system_files/etc/icinga2/php.ini
+    fi
+    # Setup MySQL server
+    exit
+    echo "mysql-server-5.5 mysql-server/root_password password ${MASTER_PASSWORD}" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password ${MASTER_PASSWORD}" | chroot ${prefix} /usr/bin/debconf-set-selections
+    installDebianPackage ${prefix} mysql-server mysql-client
+    #chroot ${prefix} /usr/bin/mysql_secure_installation
+    installDebianPackage ${prefix} icinga2-ido-mysql
+    # Setting Up Icinga 2 REST API
+    if [[ -e $SNOW_CONF/system_files/etc/icinga2/pki/ca.crt ]]; then 
+        cp -pr $SNOW_CONF/system_files/etc/icinga2 ${prefix}/etc/
+        mkdir -p ${prefix}/var/lib/icinga2
+        cp -pr $SNOW_CONF/system_files/var/lib/icinga2/ca ${prefix}/var/lib/icinga2/
+    else
+        chroot ${prefix} /usr/sbin/icinga2 api setup
+        replace_text ${prefix}/etc/icinga2/conf.d/api-users.conf "password =" "password = ${MASTER_PASSWORD}"
+        chroot ${prefix} /usr/bin/icingacli setup token create
+        chroot ${prefix} /usr/bin/mysql -u root < "CREATE DATABASE icingaweb2;"
+        chroot ${prefix} /usr/bin/mysql -u root < "GRANT ALL ON icingaweb2.* TO icingaweb2@localhost IDENTIFIED BY '${MASTER_PASSWORD}';"
+    fi
+    warning_msg "Visit http://$ICINGA_SERVER/icingaweb2/setup and complete the icinga setup"
+fi
