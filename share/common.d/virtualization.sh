@@ -134,7 +134,7 @@ function install_xen()
         ;;
         ubuntu)
             apt-get -y update
-            install_software "cpufrequtils xen-system xen-tools"
+            install_software "cpufrequtils xen-system-amd64 xen-tools"
             # Following suggestions from Debian : https://wiki.debian.org/Xen
             sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
