@@ -807,7 +807,7 @@ function init()
     init_active_domains_conf $force
     init_ha $force
     init_nfs_server $force
-    init_check_domains_conf $force
+    init_domains_conf $force
     init_hosts $force
     init_ssh_config $force
 } 1>>$LOGFILE 2>&1
