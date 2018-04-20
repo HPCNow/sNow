@@ -65,7 +65,7 @@ function logsetup()
         chown root:root $LOGFILE
         chmod 600 $LOGFILE
     fi
-    local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
+    #local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
