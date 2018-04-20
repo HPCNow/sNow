@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# This file contains recipes to deploy domains using sNow! CLI
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information, visit the official website: www.hpcnow.com/snow
+#
+#SHORT_DESCRIPTION: Installs OpenNebula Front-end and MySQL servers.
+prefix=$1
+
+#  Source our common functions - this will let us install a Debian package.
+if [[ -e /usr/share/xen-tools/common.sh ]]; then
+    source /usr/share/xen-tools/common.sh
+else
+    echo "Installation problem"
+fi
+# Load sNow! configuration
+if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    declare -A CLUSTERS
+    source /sNow/snow-tools/etc/snow.conf
+else
+    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
+    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+fi
+# Load sNow! functions
+if [[ -f /sNow/snow-tools/share/common.sh ]]; then
+    source /sNow/snow-tools/share/common.sh
+    get_os_distro
+    architecture_identification
+fi
+
+# OpenNebula Database Server Setup
+OPENNEBULA_DB_NAME="${OPENNEBULA_DB_NAME:-opennebula}"
+OPENNEBULA_USER="${OPENNEBULA_USER:-oneadmin}"
+OPENNEBULA_PASSWORD="${OPENNEBULA_PASSWORD:-$MASTER_PASSWORD}"
+SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+if  [[ ! -z "$SNOW_OPENNEBULA_SERVER" ]]; then
+    # Setup MySQL server
+    echo "mysql-server-5.5 mysql-server/root_password password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    echo "mysql-server-5.5 mysql-server/root_password_again password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
+    installDebianPackage ${prefix} curl pbzip2 mysql-server
+    chroot ${prefix} /bin/systemctl start mysql.service
+    chroot ${prefix} /usr/bin/mysqld_safe &
+    #chroot ${prefix} /bin/systemctl enable mysql.service
+    sleep 30
+    echo "create database $OPENNEBULA_DB_NAME;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTER_PASSWORD
+    echo "grant all on $OPENNEBULA_DB_NAME.* to $OPENNEBULA_USER@localhost identified by '$OPENNEBULA_PASSWORD';" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTER_PASSWORD
+    echo "SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;" | chroot ${prefix} /usr/bin/mysql -h 127.0.0.1 -P 3306 -u root --password=$MASTER_PASSWORD
+    #chroot ${prefix} /bin/systemctl stop mysql.service
+    /usr/bin/killall -9 mysqld_safe mysqld
+    echo "DB = [ backend = \"mysql\",
+       server  = \"localhost\",
+       port    = 0,
+       user    = \"$OPENNEBULA_USER\",
+       passwd  = \"$OPENNEBULA_PASSWORD\",
+       db_name = \"$OPENNEBULA_DB_NAME\" ]" > ${prefix}/etc/one/oned.conf
+    # Setup OpenNebula repositories
+    wget -q -O- https://downloads.opennebula.org/repo/repo.key | chroot ${prefix} /sbin/apt-key add -
+    echo "deb https://downloads.opennebula.org/repo/5.4/Debian/9 stable opennebula" > ${prefix}/etc/apt/sources.list.d/opennebula.list
+    chroot ${prefix} /usr/bin/apt-get update -q
+    # Install OpenNebula packages
+    installDebianPackage ${prefix} opennebula opennebula-sunstone opennebula-gate opennebula-flow
+    # Install Ruby Runtime and its dependencies
+    chroot ${prefix} /usr/share/one/install_gems
+    # Setup the password for OPENNEBULA_USER
+    chroot ${prefix} /sbin/su -c "exit" - $OPENNEBULA_USER
+    # Note that if you alredy have the password file available, no changes will be performed.
+    if [[ ! -e $SNOW_CONF/system_files/etc/one/one_auth ]]; then
+        echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+        echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/var/lib/one/.one/one_auth
+        cp -p ${prefix}/var/lib/one/.one/one_auth $SNOW_CONF/system_files/etc/one/one_auth
+    else
+        cp -p $SNOW_CONF/system_files/etc/one/one_auth ${prefix}/var/lib/one/.one/one_auth
+        grep "^$OPENNEBULA_PASSWORD:" $SNOW_CONF/system_files/etc/one/one_auth > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+    fi
+    # Enable the services at boot time
+    chroot ${prefix} /bin/systemctl enable opennebula
+    chroot ${prefix} /bin/systemctl enable opennebula-sunstone
+fi
