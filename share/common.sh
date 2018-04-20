@@ -65,7 +65,7 @@ function logsetup()
         chown root:root $LOGFILE
         chmod 600 $LOGFILE
     fi
-    local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
+    #local tmp_log=$(tail -n $RETAIN_NUM_LINES $LOGFILE 2>/dev/null) && echo "${tmp_log}" > $LOGFILE
     chown root:root $LOGFILE
     chmod 600 $LOGFILE
     exec 3>&1 1>>${LOGFILE} 2>&1
@@ -807,7 +807,7 @@ function init()
     init_active_domains_conf $force
     init_ha $force
     init_nfs_server $force
-    init_check_domains_conf $force
+    init_domains_conf $force
     init_hosts $force
     init_ssh_config $force
 } 1>>$LOGFILE 2>&1
@@ -988,7 +988,7 @@ function deploy_domain_xen()
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
+        system("LC_ALL=C xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
         }'
     if [[ ! -f ${SNOW_PATH}/snow-tools/etc/domains/${domain}.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"

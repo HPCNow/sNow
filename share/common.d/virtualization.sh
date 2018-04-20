@@ -114,10 +114,12 @@ function install_xen()
             apt-get -y update
             install_software "cpufrequtils xen-system xen-tools"
             # Following suggestions from Debian : https://wiki.debian.org/Xen
-            if [[ -f /etc/default/cpufrequtils ]]; then
+            if [[ -e /etc/default/cpufrequtils ]]; then
                 bkp /etc/default/cpufrequtils
-                sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
+            else
+                touch /etc/default/cpufrequtils
             fi
+            replace_text /etc/default/cpufrequtils "^GOVERNOR" "GOVERNOR=performance"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub
@@ -134,9 +136,14 @@ function install_xen()
         ;;
         ubuntu)
             apt-get -y update
-            install_software "cpufrequtils xen-system xen-tools"
+            install_software "cpufrequtils xen-system-amd64 xen-tools"
             # Following suggestions from Debian : https://wiki.debian.org/Xen
-            sed -i '/GOVERNOR/s/=.*/="performance"/' /etc/default/cpufrequtils
+            if [[ -e /etc/default/cpufrequtils ]]; then
+                bkp /etc/default/cpufrequtils
+            else
+                touch /etc/default/cpufrequtils
+            fi
+            replace_text /etc/default/cpufrequtils "^GOVERNOR" "GOVERNOR=performance"
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub

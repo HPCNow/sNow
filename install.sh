@@ -7,7 +7,7 @@
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 readonly PROGNAME=$(basename "$0")
-readonly SNOW_VERSION="${1:-1.1.13}"
+readonly SNOW_VERSION="${1:-1.1.14}"
 trap "error_exit 'Received signal SIGHUP'" SIGHUP
 trap "error_exit 'Received signal SIGINT'" SIGINT
 trap "error_exit 'Received signal SIGTERM'" SIGTERM
@@ -238,7 +238,7 @@ function install_snow_dependencies()
 {
     case $OS in
         debian)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch pbzip2 unzip python-pip apt-transport-https ca-certificates members git parallel axel sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool firmware-bnx2 firmware-bnx2x firmware-linux-free firmware-realtek freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
             if [[ "${OS_VERSION_MAJOR}" == "8" ]]; then
                 pkgs="$pkgs python-software-properties"
             elif [[ "${OS_VERSION_MAJOR}" == "9" ]]; then
@@ -251,7 +251,7 @@ function install_snow_dependencies()
             fi
         ;;
         ubuntu)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo consolekit bzip2 debian-archive-keyring dmidecode hwinfo ethtool linux-firmware freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools"
+            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch pbzip2 unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo bzip2 dmidecode hwinfo ethtool linux-firmware freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools automake autoconf m4 libtool autoconf-archive gnu-standards gettext"
             if is_master && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi

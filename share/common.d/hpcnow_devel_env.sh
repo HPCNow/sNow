@@ -48,13 +48,13 @@ function setup_devel_env_hpcnow()
         #git clone https://github.com/HPCNow/dotfiles.git /tmp/dotfiles
         #cd /tmp/dotfiles
         #bash dotfiles.sh
-        git clone https://github.com/squash/sudosh2.git /tmp/sudosh2
-        cd /tmp/sudosh2
-        ./configure 
-        make
-        make install 
-        sudosh -i 
-        rm -fr /tmp/sudosh2
+        #git clone https://github.com/squash/sudosh2.git /tmp/sudosh2
+        #cd /tmp/sudosh2
+        #./configure 
+        #make
+        #make install 
+        #sudosh -i 
+        #rm -fr /tmp/sudosh2
         mkdir -p /usr/share/images/grub
         bkp /etc/default/grub
         echo "GRUB_BACKGROUND=\"/usr/share/images/grub/snow-grub-bg.png\"" >> /etc/default/grub 
