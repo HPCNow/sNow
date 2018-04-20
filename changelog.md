@@ -229,4 +229,13 @@
 * Fix issue 135: Especial characters in the passwords defined in snow.conf could introduce some issues. It can be fixed by using single quotation marks. i.e. '$my_Str0Ng!! P455w@rD#'
 * Fix issue 145: Included additional logic to allow to execute ```snow help``` when the snow.conf is not available.
 
-### Major fixes
+## 1.1.14
+
+### New Features and changes
+* Initial support for Ubuntu 18.04 LTS as sNow! server
+* Removed sudosh from the HPCNow! working environment. Will include the package in the repository.
+* Included parallel bzip2 (pbzip2) in the decompression of sNow! domain template.
+
+### Minor fixes
+* Fix warning messages in snow.log during domain deployment
+* Included full log history of snow command.
