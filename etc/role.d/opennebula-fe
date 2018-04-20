@@ -52,7 +52,7 @@ if  [[ ! -z "$SNOW_OPENNEBULA_SERVER" ]]; then
     # Setup MySQL server
     echo "mysql-server-5.5 mysql-server/root_password password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
     echo "mysql-server-5.5 mysql-server/root_password_again password $MASTER_PASSWORD" | chroot ${prefix} /usr/bin/debconf-set-selections
-    installDebianPackage ${prefix} curl pbzip2 mysql-server
+    installDebianPackage ${prefix} curl pbzip2 mysql-server lsb-release
     chroot ${prefix} /bin/systemctl start mysql.service
     chroot ${prefix} /usr/bin/mysqld_safe &
     #chroot ${prefix} /bin/systemctl enable mysql.service
@@ -69,15 +69,15 @@ if  [[ ! -z "$SNOW_OPENNEBULA_SERVER" ]]; then
        passwd  = \"$OPENNEBULA_PASSWORD\",
        db_name = \"$OPENNEBULA_DB_NAME\" ]" > ${prefix}/etc/one/oned.conf
     # Setup OpenNebula repositories
-    wget -q -O- https://downloads.opennebula.org/repo/repo.key | chroot ${prefix} /sbin/apt-key add -
-    echo "deb https://downloads.opennebula.org/repo/5.4/Debian/9 stable opennebula" > ${prefix}/etc/apt/sources.list.d/opennebula.list
+    wget -q -O- https://downloads.opennebula.org/repo/repo.key | chroot ${prefix} /usr/bin/apt-key add -
+    echo "deb https://downloads.opennebula.org/repo/5.4/Debian/8 stable opennebula" > ${prefix}/etc/apt/sources.list.d/opennebula.list
     chroot ${prefix} /usr/bin/apt-get update -q
     # Install OpenNebula packages
     installDebianPackage ${prefix} opennebula opennebula-sunstone opennebula-gate opennebula-flow
     # Install Ruby Runtime and its dependencies
     chroot ${prefix} /usr/share/one/install_gems
     # Setup the password for OPENNEBULA_USER
-    chroot ${prefix} /sbin/su -c "exit" - $OPENNEBULA_USER
+    chroot ${prefix} /bin/su -c "exit" - $OPENNEBULA_USER
     # Note that if you alredy have the password file available, no changes will be performed.
     if [[ ! -e $SNOW_CONF/system_files/etc/one/one_auth ]]; then
         echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
