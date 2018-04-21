@@ -75,17 +75,41 @@ if  [[ ! -z "$SNOW_OPENNEBULA_SERVER" ]]; then
     # Install OpenNebula packages
     installDebianPackage ${prefix} opennebula opennebula-sunstone opennebula-gate opennebula-flow
     # Install Ruby Runtime and its dependencies
-    chroot ${prefix} /usr/share/one/install_gems
+    cat <<EOF >> ${prefix}/root/install_ruby_runtime
+#!/usr/bin/expect --
+spawn /bin/ruby /usr/share/one/install_gems
+expect "Press enter to continue..."
+send "\r"
+expect "Do you want to continue? \\\[Y/n\\\]"
+send "y\r"
+expect "Press enter to continue..."
+send "\r"
+set timeout -1
+expect "Abort."
+EOF
+    chmod 700 ${prefix}/root/install_ruby_runtime
+    chroot ${prefix} /root/install_ruby_runtime
     # Setup the password for OPENNEBULA_USER
     chroot ${prefix} /bin/su -c "exit" - $OPENNEBULA_USER
     # Note that if you alredy have the password file available, no changes will be performed.
-    if [[ ! -e $SNOW_CONF/system_files/etc/one/one_auth ]]; then
+    if [[ ! -e $SNOW_CONF/system_files/etc/one_auth ]]; then
+        mkdir -p ${prefix}/home/$OPENNEBULA_USER/.one
+        chroot ${prefix} /bin/chown -R $OPENNEBULA_USER /home/$OPENNEBULA_USER/.one
         echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
         echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/var/lib/one/.one/one_auth
-        cp -p ${prefix}/var/lib/one/.one/one_auth $SNOW_CONF/system_files/etc/one/one_auth
+        cp -p ${prefix}/var/lib/one/.one/one_auth $SNOW_CONF/system_files/etc/one_auth
     else
-        cp -p $SNOW_CONF/system_files/etc/one/one_auth ${prefix}/var/lib/one/.one/one_auth
-        grep "^$OPENNEBULA_PASSWORD:" $SNOW_CONF/system_files/etc/one/one_auth > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+        cp -p $SNOW_CONF/system_files/etc/one_auth ${prefix}/var/lib/one/.one/one_auth
+        grep "^$OPENNEBULA_PASSWORD:" $SNOW_CONF/system_files/etc/one_auth > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+    fi
+    # Note that if you alredy have the OpenNebula confuguration (one) available, no changes will be performed.
+    if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
+        if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then 
+            mkdir $SNOW_CONF/system_files/etc/one
+        fi
+        cp -pr ${prefix}/etc/one/* $SNOW_CONF/system_files/etc/one/
+    else
+        cp -pr $SNOW_CONF/system_files/etc/one/* ${prefix}/etc/one/
     fi
     # Enable the services at boot time
     chroot ${prefix} /bin/systemctl enable opennebula
