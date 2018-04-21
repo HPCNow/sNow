@@ -92,20 +92,19 @@ EOF
     # Setup the password for OPENNEBULA_USER
     chroot ${prefix} /bin/su -c "exit" - $OPENNEBULA_USER
     # Note that if you alredy have the password file available, no changes will be performed.
-    if [[ ! -e $SNOW_CONF/system_files/etc/one_auth ]]; then
-        mkdir -p ${prefix}/home/$OPENNEBULA_USER/.one
-        chroot ${prefix} /bin/chown -R $OPENNEBULA_USER /home/$OPENNEBULA_USER/.one
-        echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+    if [[ ! -e $SNOW_CONF/system_files/var/lib/one/.one ]]; then
         echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/var/lib/one/.one/one_auth
-        cp -p ${prefix}/var/lib/one/.one/one_auth $SNOW_CONF/system_files/etc/one_auth
+        if [[ ! -e $SNOW_CONF/system_files/var/lib ]]; then 
+            mkdir -p $SNOW_CONF/system_files/var/lib
+        fi
+        cp -pr ${prefix}/var/lib/one $SNOW_CONF/system_files/var/lib/
     else
-        cp -p $SNOW_CONF/system_files/etc/one_auth ${prefix}/var/lib/one/.one/one_auth
-        grep "^$OPENNEBULA_PASSWORD:" $SNOW_CONF/system_files/etc/one_auth > ${prefix}/home/$OPENNEBULA_USER/.one/one_auth
+        cp -pr $SNOW_CONF/system_files/var/lib/one ${prefix}/var/lib/
     fi
     # Note that if you alredy have the OpenNebula confuguration (one) available, no changes will be performed.
     if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
         if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then 
-            mkdir $SNOW_CONF/system_files/etc/one
+            mkdir -p $SNOW_CONF/system_files/etc/one
         fi
         cp -pr ${prefix}/etc/one/* $SNOW_CONF/system_files/etc/one/
     else
