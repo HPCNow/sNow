@@ -79,19 +79,16 @@ function install_lxd()
 {
     case $OS in
         debian)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
+            error_msg "sNow! LXD Support not yet available for $OS"
         ;;
         ubuntu)
             apt-get -y install lxd zfsutils-linux
         ;;
         rhel|redhat|centos)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
+            error_msg "sNow! LXD Support not yet available for $OS"
        ;;
        suse|sle[sd]|opensuse)
-            echo "sNow! LXD Support not yet available for $OS"
-            exit 1
+            error_msg "sNow! LXD Support not yet available for $OS"
        ;;
    esac
 }
@@ -159,8 +156,7 @@ function install_xen()
             replace_text /etc/modules "loop" "loop max_loop=64"
         ;;
         centos)
-            echo "sNow! Xen Support not yet available for RHEL and CentOS"
-            exit 1
+            error_msg "sNow! Xen Support not yet available for RHEL and CentOS"
             yum -y install centos-release-xen bridge-utils SDL net-tools
             yum -y update
             yum -y install xen
@@ -168,13 +164,11 @@ function install_xen()
             systemctl disable NetworkManager
        ;;
         rhel|redhat)
-            echo "sNow! Xen Support not yet available for RHEL and CentOS"
-            exit 1
+            error_msg "sNow! Xen Support not yet available for RHEL and CentOS"
             yum -y install xen kernel-xen
        ;;
        suse|sle[sd]|opensuse)
-            echo "sNow! Xen Support not yet available for SLES and OpenSUSE"
-            exit 1
+            error_msg "sNow! Xen Support not yet available for SLES and OpenSUSE"
             zypper -n --no-gpg-checks in -t pattern xen_server
        ;;
    esac
@@ -211,5 +205,64 @@ function setup_singularity()
         info_msg "Singularity is not supported in the master node"
     else
         install_singularity
+    fi
+} 1>>$LOGFILE 2>&1
+
+function install_opennebula()
+{
+    add_repo_key https://downloads.opennebula.org/repo/repo.key
+    case $OS in
+        debian)
+            echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Debian/${OS_VERSION} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
+            pkgs="opennebula-node"
+        ;;
+        ubuntu)
+            echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Ubuntu/${OS_VERSION} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
+            pkgs="opennebula-node"
+        ;;
+        rhel|redhat|centos)
+            pkgs="opennebula-node-kvm"
+        ;;
+        suse|sle[sd]|opensuse)
+            error_msg "This distribution is not yet supported in OpenNebula for sNow!."
+            # review https://en.opensuse.org/SDB:Cloud_OpenNebula
+            pkgs="opennebula-node-kvm"
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+    install_software "$pkgs"
+    case $OS in
+        debian|ubuntu)
+            systemctl restart libvirtd
+            systemctl restart libvirt-bin
+        ;;
+        rhel|redhat|centos)
+            systemctl restart libvirtd
+        ;;
+        suse|sle[sd]|opensuse)
+            systemctl restart libvirtd
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+}
+
+function setup_opennebula()
+{
+    if is_master; then
+        info_msg "OpenNebula is not supported in the master node"
+    else
+        install_opennebula
+        # LDAP authentication
+        # Review: http://docs.opennebula.org/5.4/deployment/authentication_setup/ldap.html
+        #setup_opennebula_ldap_auth
+        #setup_opennebula_network ${OPENNEBULA_NETWORK_MODE}
+        # cat /etc/network/interfaces | gawk '{if($1 ~ /^iface$/ && $2 !~ /lo/){print "auto br"n"\n"$1"br"n" "$3" "$4" "$5}}'
+        # First iteration supports only KVM
+        # For LXD support review https://github.com/OpenNebula/addon-lxdone/blob/master/Setup.md
+        onehost create $(uname -n) -i kvm -v kvm
     fi
 } 1>>$LOGFILE 2>&1
