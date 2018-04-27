@@ -47,7 +47,7 @@ fi
 if [[ -z ${HPCNow_GID} ]];then
     HPCNow_GID=2000
 fi
-
+# shellcheck disable=SC2034
 declare -A CLUSTERS
 # Allow to re-use existing or already customised snow.conf
 if [[ -f ./etc/snow.conf ]]; then
@@ -83,7 +83,7 @@ if [[ -z "${SNOW_CONF}" ]]; then
     SNOW_CONF=${SNOW_PATH}/snow-configspace
 fi
 
-if [[ -z "${SNOW_TOOLS}" ]]; then
+if [[ -z "${SNOW_TOOL}" ]]; then
     SNOW_TOOL=${SNOW_PATH}/snow-tools
 fi
 
@@ -108,7 +108,7 @@ if [[ -z "${NFS_SERVER}" ]]; then
     NFS_SERVER=$(uname -n)
 fi
 
-# In order to enable unattended installation, SNOW_EULA environment variable 
+# In order to enable unattended installation, SNOW_EULA environment variable
 # must be set to accepted. Otherwise, the installation will request the acceptance
 # of the EULA.
 if [[ -z "${SNOW_EULA}" ]]; then
@@ -164,7 +164,7 @@ if is_master; then
         fi
         # Allow to re-use existing or already customised snow.conf
         if [[ -z "$PRIVATE_GIT_TOKEN" && -z "$PRIVATE_GIT_REPO" ]]; then
-            mkdir -p $SNOW_CONF 
+            mkdir -p $SNOW_CONF
             # Transfer the SSH host keys to the configspace
             mkdir -p $SNOW_CONF/system_files/etc/ssh/
             cp -pr /etc/ssh/ssh_host_* $SNOW_CONF/system_files/etc/ssh/
@@ -181,11 +181,11 @@ if is_master; then
     if ! is_git_repo ${SNOW_TOOL}; then
         git clone http://bitbucket.org/hpcnow/snow-tools.git -b ${SNOW_VERSION} ${SNOW_TOOL} || echo "ERROR: please review the connection to bitbucket."
     else
-        cd ${SNOW_TOOL}
+        cd ${SNOW_TOOL} || exit
         git fetch
         git checkout ${SNOW_VERSION}
         git pull
-        cd -
+        cd - || exit
     fi
     chown -R ${sNow_UID}:${sNow_GID} ${SNOW_TOOL}
 fi
@@ -194,14 +194,17 @@ fi
 function load_snow_env()
 {
 if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+    # shellcheck source=share/common.sh
     source ${SNOW_TOOL}/share/common.sh
     logsetup
     get_os_distro
     architecture_identification
     if [[ -f ${ENTERPRISE_EXTENSIONS} ]]; then
+        # shellcheck source=share/enterprise_extensions.sh
         source ${ENTERPRISE_EXTENSIONS}
         has_ee=true
-    else 
+    else
+        # shellcheck disable=SC2034
         has_ee=false
     fi
 else
@@ -216,13 +219,6 @@ function setup_filesystems()
 {
     if is_master && is_nfs_server; then
         check_mountpoints $SNOW_PATH
-        if [[ ! -e ${SNOW_LOG} ]]; then
-            mkdir -p ${SNOW_LOG}
-            touch ${SNOW_LOG}/snow.log
-            chown -R root:root ${SNOW_LOG}
-            chmod 600 ${SNOW_LOG}/snow.log
-            chmod 700 ${SNOW_LOG}
-        fi
     else
         mkdir -p $SNOW_PATH
         mkdir -p $SNOW_HOME
@@ -231,6 +227,13 @@ function setup_filesystems()
         echo "$NFS_SERVER:$SNOW_HOME $SNOW_HOME    nfs    rw,tcp,bg,hard,intr,async,nodev,nosuid,defaults 0 0" >> /etc/fstab
         mount $SNOW_PATH
         mount $SNOW_HOME
+    fi
+    if [[ ! -e ${SNOW_LOG} ]]; then
+        mkdir -p ${SNOW_LOG}
+        touch ${SNOW_LOG}/snow.log
+        chown -R root:root ${SNOW_LOG}
+        chmod 600 ${SNOW_LOG}/snow.log
+        chmod 700 ${SNOW_LOG}
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -293,9 +296,9 @@ function eula()
         echo "EULA accepted. The installation will proceed (unattended mode)."
     else
         echo "Do you accept the EULA? type Accept or Decline"
-        read input                                                 
+        read input
 
-        if [[ "$input" != "Accept"  ]]; then                                  
+        if [[ "$input" != "Accept"  ]]; then
             echo "The installation will not proceed"
             exit 1
         fi
@@ -308,26 +311,26 @@ install_snow_repos
 eula
 load_snow_env
 setup_software         && error_check 0 'Stage 1/6 : Software installed ' || error_check 1 'Stage 1/6 : Software installed ' &
-spinner $!             'Stage 1/6 : Installing Software ' 
+spinner $!             'Stage 1/6 : Installing Software '
 setup_filesystems      && error_check 0 'Stage 2/6 : Filesystem setup ' || error_check 1 'Stage 2/6 : Filesystem setup ' &
 spinner $!             'Stage 2/6 : Setting Filesystem '
-setup_ssh              && error_check 0 'Stage 3/6 : SSH service and sNow! users created ' || error_check 1 'Stage 3/6 : SSH service and sNow! users created ' & 
+setup_ssh              && error_check 0 'Stage 3/6 : SSH service and sNow! users created ' || error_check 1 'Stage 3/6 : SSH service and sNow! users created ' &
 spinner $!             'Stage 3/6 : Creating SSH service and sNow! users '
-setup_env              && error_check 0 'Stage 4/6 : User Environment configured ' || error_check 1 'Stage 4/6 : User Environment configured ' & 
+setup_env              && error_check 0 'Stage 4/6 : User Environment configured ' || error_check 1 'Stage 4/6 : User Environment configured ' &
 spinner $!             'Stage 4/6 : Configuring User Environment '
 case $VIRT_TECH in
     XEN)
-        setup_xen      && error_check 0 'Stage 5/6 : sNow! Xen installation ' || error_check 1 'Stage 5/6 : sNow! Xen installation ' & 
+        setup_xen      && error_check 0 'Stage 5/6 : sNow! Xen installation ' || error_check 1 'Stage 5/6 : sNow! Xen installation ' &
         spinner $!     'Stage 5/6 : sNow! Xen installation '
     ;;
     DOCKER)
         echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
-        setup_docker   && error_check 0 'Stage 5/6 : sNow! Docker installed ' || error_check 1 'Stage 5/6 : sNow! Docker installed ' & 
+        setup_docker   && error_check 0 'Stage 5/6 : sNow! Docker installed ' || error_check 1 'Stage 5/6 : sNow! Docker installed ' &
         spinner $!     'Stage 5/6 : sNow! Docker installation '
     ;;
     LXD)
         echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
-        setup_lxd      && error_check 0 'Stage 5/6 : sNow! LXD installation ' || error_check 1 'Stage 5/6 : sNow! LXD installation ' & 
+        setup_lxd      && error_check 0 'Stage 5/6 : sNow! LXD installation ' || error_check 1 'Stage 5/6 : sNow! LXD installation ' &
         spinner $!     'Stage 5/6 : sNow! LXD installation '
         lxd init
     ;;
