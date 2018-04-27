@@ -29,6 +29,7 @@ function install_docker()
             apt-get -y update
             apt-get -y install docker-ce
             groupadd docker
+            # shellcheck disable=SC2154
             usermod -aG docker $sNow_USER
             systemctl enable docker
             systemctl start docker
@@ -214,19 +215,19 @@ function install_opennebula()
     case $OS in
         debian)
             echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Debian/${OS_VERSION} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
-            pkgs="opennebula-node"
+            pkgs="opennebula-node bridge-utils"
         ;;
         ubuntu)
             echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Ubuntu/${OS_VERSION} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
-            pkgs="opennebula-node"
+            pkgs="opennebula-node bridge-utils"
         ;;
         rhel|redhat|centos)
-            pkgs="opennebula-node-kvm"
+            pkgs="opennebula-node-kvm bridge-utils"
         ;;
         suse|sle[sd]|opensuse)
             error_msg "This distribution is not yet supported in OpenNebula for sNow!."
             # review https://en.opensuse.org/SDB:Cloud_OpenNebula
-            pkgs="opennebula-node-kvm"
+            pkgs="opennebula-node-kvm bridge-utils"
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -250,6 +251,34 @@ function install_opennebula()
     esac
 }
 
+function setup_network_bridges()
+{
+    case $OS in
+        debian)
+            bkp /etc/network/interfaces
+            cp -p /etc/network/interfaces /etc/network/interfaces.tmp
+            cat /etc/network/interfaces.tmp | gawk 'BEGIN{n=0}{if($1 ~ /^iface$/ && $2 !~ /lo/){print "auto br"n"\n"$1" br"n" "$3" "$4" "$5"\n    bridge_ports "$2; n++}}' > /etc/network/interfaces
+            rm -f /etc/network/interfaces.tmp
+        ;;
+        rhel|redhat|centos)
+            for n in $(ip -o link show | awk -F': ' '{print $2}' | grep -v "^lo$"); do
+                i=$(($i+1))
+                bkp /etc/sysconfig/network-scripts/ifcfg-$n
+                cp -p /etc/sysconfig/network-scripts/ifcfg-$n /etc/sysconfig/network-scripts/ifcfg-br$i
+                replace_text /etc/sysconfig/network-scripts/ifcfg-$i "^BRIDGE" "BRIDGE=\"br$i\""
+                replace_text /etc/sysconfig/network-scripts/ifcfg-$i "^TYPE" "TYPE=\"Bridge\""
+                echo "DEVICE=$n\n TYPE=Ethernet\n BOOTPROTO=none\n ONBOOT=yes\n NM_CONTROLLED=no\n BRIDGE=br$i" > /etc/sysconfig/network-scripts/ifcfg-$n
+            done
+        ;;
+        suse|sle[sd]|opensuse)
+            error_msg "This distribution is not supported."
+        ;;
+        *)
+            warning_msg "This distribution is not supported."
+        ;;
+    esac
+}
+
 function setup_opennebula()
 {
     if is_master; then
@@ -260,9 +289,9 @@ function setup_opennebula()
         # Review: http://docs.opennebula.org/5.4/deployment/authentication_setup/ldap.html
         #setup_opennebula_ldap_auth
         #setup_opennebula_network ${OPENNEBULA_NETWORK_MODE}
-        # cat /etc/network/interfaces | gawk '{if($1 ~ /^iface$/ && $2 !~ /lo/){print "auto br"n"\n"$1"br"n" "$3" "$4" "$5}}'
+        setup_network_bridges
         # First iteration supports only KVM
         # For LXD support review https://github.com/OpenNebula/addon-lxdone/blob/master/Setup.md
-        onehost create $(uname -n) -i kvm -v kvm
+        onehost create "$(uname -n)" -i kvm -v kvm
     fi
 } 1>>$LOGFILE 2>&1
