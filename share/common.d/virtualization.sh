@@ -265,8 +265,8 @@ function setup_network_bridges()
                 i=$(($i+1))
                 bkp /etc/sysconfig/network-scripts/ifcfg-$n
                 cp -p /etc/sysconfig/network-scripts/ifcfg-$n /etc/sysconfig/network-scripts/ifcfg-br$i
-                replace_text /etc/sysconfig/network-scripts/ifcfg-$i "^BRIDGE" "BRIDGE=\"br$i\""
-                replace_text /etc/sysconfig/network-scripts/ifcfg-$i "^TYPE" "TYPE=\"Bridge\""
+                replace_text /etc/sysconfig/network-scripts/ifcfg-br$i "^BRIDGE" "BRIDGE=\"br$i\""
+                replace_text /etc/sysconfig/network-scripts/ifcfg-br$i "^TYPE" "TYPE=\"Bridge\""
                 echo "DEVICE=$n\n TYPE=Ethernet\n BOOTPROTO=none\n ONBOOT=yes\n NM_CONTROLLED=no\n BRIDGE=br$i" > /etc/sysconfig/network-scripts/ifcfg-$n
             done
         ;;
