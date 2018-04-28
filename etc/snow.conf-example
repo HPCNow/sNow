@@ -42,15 +42,15 @@ VIRT_TECH=XEN
 
 #                 [ LVM disk management ]
 #
-# Defines where the domains OS files will be stored. This allows you 
-# to use root and swap filesystems for the domains in LVM volumes or loopback 
-# files. 
+# Defines where the domains OS files will be stored. This allows you
+# to use root and swap filesystems for the domains in LVM volumes or loopback
+# files.
 # The NFSROOT option requires complex manual intervention and it is still
 # experimental.
 #
 
 # LVM: The domains will be stored inside a Logical Volume created in the snow_vg
-# Volume Group. 
+# Volume Group.
 IMG_DST='lvm=snow_vg'
 
 # Loopback file: The domains will be stored inside a loopback file located
@@ -172,7 +172,7 @@ NET_MGMT=( 'xmgmt' '10.0.0.1' '10.0.1.1' '10.0.0.' '255.255.0.0' '-mgmt' )
 NET_LLF=( 'xllf0' '10.1.0.1' '10.1.1.1' '10.1.0.' '255.255.0.0' '-ib' )
 
 # The NET_DMZ network is an optional network which allows to expose some
-# services to the public network. 
+# services to the public network.
 # It may require some rules applied in your institutional firewall or to setup
 # a local firewall in the sNow! management server.
 # If you want to use it uncomment it and check the sNow! Administration Guide
@@ -292,7 +292,7 @@ DOWNLD=wget
 # configuration.
 # The following options ensure the consistency across the services allocated in
 # the domains and the nodes deployed with sNow!
-# 
+#
 
 LANG=en_US
 KEYMAP=us
@@ -324,7 +324,7 @@ DHCP_NIC=eth0
 # sNow! provides easy integration with your existing environment through the
 # SITE_SERVICES variables. The following parametres define integration with
 # standard services usually required by an HPC cluster. Other services can be
-# integrated via hooks (see section 12 of sNow! administrator documentation). 
+# integrated via hooks (see section 12 of sNow! administrator documentation).
 #
 
 #SITE_PROXY_SERVER=192.168.7.1
@@ -354,7 +354,7 @@ MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,noa
 
 # If you are using a different shared file system, then the $SNOW_PATH and
 # $HOME must be available in the sNow! management nodes and some node(s) must
-# re-export those file systems through NFS. 
+# re-export those file systems through NFS.
 #
 # NFS Performance considerations:
 # * Consider to increase the number of NFS daemons (RPCNFSDCOUNT) in the server
@@ -374,11 +374,11 @@ SLURMDBD_PASSWORD='whatever'
 #SLURMDBD_NAME=slurm_acct_db
 
 #             [ Slurm Accounting and Fair Share ]
-#               
+#
 # The following option forces to use associations and QoS for accounting.
 # Fairsharing is the most common approach to share resources. Consider to use
 # the helper script "$SNOW_TOOLS/contrib/slurm_fairshare/slurm_share_tree.sh"
-# to define how to share the computational resources within your groups and users 
+# to define how to share the computational resources within your groups and users
 #ACCOUNTING_STORAGE_ENFORCE=associations,qos
 #
 # nojobs - This will make it so no job information is stored in accounting.
@@ -401,14 +401,14 @@ SLURM_CONF=/etc/slurm/slurm.conf
 SLURM_GID=20995
 SLURM_UID=20995
 # The following parameter defines the number of licenses available for each
-# software. 
+# software.
 # Syntax: LICENSES=licenseA*number_of_tockens,licenseB*number_of_tockens
 # Example: LICENSES=intel*2,fluent*5000
 #LICENSES=intel*2,fluent*5000
-# The following lines define three different types of Slurm Compute Nodes 
-SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN" 
-SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN" 
-SLURM_NODES[3]="NodeName=skl[01-99] RealMemory=512000  Sockets=4  CoresPerSocket=24 ThreadsPerCore=1 State=UNKNOWN" 
+# The following lines define three different types of Slurm Compute Nodes
+SLURM_NODES[1]="NodeName=knl[01-99] RealMemory=128000  Sockets=2  CoresPerSocket=72 ThreadsPerCore=4 State=UNKNOWN"
+SLURM_NODES[2]="NodeName=hsw[01-99] RealMemory=256000  Sockets=2  CoresPerSocket=12 ThreadsPerCore=1 State=UNKNOWN"
+SLURM_NODES[3]="NodeName=skl[01-99] RealMemory=512000  Sockets=4  CoresPerSocket=24 ThreadsPerCore=1 State=UNKNOWN"
 # The following lines define four simple partitions which meet most of the
 # requirements in small HPC centers
 SLURM_PARTITION[1]="PartitionName=high    Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=NO  OverSubscribe=FORCE:1 Priority=100 PriorityTier=5 MaxTime=6:00:00   PreemptMode=off"
@@ -417,7 +417,7 @@ SLURM_PARTITION[3]="PartitionName=requeue Nodes=knl[01-99],hsw[01-99],skl[01-99]
 SLURM_PARTITION[4]="PartitionName=low     Nodes=knl[01-99],hsw[01-99],skl[01-99]  Default=YES OverSubscribe=FORCE:1 Priority=25  PriorityTier=2 MaxTime=168:00:00 PreemptMode=suspend"
 
 #             [ Torque Configuration ]
-# sNow! allows to install a torque master domain and also build the required packages to 
+# sNow! allows to install a torque master domain and also build the required packages to
 # be deployed in the compute nodes. The following two parameters will help you to define the very basic
 # configuration of torque. Maui is not supported
 
@@ -440,3 +440,17 @@ LDAP_CONFIG_PASSWORD='whatever'
 #LDAP_PPOLICY_DN_PREFIX=cn=default,ou=policies
 #LDAP_ADDITIONAL_SCHEMAS=collective,corba,duaconf,dyngroup,java,misc,openldap,pmi,ppolicy
 #LDAP_ADDITIONAL_MODULES=memberof,ppolicy
+
+#             [ OpenNebula Configuration ]
+# sNow! can deploy OpenNebula Frontend servers and re-architect compute nodes
+# to OpenNebula hypervisor nodes.
+# NOTE: OpenNebula integration is not available for SuSE and OpenSuSE.
+#
+# In order to enable OpenNebula, you must define the version to be used:
+# OPENNEBULA_VERSION="5.4"
+#
+# The following parameters define the default values. Consider to update those values before to
+# deploy any OpenNebula service.
+# OPENNEBULA_DB_NAME="opennebula"
+# OPENNEBULA_USER="oneadmin"
+# OPENNEBULA_PASSWORD="${$MASTER_PASSWORD}"

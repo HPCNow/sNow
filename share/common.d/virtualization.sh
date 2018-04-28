@@ -214,7 +214,7 @@ function install_opennebula()
     add_repo_key https://downloads.opennebula.org/repo/repo.key
     case $OS in
         debian)
-            echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Debian/${OS_VERSION} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
+            echo "deb https://downloads.opennebula.org/repo/${OPENNEBULA_RELEASE}/Debian/${OS_VERSION_MAJOR} stable opennebula" > /etc/apt/sources.list.d/opennebula.list
             pkgs="opennebula-node bridge-utils"
         ;;
         ubuntu)
@@ -222,6 +222,8 @@ function install_opennebula()
             pkgs="opennebula-node bridge-utils"
         ;;
         rhel|redhat|centos)
+            cp -p ${SNOW_TOOL}/etc/config_template.d/opennebula/opennebula_centos.repo /etc/yum.repos.d/opennebula.repo
+            replace_text /etc/yum.repos.d/opennebula.repo "^baseurl" "baseurl=https://downloads.opennebula.org/repo/${OPENNEBULA_VERSION}/CentOS/${OS_VERSION_MAJOR}/x86_64"
             pkgs="opennebula-node-kvm bridge-utils"
         ;;
         suse|sle[sd]|opensuse)
@@ -292,6 +294,7 @@ function setup_opennebula()
         setup_network_bridges
         # First iteration supports only KVM
         # For LXD support review https://github.com/OpenNebula/addon-lxdone/blob/master/Setup.md
-        onehost create "$(uname -n)" -i kvm -v kvm
+        SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+        ssh ${SNOW_OPENNEBULA_SERVER} onehost create "$(uname -n)" -i kvm -v kvm
     fi
 } 1>>$LOGFILE 2>&1
