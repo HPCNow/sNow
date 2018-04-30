@@ -106,11 +106,11 @@ spinner $!             'Stage 10/12: Setting syslog client '
 setup_ntp_client       && error_check 0 'Stage 11/12: NTP client setup ' || error_check 1 'Stage 11/12: NTP client setup ' &
 spinner $!             'Stage 11/12: Setting NTP client '
 
-if [[ -z ${DOCKER_VERSION} ]]; then
+if [[ ! -z ${DOCKER_VERSION} ]]; then
     setup_docker_swarm_worker && error_check 0 'Stage 12/12 : sNow! Docker Swarm worker installation ' || error_check 1 'Stage 12/12 : sNow! Docker Swarm worker installation ' &
     spinner $!         'Stage 12/12 : sNow! Docker Swarm worker installation '
 fi
-if [[ -z ${OPENNEBULA_VERSION} ]]; then
+if [[ ! -z ${OPENNEBULA_VERSION} ]]; then
     setup_opennebula   && error_check 0 'Stage 12/12 : sNow! OpenNebula installation ' || error_check 1 'Stage 12/12 : sNow! OpenNebula installation ' &
     spinner $!         'Stage 12/12 : sNow! OpenNebula installation '
 fi
