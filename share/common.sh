@@ -1736,6 +1736,9 @@ function generate_rootfs()
     bkp ${mount_point}/etc/fstab
     # Patch the network
     patch_network_configuration
+    # Clear PageCache, dentries and inodes
+    sync; echo 3 > /proc/sys/vm/drop_caches
+    # Create tarball
     tar -cf /dev/shm/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
     pigz -9 /dev/shm/rootfs.tar

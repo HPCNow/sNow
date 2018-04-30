@@ -323,19 +323,14 @@ case $VIRT_TECH in
         setup_xen      && error_check 0 'Stage 5/6 : sNow! Xen installation ' || error_check 1 'Stage 5/6 : sNow! Xen installation ' &
         spinner $!     'Stage 5/6 : sNow! Xen installation '
     ;;
-    DOCKER)
-        echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
-        setup_docker   && error_check 0 'Stage 5/6 : sNow! Docker installed ' || error_check 1 'Stage 5/6 : sNow! Docker installed ' &
-        spinner $!     'Stage 5/6 : sNow! Docker installation '
-    ;;
     LXD)
-        echo "sNow! only supports XEN for production. DOCKER and LXD are experimental options at this time."
+        echo "sNow! only supports XEN for production. LXD is experimental options at this time."
         setup_lxd      && error_check 0 'Stage 5/6 : sNow! LXD installation ' || error_check 1 'Stage 5/6 : sNow! LXD installation ' &
         spinner $!     'Stage 5/6 : sNow! LXD installation '
         lxd init
     ;;
     *)
-        echo "sNow! only accepts the following options : XEN (default), DOCKER (experimental) and LXD (experimental)."
+        echo "sNow! only accepts the following options : XEN (default) and LXD (experimental)."
     ;;
 esac
 setup_devel_env_hpcnow && error_check 0 'Stage 6/6 : HPCNow! development environment setup ' || error_check 1 'Stage 6/6 : HPCNow! development environment setup ' &

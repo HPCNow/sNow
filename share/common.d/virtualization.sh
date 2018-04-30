@@ -23,11 +23,11 @@ function install_docker()
 {
     case $OS in
         debian)
-            apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+            install_software "apt-transport-https ca-certificates curl gnupg2 software-properties-common"
             curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
             add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
             apt-get -y update
-            apt-get -y install docker-ce
+            install_software "docker-ce=${DOCKER_VERSION}"
             groupadd docker
             # shellcheck disable=SC2154
             usermod -aG docker $sNow_USER
@@ -35,11 +35,11 @@ function install_docker()
             systemctl start docker
         ;;
         ubuntu)
-            apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+            install_software "apt-transport-https ca-certificates curl gnupg2 software-properties-common"
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
             add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
             apt-get -y update
-            apt-get -y install docker-ce
+            install_software "docker-ce=${DOCKER_VERSION}"
             groupadd docker
             usermod -aG docker $sNow_USER
             systemctl enable docker
@@ -49,7 +49,9 @@ function install_docker()
         ;;
         rhel|redhat|centos)
             yum -y update
-            curl -sSL https://get.docker.com/ | sh
+            install_software "yum-utils device-mapper-persistent-data lvm2"
+            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            install_software "docker-ce-${DOCKER_VERSION}"
             usermod -aG docker $sNow_USER
             systemctl start docker
             systemctl enable docker
@@ -68,11 +70,46 @@ function install_docker()
 function setup_docker()
 {
     if is_master; then
-        install_docker
-        curl -L https://github.com/docker/compose/releases/download/1.12.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+        info_msg "Docker is not supported in the master node"
     else
-        echo "Nothing to be done yet"
+        install_docker
+    fi
+} 1>>$LOGFILE 2>&1
+
+
+function setup_docker_swarm_worker()
+{
+    install_docker
+    # Setup Docker Swarm Worker
+    SNOW_SWARM_MANAGER=$(gawk '{if($2 ~ /swarm-manager/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+    SNOW_SWARM_MANAGER_IP=$(gawk '{if($2 ~ /swarm-manager/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    if  [[ ! -z "$SNOW_SWARM_MANAGER" && ! -z "$SITE_SWARM_MANAGER" ]]; then
+        SWARM_MANAGER=$SNOW_SWARM_MANAGER
+    else
+        SWARM_MANAGER="${SITE_SWARM_MANAGER:-$SNOW_SWARM_MANAGER}"
+    fi
+
+    if  [[ ! -z "$SNOW_SWARM_MANAGER_IP" && ! -z "$SITE_SWARM_MANAGER_IP" ]]; then
+        SWARM_MANAGER_IP=$SNOW_SWARM_MANAGER_IP
+    else
+        SWARM_MANAGER_IP="${SITE_SWARM_MANAGER_IP:-$SNOW_SWARM_MANAGER_IP}"
+    fi
+    # Register node as woker node in the Docker Swarm cluster
+    if  [[ ! -z "$SWARM_MANAGER" ]]; then
+        # Check if the token file already exists
+        if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then
+            mkdir /etc/portainer
+            docker swarm join --token "$(cat ${SNOW_CONF}/system_files/etc/docker_swarm.token)" ${SWARM_MANAGER_IP}:2377
+        else
+            check_host_status ${SWARM_MANAGER}
+            scp -p ${SWARM_MANAGER}:/root/docker_swarm.token ${SNOW_CONF}/system_files/etc/docker_swarm.token
+            if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then
+                error_msg "Docker Swarm Worker requires the file ${SNOW_CONF}/system_files/etc/docker_swarm.token"
+                error_msg "Which is generated once the Docker Swarm manager is booted for first time"
+            fi
+        fi
+    else
+        error_msg "Docker Swarm Worker requires a manager already deployed and running"
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -279,6 +316,7 @@ function setup_network_bridges()
             warning_msg "This distribution is not supported."
         ;;
     esac
+
 }
 
 function setup_opennebula()

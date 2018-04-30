@@ -36,7 +36,7 @@ NFS_SERVER=snow01
 
 #                 [ Virtualization Technology ]
 # The current and default virtualization technology for sNow! domains is XEN.
-# LXD and DOCKER support require complex manual intervention and it's still experimental
+# LXD support require complex manual intervention and it's still experimental
 # Please, don't change this parameter unless you know what you are doing.
 VIRT_TECH=XEN
 
@@ -454,3 +454,12 @@ LDAP_CONFIG_PASSWORD='whatever'
 # OPENNEBULA_DB_NAME="opennebula"
 # OPENNEBULA_USER="oneadmin"
 # OPENNEBULA_PASSWORD="${$MASTER_PASSWORD}"
+
+
+#             [ Docker Swarm Configuration ]
+# sNow! can deploy Docker Swarm Clusters and re-architect compute nodes to Docker Swarm worker nodes.
+# NOTE: Docker Swarm integration is not available for SuSE and OpenSuSE.
+#
+# In order to enable Docker Swarm, you must define the version to be used:
+# DOCKER_VERSION="18.03.1.ce"
+#
