@@ -29,7 +29,7 @@ function setup_user()
     local user_shell=$6
     local user_gecos="$7"
 
-    if [[ $# < 7 ]]; then
+    if [[ $# -lt 7 ]]; then
         error_exit "User ${user_name} can not be created because some parameters are missing."
     fi
 
@@ -38,7 +38,7 @@ function setup_user()
         bkp /etc/passwd
         bkp /etc/shadow
         groupadd -g ${user_gid} ${user_group}
-        useradd -u ${user_uid} -g ${user_gid} -c "${user_gecos}" -s ${user_shell} -d $SNOW_HOME/${user_name}  ${user_name} 
+        useradd -u ${user_uid} -g ${user_gid} -c "${user_gecos}" -s ${user_shell} -d $SNOW_HOME/${user_name}  ${user_name}
     elif [[ "$(id -u ${user_name})" != "${user_uid}"  &&  "$(id -g ${user_name})" != "${user_gid}" ]]; then
         groupmod -g ${user_gid} ${user_group}
         usermod -u ${user_uid} -g ${user_gid} ${user_name}
@@ -115,7 +115,6 @@ function setup_ssh()
     echo "GSSAPICleanupCredentials yes" >> /etc/ssh/sshd_config
     echo "HostbasedUsesNameFromPacketOnly yes" >> /etc/ssh/sshd_config
     echo "IgnoreRhosts no" >> /etc/ssh/sshd_config
-    echo "HostbasedUsesNameFromPacketOnly yes" >> /etc/ssh/sshd_config
     echo "UseDNS no" >> /etc/ssh/sshd_config
     systemctl restart sshd
 } 1>>$LOGFILE 2>&1
@@ -129,4 +128,3 @@ function setup_env()
     ln -sf $SNOW_TOOL/bin/snow-source.sh /etc/profile.d/snow.sh
     ln -sf $SNOW_TOOL/bin/snow-source.csh /etc/profile.d/snow.csh
 } 1>>$LOGFILE 2>&1
-

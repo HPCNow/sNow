@@ -27,7 +27,7 @@ function install_docker()
             curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
             add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
             apt-get -y update
-            install_software "docker-ce=${DOCKER_VERSION}"
+            install_software "docker-ce=${DOCKER_VERSION}~ce-0~debian"
             groupadd docker
             # shellcheck disable=SC2154
             usermod -aG docker $sNow_USER
@@ -39,7 +39,7 @@ function install_docker()
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
             add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
             apt-get -y update
-            install_software "docker-ce=${DOCKER_VERSION}"
+            install_software "docker-ce=${DOCKER_VERSION}~ce-0~ubuntu"
             groupadd docker
             usermod -aG docker $sNow_USER
             systemctl enable docker
@@ -51,7 +51,7 @@ function install_docker()
             yum -y update
             install_software "yum-utils device-mapper-persistent-data lvm2"
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-            install_software "docker-ce-${DOCKER_VERSION}"
+            install_software "docker-ce-${DOCKER_VERSION}.ce"
             usermod -aG docker $sNow_USER
             systemctl start docker
             systemctl enable docker
