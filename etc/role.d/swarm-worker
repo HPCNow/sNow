@@ -65,7 +65,7 @@ if  [[ ! -z "$SWARM_MANAGER" ]]; then
     curl -fsSL https://download.docker.com/linux/debian/gpg | chroot ${prefix} /usr/bin/apt-key add -
     chroot ${prefix} /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
     chroot ${prefix} /usr/bin/apt-get -y update
-    chroot ${prefix} /usr/bin/apt-get -y install docker-ce=${DOCKER_VERSION}
+    chroot ${prefix} /usr/bin/apt-get -y install "docker-ce=${DOCKER_VERSION}~ce-0~debian"
     #chroot ${prefix} /usr/sbin/usermod -aG docker $sNow_USER
     chroot ${prefix} /bin/systemctl enable docker
     cp -p $SNOW_TOOL/etc/role.d/first_boot/deploy_swarm.sh ${prefix}/usr/local/first_boot/01-deploy_swarm.sh
