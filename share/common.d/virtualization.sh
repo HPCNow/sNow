@@ -273,6 +273,20 @@ function install_opennebula()
         ;;
     esac
     install_software "$pkgs"
+    # Note that if you alredy have oneadmin SSH keys available, sNow! will use those.
+    if [[ ! -e $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
+        if [[ ! -e $SNOW_CONF/system_files/etc/rsa ]]; then
+            mkdir -p $SNOW_CONF/system_files/etc/rsa
+        fi
+        cp -pr /var/lib/one/.ssh/id_rsa $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin
+        cp -pr /var/lib/one/.ssh/id_rsa.pub $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub
+    else
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin /var/lib/one/.ssh/id_rsa
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub /var/lib/one/.ssh/id_rsa.pub
+        cp -p /var/lib/one/.ssh/id_rsa.pub /var/lib/one/.ssh/authorized_keys
+        chmod 600 /var/lib/one/.ssh/authorized_keys
+        chmod 400 /var/lib/one/.ssh/id_rsa
+    fi
     case $OS in
         debian|ubuntu)
             systemctl restart libvirtd

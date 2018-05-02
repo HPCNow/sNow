@@ -243,11 +243,13 @@
 ## 1.1.15
 
 ### New Features and Changes
-* Extended support for Docker Swarm cluster provisioning
-* Introduced support for OpenNebula private cloud provisioning
+* Extended support for Docker Swarm cluster provisioning.
+* Docker version must be set in snow.conf in order to ensure consistency in the Docker Swarm cluster.
+* Introduced support for OpenNebula private cloud provisioning.
 * Initial support for dynamic provisioning between Slurm, Docker Swarm and OpenNebula.
 * Included shellcheck in HPCNow! development environment.
 * Reduced memory footprint during the image gathering.
 
 ### Minor Fixes
 * Fix issues with no-fetching option in stateless provisioning over NFS
+* Fix path of domain images. Default location is /sNow/domains/domain_name rather than /sNow/domains/domains/domain_name

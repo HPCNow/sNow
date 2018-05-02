@@ -30,6 +30,7 @@ else
 fi
 # Load sNow! configuration
 if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+    # shellcheck disable=SC2034
     declare -A CLUSTERS
     source /sNow/snow-tools/etc/snow.conf
 else
@@ -84,7 +85,7 @@ EOF
     else
         cp -pr $SNOW_CONF/system_files/var/lib/one ${prefix}/var/lib/
     fi
-    # Note that if you alredy have the OpenNebula confuguration (one) available, no changes will be performed.
+    # Note that if you alredy have the OpenNebula configuration (one) available, no changes will be performed.
     if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
         if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
             mkdir -p $SNOW_CONF/system_files/etc/one
@@ -92,6 +93,20 @@ EOF
         cp -pr ${prefix}/etc/one/* $SNOW_CONF/system_files/etc/one/
     else
         cp -pr $SNOW_CONF/system_files/etc/one/* ${prefix}/etc/one/
+    fi
+    # Note that if you alredy have oneadmin SSH keys available, sNow! will use those.
+    if [[ ! -e $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
+        if [[ ! -e $SNOW_CONF/system_files/etc/rsa ]]; then
+            mkdir -p $SNOW_CONF/system_files/etc/rsa
+        fi
+        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin
+        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa.pub $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub
+    else
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin ${prefix}/var/lib/one/.ssh/id_rsa
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ${prefix}/var/lib/one/.ssh/id_rsa.pub
+        cp -p ${prefix}/var/lib/one/.ssh/id_rsa.pub ${prefix}/var/lib/one/.ssh/authorized_keys
+        chmod 600 ${prefix}/var/lib/one/.ssh/authorized_keys
+        chmod 400 ${prefix}/var/lib/one/.ssh/id_rsa
     fi
     # Enable the services at boot time
     chroot ${prefix} /bin/systemctl enable opennebula
