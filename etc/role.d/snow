@@ -100,7 +100,7 @@ chown -R root:root ${prefix}/root/.ssh
 chmod 700 ${prefix}/root/.ssh
 chmod 640 ${prefix}/root/.ssh/authorized_keys
 cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* ${prefix}/etc/ssh/
-replace_text /etc/ssh/ssh_config sed -i "s/StrictHostKeyChecking/StrictHostKeyChecking no/g"
+replace_text ${prefix}/etc/ssh/ssh_config "StrictHostKeyChecking" "StrictHostKeyChecking no"
 #sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
 
 if [[ -e /sNow/snow-configspace/system_files/etc/ssh/sshd_config ]]; then
