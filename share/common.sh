@@ -312,6 +312,18 @@ function is_golden_node()
     return $gn
 } 1>>$LOGFILE 2>&1
 
+function is_snow_node()
+{
+    # Returns 0 if this node is a golden node
+    local sn=1
+    for i in "${SNOW_NODES[@]}"; do
+        if [[ "$(hostname -s)" == "$i" ]]; then
+            local sn=0
+        fi
+    done
+    return $sn
+} 1>>$LOGFILE 2>&1
+
 function is_git_repo()
 {
     local git_path=$1

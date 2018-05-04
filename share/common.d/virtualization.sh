@@ -69,7 +69,7 @@ function install_docker()
 
 function setup_docker()
 {
-    if is_master; then
+    if is_snow_node; then
         info_msg "Docker is not supported in the master node"
     else
         install_docker
@@ -133,7 +133,7 @@ function install_lxd()
 
 function setup_lxd()
 {
-    if is_master; then
+    if is_snow_node; then
         install_lxd
     else
         echo "Nothing to be done yet"
@@ -245,7 +245,7 @@ function install_singularity()
 
 function setup_singularity()
 {
-    if is_master; then
+    if is_snow_node; then
         info_msg "Singularity is not supported in the master node"
     else
         install_singularity
@@ -345,7 +345,7 @@ function setup_network_bridges()
 
 function setup_opennebula()
 {
-    if is_master; then
+    if is_snow_node; then
         info_msg "OpenNebula is not supported in the master node"
     else
         install_opennebula

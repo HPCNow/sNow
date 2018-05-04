@@ -96,10 +96,10 @@ if [[ -z "${VIRT_TECH}" ]]; then
     VIRT_TECH=XEN
 fi
 
-# If SNOW_MASTER variable is not provided, it will assume that the current node
+# If SNOW_NODES variable array is not provided, it will assume that the current node
 # is the sNow! master node
-if [[ -z "${SNOW_MASTER}" ]]; then
-    SNOW_MASTER=$(uname -n)
+if [[ "${#SNOW_NODES[@]}" == "0" ]]; then
+    SNOW_NODES=( "$(uname -n)" )
 fi
 
 # If NFS_SERVER variable is not provided, it will assume that the current node
@@ -138,12 +138,17 @@ function is_git_repo()
     return $?
 } &>/dev/null
 
-function is_master()
+function is_snow_node()
 {
-    hostname | grep "$SNOW_MASTER"
-    return $?
-} &>/dev/null
-
+    # Returns 0 if this node is a golden node
+    local sn=1
+    for i in "${SNOW_NODES[@]}"; do
+        if [[ "$(hostname -s)" == "$i" ]]; then
+            local sn=0
+        fi
+    done
+    return $sn
+} 1>>$LOGFILE 2>&1
 
 function is_nfs_server()
 {
@@ -153,7 +158,7 @@ function is_nfs_server()
 
 function install_snow_repos()
 {
-if is_master; then
+if is_snow_node; then
     # If the configspace is not available, it must be created from scratch or pulled from git
     if [[ ! -e $SNOW_CONF ]]; then
         # Justify why snow-configspace is created from scratch
@@ -217,7 +222,7 @@ fi
 
 function setup_filesystems()
 {
-    if is_master && is_nfs_server; then
+    if is_snow_node && is_nfs_server; then
         check_mountpoints $SNOW_PATH
     else
         mkdir -p $SNOW_PATH
@@ -249,31 +254,31 @@ function install_snow_dependencies()
             else
                 error_msg "OS releases not supported"
             fi
-            if is_master && is_nfs_server ; then
+            if is_snow_node && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi
         ;;
         ubuntu)
             pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch pbzip2 unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo bzip2 dmidecode hwinfo ethtool linux-firmware freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools automake autoconf m4 libtool autoconf-archive gnu-standards gettext"
-            if is_master && is_nfs_server ; then
+            if is_snow_node && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi
         ;;
         rhel|redhat|centos)
             pkgs="epel-release @base @development-tools lsb libdb flex perl perl-Data-Dumper perl-Digest-MD5 perl-JSON perl-Parse-CPAN-Meta perl-CPAN pcre pcre-devel zlib zlib-devel bzip2 bzip2-devel bzip2-libs openssl openssl-devel openssl-libs nfs-utils rpcbind mdadm wget curl gawk patch unzip python-devel python-pip members git parallel jq squashfs-tools"
-            if is_master && is_nfs_server; then
+            if is_snow_node && is_nfs_server; then
                 pkgs="$pkgs nfs-utils rpcbind"
             fi
         ;;
         suse|sle[sd])
             pkgs="libbz2-1 libz1 openssl libopenssl-devel gcc gcc-c++ nfs-client rpcbind wget curl gawk python-devel python-pip members git parallel jq squashfs-tools"
-            if is_master && is_nfs_server; then
+            if is_snow_node && is_nfs_server; then
                 pkgs="$pkgs nfs-kernel-server"
             fi
         ;;
         opensuse)
             pkgs="libbz2-1 libz1 openssl libopenssl-devel gcc gcc-c++ nfs-client rpcbind wget curl gawk python-devel python-pip members git parallel jq"
-            if is_master && is_nfs_server; then
+            if is_snow_node && is_nfs_server; then
                 pkgs="$pkgs nfs-kernel-server"
             fi
         ;;

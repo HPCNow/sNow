@@ -249,6 +249,7 @@
 * Initial support for dynamic provisioning between Slurm, Docker Swarm and OpenNebula.
 * Included shellcheck in HPCNow! development environment.
 * Reduced memory footprint during the image gathering.
+* Installation has sNow nodes awareness, prelude to HA cluster self join.
 
 ### Minor Fixes
 * Fix issues with no-fetching option in stateless provisioning over NFS

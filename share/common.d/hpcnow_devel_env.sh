@@ -43,7 +43,7 @@ function install_devel_env_hpcnow()
 
 function setup_devel_env_hpcnow()
 {
-    if is_master; then
+    if is_snow_node; then
         install_devel_env_hpcnow
         #git clone https://github.com/HPCNow/dotfiles.git /tmp/dotfiles
         #cd /tmp/dotfiles
