@@ -253,3 +253,4 @@
 ### Minor Fixes
 * Fix issues with no-fetching option in stateless provisioning over NFS
 * Fix path of domain images. Default location is /sNow/domains/domain_name rather than /sNow/domains/domains/domain_name
+* Stateless provisioning is no longer fetching OS image into memory by default.
