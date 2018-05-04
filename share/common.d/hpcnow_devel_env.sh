@@ -51,7 +51,7 @@ function setup_devel_env_hpcnow()
         pip install yq
         mkdir -p /usr/share/images/grub
         bkp /etc/default/grub
-        echo "GRUB_BACKGROUND=\"/usr/share/images/grub/snow-grub-bg.png\"" >> /etc/default/grub
+        replace_text /etc/default/grub "GRUB_BACKGROUND" "GRUB_BACKGROUND=\"/usr/share/images/grub/snow-grub-bg.png\""
         wget http://hpcnow.com/images/snow/snow-grub-bg.png -O /usr/share/images/grub/snow-grub-bg.png
         update-grub
     else
