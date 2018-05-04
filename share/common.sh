@@ -753,6 +753,7 @@ function init_hosts()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
+    replace_text /etc/hosts.base "127.0.1.1" "#127.0.1.1"
     # Generate new static_hosts if the file does not exist or if force is enabled
     if [[ ! -e $SNOW_CONF/system_files/etc/static_hosts || "$force" == "yes" ]]; then
         cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
