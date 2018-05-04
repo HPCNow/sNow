@@ -60,15 +60,27 @@ function setup_user()
             mkdir -p $SNOW_HOME/${user_name}/.ssh
             chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh
         fi
-        sudo -u ${user_name} ssh-keygen -t rsa -f $SNOW_HOME/${user_name}/.ssh/id_rsa -q -P ""
+        # Note that if you already have SSH keys available, sNow! will use those.
+        if [[ ! -e $SNOW_CONF/system_files/etc/rsa/id_rsa_${user_name}.pub ]]; then
+            if [[ ! -e $SNOW_CONF/system_files/etc/rsa ]]; then
+                mkdir -p $SNOW_CONF/system_files/etc/rsa
+            fi
+            sudo -u ${user_name} ssh-keygen -t rsa -f $SNOW_HOME/${user_name}/.ssh/id_rsa -q -P ""
+            cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa $SNOW_CONF/system_files/etc/rsa/id_rsa_${user_name}
+            cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_CONF/system_files/etc/rsa/id_rsa_${user_name}.pub
+        else
+            cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_${user_name} $SNOW_HOME/${user_name}/.ssh/id_rsa
+            cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_${user_name}.pub $SNOW_HOME/${user_name}/.ssh/id_rsa.pub
+        fi
         bkp $SNOW_HOME/${user_name}/.ssh/authorized_keys
-        cat $SNOW_HOME/${user_name}/.ssh/id_rsa.pub > $SNOW_HOME/${user_name}/.ssh/authorized_keys
+        cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_HOME/${user_name}/.ssh/authorized_keys
+        chmod 600 $SNOW_HOME/${user_name}/.ssh/authorized_keys
+        chmod 400 $SNOW_HOME/${user_name}/.ssh/id_rsa
         echo "Host *" > $SNOW_HOME/${user_name}/.ssh/config
         echo "    StrictHostKeyChecking no" >> $SNOW_HOME/${user_name}/.ssh/config
         echo "    UserKnownHostsFile /dev/null" >> $SNOW_HOME/${user_name}/.ssh/config
         echo "    PasswordAuthentication no" >> $SNOW_HOME/${user_name}/.ssh/config
-        chown ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh/authorized_keys
-        chown ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh/config
+        chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh/
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -78,20 +90,29 @@ function setup_ssh()
     if [[ ! -z "${MASTER_PASSWORD}" ]]; then
         echo "root:${MASTER_PASSWORD}" | chpasswd
     fi
+    # shellcheck disable=SC2154
     setup_user "${sNow_USER}" "${sNow_UID}" "${sNow_GID}" "${sNow_GROUP}" "nopasswd" "/bin/bash" "sNow! Admin User"
+    # shellcheck disable=SC2154
     if [[ "${HPCNow_Support}" != "none" ]]; then
         setup_user "${HPCNow_USER}" "${HPCNow_UID}" "${HPCNow_GID}" "${HPCNow_GROUP}" "nopasswd" "/bin/bash" "HPCNow! Admin User"
     fi
-    # Setup SSH
-    mkdir -p /root/.ssh
-    cp -p $SNOW_HOME/$sNow_USER/.ssh/authorized_keys /root/.ssh/authorized_keys
-    # Allow support for GPFS requirements
-    cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub
-    cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa /root/.ssh/id_rsa
-    chown -R root:root /root/.ssh
-    chmod 700 /root/.ssh
-    chmod 640 /root/.ssh/authorized_keys
-    chmod 400 /root/.ssh/id_rsa
+    # Setup SSH keys
+    if [[ -e $SNOW_CONF/system_files/etc/rsa/id_rsa_${sNow_USER}.pub ]]; then
+        if [[ ! -e /root/.ssh ]]; then
+            mkdir -p /root/.ssh
+        fi
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_${sNow_USER} /root/.ssh/id_rsa
+        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_${sNow_USER}.pub /root/.ssh/id_rsa.pub
+        bkp /root/.ssh/authorized_keys
+        cp -p /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+        chmod 700 /root/.ssh
+        chmod 600 /root/.ssh/authorized_keys
+        chmod 400 /root/.ssh/id_rsa
+        chown -R root:root /root/.ssh
+    else
+        error_msg "sNow! SSH keys not yet generated"
+    fi
+    # Setup host based authentication
     cp -pr $SNOW_CONF/system_files/etc/ssh/ssh_host_* /etc/ssh/
     if [[ -e $SNOW_CONF/system_files/etc/ssh/shosts.equiv ]]; then
         cp -p $SNOW_CONF/system_files/etc/ssh/shosts.equiv /etc/ssh/

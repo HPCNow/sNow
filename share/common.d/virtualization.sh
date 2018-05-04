@@ -158,8 +158,11 @@ function install_xen()
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub
-            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=8192M,max:8192M dom0_max_vcpus=2 dom0_vcpus_pin\""
+            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=8192M,max:8192M dom0_max_vcpus=4 dom0_vcpus_pin\""
             replace_text /etc/default/grub "GRUB_DISABLE_OS_PROBER" "GRUB_DISABLE_OS_PROBER=true"
+            replace_text /etc/default/grub "GRUB_CMDLINE_LINUX_DEFAULT" "GRUB_CMDLINE_LINUX_DEFAULT\"=\"console=tty0 console=ttyS0,115200n8\""
+            replace_text /etc/default/grub "GRUB_TERMINAL" "GRUB_TERMINAL=console"
+            replace_text /etc/default/grub "GRUB_SERIAL_COMMAND" "#GRUB_SERIAL_COMMAND"
             bkp /etc/default/xendomains
             sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains
@@ -182,8 +185,11 @@ function install_xen()
             dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
             sed -i '/TOOLSTACK/s/=.*/=xl/' /etc/default/xen
             bkp /etc/default/grub
-            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=8192M,max:8192M dom0_max_vcpus=2 dom0_vcpus_pin\""
+            replace_text /etc/default/grub "GRUB_CMDLINE_XEN_DEFAULT" "GRUB_CMDLINE_XEN_DEFAULT=\"dom0_mem=8192M,max:8192M dom0_max_vcpus=4 dom0_vcpus_pin\""
             replace_text /etc/default/grub "GRUB_DISABLE_OS_PROBER" "GRUB_DISABLE_OS_PROBER=true"
+            replace_text /etc/default/grub "GRUB_CMDLINE_LINUX_DEFAULT" "GRUB_CMDLINE_LINUX_DEFAULT\"=\"console=tty0 console=ttyS0,115200n8\""
+            replace_text /etc/default/grub "GRUB_TERMINAL" "GRUB_TERMINAL=console"
+            replace_text /etc/default/grub "GRUB_SERIAL_COMMAND" "#GRUB_SERIAL_COMMAND"
             bkp /etc/default/xendomains
             sed -i 's/XENDOMAINS_RESTORE=true/XENDOMAINS_RESTORE=false/' /etc/default/xendomains
             sed -i 's/XENDOMAINS_SAVE=\/var\/lib\/xen\/save/XENDOMAINS_SAVE=/' /etc/default/xendomains

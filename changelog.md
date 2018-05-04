@@ -254,3 +254,6 @@
 * Fix issues with no-fetching option in stateless provisioning over NFS
 * Fix path of domain images. Default location is /sNow/domains/domain_name rather than /sNow/domains/domains/domain_name
 * Stateless provisioning is no longer fetching OS image into memory by default.
+* Fixed console redirection in Xen kernels
+* Increased the default number of CPUs available in sNow! server to 4.
+* The /home is no longer required to propagate SSH keys across the nodes and domains
