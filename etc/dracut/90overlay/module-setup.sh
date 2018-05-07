@@ -43,11 +43,11 @@ installkernel()
 install()
 {
     inst /etc/resolv.conf
-    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash dirname awk rmmod cut sed host tail
+    inst_multiple umount curl dmsetup blkid dd losetup grep blockdev find tar gzip bzip2 xz bash touch dirname awk rmmod cut sed host tail
     # make this conditional on a cmdline flag / config option
     inst_multiple -o checkisomd5
     # BeeGFS
-    inst_multiple -o /etc/beegfs/beegfs-libopentk.conf /etc/beegfs/beegfs-helperd.conf /etc/beegfs/beegfs-client-autobuild.conf /etc/beegfs/beegfs-client.conf /etc/beegfs/beegfs-mounts.conf 
+    inst_multiple -o /etc/beegfs/beegfs-libopentk.conf /etc/beegfs/beegfs-helperd.conf /etc/beegfs/beegfs-client-autobuild.conf /etc/beegfs/beegfs-client.conf /etc/beegfs/beegfs-mounts.conf
     inst_multiple -o /opt/beegfs/lib/libjbeegfs.so /opt/beegfs/lib/libbeegfs-opentk-disabledIB.so /opt/beegfs/lib/libbeegfs-opentk-enabledIB.so
     inst_multiple -o /sbin/fsck.beegfs /usr/bin/beegfs-check-servers /usr/bin/beegfs-ctl /usr/bin/beegfs-df /usr/bin/beegfs-fsck /usr/bin/beegfs-net
     inst_multiple -o /opt/beegfs/sbin/beegfs-helperd /opt/beegfs/sbin/beegfs-setup-client
@@ -57,9 +57,9 @@ install()
     [ -e /etc/udev/rules.d/95-lustre.rules ] && inst_rules /etc/udev/rules.d/95-lustre.rules
     [ -e /etc/modprobe.d/lnet.conf ] && dracut_install /etc/modprobe.d/lnet.conf
     # OverlayFS
+    # shellcheck disable=SC2154
     inst_hook cmdline 90 "$moddir/parse-overlay-opts.sh"
     inst_hook pre-pivot 90 "$moddir/overlayroot.sh"
     # required by SuSE?
     dracut_need_initqueue
 }
-
