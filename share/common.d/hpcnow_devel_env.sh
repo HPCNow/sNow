@@ -23,16 +23,16 @@ function install_devel_env_hpcnow()
 {
     case $OS in
         debian)
-            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell shellcheck"
         ;;
         ubuntu)
-            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell shellcheck"
         ;;
         rhel|redhat|centos)
-            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell ShellCheck"
         ;;
         suse|sle[sd]|opensuse)
-            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell"
+            pkgs="iotop iftop htop tmux psmisc byobu vim vim-nox iptraf traceroute pdsh clustershell ShellCheck"
         ;;
         *)
             warning_msg "This distribution is not supported."
@@ -43,21 +43,15 @@ function install_devel_env_hpcnow()
 
 function setup_devel_env_hpcnow()
 {
-    if is_master; then
-        install_devel_env_hpcnow 
+    if is_snow_node; then
+        install_devel_env_hpcnow
         #git clone https://github.com/HPCNow/dotfiles.git /tmp/dotfiles
         #cd /tmp/dotfiles
         #bash dotfiles.sh
-        #git clone https://github.com/squash/sudosh2.git /tmp/sudosh2
-        #cd /tmp/sudosh2
-        #./configure 
-        #make
-        #make install 
-        #sudosh -i 
-        #rm -fr /tmp/sudosh2
+        pip install yq
         mkdir -p /usr/share/images/grub
         bkp /etc/default/grub
-        echo "GRUB_BACKGROUND=\"/usr/share/images/grub/snow-grub-bg.png\"" >> /etc/default/grub 
+        replace_text /etc/default/grub "GRUB_BACKGROUND" "GRUB_BACKGROUND=\"/usr/share/images/grub/snow-grub-bg.png\""
         wget http://hpcnow.com/images/snow/snow-grub-bg.png -O /usr/share/images/grub/snow-grub-bg.png
         update-grub
     else

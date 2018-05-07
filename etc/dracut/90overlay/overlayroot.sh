@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This file contains dracut recipies to generage Single System Image in sNow! cluster manager
 # Copyright (C) 2008 Jordi Blasco
 #
@@ -18,7 +18,7 @@
 # sNow! Cluster Suite is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website: www.hpcnow.com/snow
 #
-# overlayroot - fetch a OS image or mount the rootfs file system from the network and 
+# overlayroot - fetch a OS image or mount the rootfs file system from the network and
 # thanks to overlay allows to write files on tmpfs to turn allow stateless setup
 # It's specified with the following syntax:
 #   overlay_rootfs=http://server/path/to/file/rootfs.squashfs
@@ -37,6 +37,7 @@ newroot="${3:-/sysroot}"
 
 # Read the settings from the files created by a command-line parsing script from /tmp
 [ -r /tmp/overlay.type ] && read overlay_type < /tmp/overlay.type
+# shellcheck disable=SC2034
 [ -r /tmp/overlay.opts ] && read overlay_opts < /tmp/overlay.opts
 [ -r /tmp/overlay.rootfs ] && read overlay_rootfs < /tmp/overlay.rootfs
 [ -r /tmp/overlay.server ] && read overlay_server < /tmp/overlay.server
@@ -66,8 +67,8 @@ if [ -n "${overlay_rootfs}" ]; then
 
     # Create the directories and mount the writable file system based on tmpfs (stateless)
     info "Creating mount point directories"
-    mkdir -p ${stage0_ro} ${stage0_rw} ${stage0_rootfs}
-    mkdir -p ${stage1_ro} ${stage1_rw} ${stage1_rootfs}
+    mkdir -p ${stage0_ro} ${stage0_rw}
+    mkdir -p ${stage1_ro} ${stage1_rw}
     info "Mounting tmpfs as writable layer"
     mount -n -t tmpfs tmpfs-root ${stage0_rw}
     mount --make-private ${stage0_rw}
@@ -75,12 +76,12 @@ if [ -n "${overlay_rootfs}" ]; then
         warn "failed to create tmpfs"
         exit 1
     fi
-    mkdir -p ${stage0_rw_upper} ${stage0_rw_work}
-    mkdir -p ${stage1_rw_upper} ${stage1_rw_work}
+    mkdir -p ${stage0_rootfs} ${stage0_rw_upper} ${stage0_rw_work}
+    mkdir -p ${stage1_rootfs} ${stage1_rw_upper} ${stage1_rw_work}
 
     if [ "${overlay_type}" = "squashfs" ]; then
         case "${overlay_protocol}" in
-            http|https|ftp|tftp) 
+            http|https|ftp|tftp)
                 [ -e /tmp/readonly_rootfs.downloaded ] && exit 0
                 info "Fetching ${overlay_rootfs}"
                 stage0_rootfs=${stage0_rootfs}/rootfs.squashfs
@@ -89,7 +90,7 @@ if [ -n "${overlay_rootfs}" ]; then
                 	warn "failed to download overlay image: error $?"
                 	exit 1
                 fi
-                > /tmp/readonly_rootfs.downloaded
+                touch /tmp/readonly_rootfs.downloaded
                 #fetch_curl ${overlay_rootfs} ${stage0_rootfs}
                 ;;
             beegfs)
@@ -149,7 +150,7 @@ if [ -n "${overlay_rootfs}" ]; then
     fi
 
     if [ "${overlay_type}" = "nfs" ]; then
-        if [ ! -z "${overlay_server}" ]; then 
+        if [ ! -z "${overlay_server}" ]; then
             stage0_ro_rootfs_path=${stage0_ro}
             info "Mounting NFSROOT read-only"
             mount -t ${overlay_protocol} -o defaults,ro ${overlay_server} ${stage0_ro}
@@ -159,7 +160,7 @@ if [ -n "${overlay_rootfs}" ]; then
                 exit 1
             fi
         else
-            die "Required parameter 'overlay_server' is missing" 
+            die "Required parameter 'overlay_server' is missing"
         fi
     fi
 
@@ -183,7 +184,7 @@ if [ -n "${overlay_rootfs}" ]; then
     fi
 
     if [ "${overlay_type}" = "lustre" ]; then
-        if [ ! -z "${overlay_server}" ]; then 
+        if [ ! -z "${overlay_server}" ]; then
             stage0_ro_rootfs_path=${stage0_ro}
             info "Mounting Lustre-root read-only"
             modprobe lnet
@@ -195,7 +196,7 @@ if [ -n "${overlay_rootfs}" ]; then
                 exit 1
             fi
         else
-            die "Required parameter 'overlay_server' is missing" 
+            die "Required parameter 'overlay_server' is missing"
         fi
     fi
 
@@ -209,13 +210,14 @@ if [ -n "${overlay_rootfs}" ]; then
     mkdir -p ${newroot}${stage0_ro} ${newroot}${stage0_rw}
     mount --move ${stage0_ro} ${newroot}${stage0_ro} || info "Failed to move ${stage0_ro} to ${newroot}${stage0_ro}"
     mount --move ${stage0_rw} ${newroot}${stage0_rw} || info "Failed to move ${stage0_rw} to ${newroot}${stage0_rw}"
-    cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
+    #cp -p /run/initramfs/log/var/log/beegfs-client.log $newroot/var/log/beegfs-client.log
     # Workaround to systemd-machine-id-commit + overlayfs bug: https://github.com/systemd/systemd/issues/729
     ip_addr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
     hostname=$(host ${ip_addr} | cut -d ' ' -f 5 | sed -r 's/((.*)[^\.])\.?/\1/g' )
     echo $hostname > ${newroot}/etc/hostname
     # maybe required by SuSE - inject new exit_if_exists
+    # shellcheck disable=SC2154
     echo '[ -e $NEWROOT/proc ]' > $hookdir/initqueue/overlayfsroot.sh
     # force udevsettle to break
-    > $hookdir/initqueue/work
+    touch $hookdir/initqueue/work
 fi

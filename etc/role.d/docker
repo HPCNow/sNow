@@ -47,11 +47,10 @@ fi
 # Installs required packages
 installDebianPackage ${prefix} apt-transport-https ca-certificates curl gnupg2 software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | chroot ${prefix} /usr/bin/apt-key add -
-chroot ${prefix} /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+distribution_codename=$(chroot ${prefix} /usr/bin/lsb_release -cs)
+chroot ${prefix} /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian ${distribution_codename} stable"
 chroot ${prefix} /usr/bin/apt-get -y update
-chroot ${prefix} /usr/bin/apt-get -y install docker-ce
+chroot ${prefix} /usr/bin/apt-get -y install "docker-ce=${DOCKER_VERSION}~ce-0~debian"
 #chroot ${prefix} /usr/sbin/groupadd docker
 #chroot ${prefix} /usr/sbin/usermod -aG docker $sNow_USER
 chroot ${prefix} /bin/systemctl enable docker
-curl -L https://github.com/docker/compose/releases/download/1.12.0/docker-compose-`uname -s`-`uname -m` > ${prefix}/usr/local/bin/docker-compose
-chmod +x ${prefix}/usr/local/bin/docker-compose

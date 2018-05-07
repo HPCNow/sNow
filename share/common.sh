@@ -312,6 +312,18 @@ function is_golden_node()
     return $gn
 } 1>>$LOGFILE 2>&1
 
+function is_snow_node()
+{
+    # Returns 0 if this node is a golden node
+    local sn=1
+    for i in "${SNOW_NODES[@]}"; do
+        if [[ "$(hostname -s)" == "$i" ]]; then
+            local sn=0
+        fi
+    done
+    return $sn
+} 1>>$LOGFILE 2>&1
+
 function is_git_repo()
 {
     local git_path=$1
@@ -433,8 +445,8 @@ function replace_text()
     local file="$1"
     local expression="$2"
     local replacement="$3"
-    if [[ $# < 3 ]]; then
-        error_exit "Missing arguments in replace_text function call: $@"
+    if [[ $# -lt 3 ]]; then
+        error_exit "Missing arguments in replace_text function call: $*"
     fi
     if [[ ! -e $file ]]; then
         error_exit "File $file does not exit"
@@ -642,7 +654,7 @@ function init_active_domains_conf()
     local force=$1
     # Check for active-domains.conf
     if [[ -f ${SNOW_CONF}/system_files/etc/active-domains.conf ]]; then
-        ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
+        ln -sf ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
     elif [[ -f ${SNOW_TOOL}/etc/active-domains.conf ]]; then
         mv ${SNOW_TOOL}/etc/active-domains.conf ${SNOW_CONF}/system_files/etc/active-domains.conf
         ln -s ${SNOW_CONF}/system_files/etc/active-domains.conf ${SNOW_TOOL}/etc/active-domains.conf
@@ -743,7 +755,7 @@ function init_hosts()
     local force=$1
     # Generate /etc/hosts based on the sNow! domains and compute node list defined in snow.conf (parameter CLUSTERS)
     host=( )
-    for i in ${!CLUSTERS[@]}
+    for i in "${!CLUSTERS[@]}"
     do
         nodelist=${CLUSTERS[$i]}
         host+=( $(node_list ${nodelist}) )
@@ -753,6 +765,7 @@ function init_hosts()
         cp -p /etc/hosts /etc/hosts.base
     fi
     bkp /etc/hosts
+    replace_text /etc/hosts.base "127.0.1.1" "#127.0.1.1"
     # Generate new static_hosts if the file does not exist or if force is enabled
     if [[ ! -e $SNOW_CONF/system_files/etc/static_hosts || "$force" == "yes" ]]; then
         cat $SNOW_TOOL/etc/config_template.d/dhcp/etc_hosts_warning.txt > $SNOW_CONF/system_files/etc/static_hosts
@@ -1090,7 +1103,7 @@ function add_node()
     local nodelist=$1
     local node_type=compute
     local cluster=""
-    local image=${DEFAULT_BOOT} 
+    local image=${DEFAULT_BOOT}
     local template=${DEFAULT_TEMPLATE}
     local install_repo=${INSTALL_REPO}
     local install_proxy=${INSTALL_PROXY}
@@ -1206,7 +1219,7 @@ function show_nodes()
 
 function set_node()
 {
-    if [[ $# < 3 ]]; then
+    if [[ $# -lt 3 ]]; then
         error_exit "No enough parameters have been provided."
     fi
     local nodelist=$1
@@ -1378,16 +1391,16 @@ function set_snow_json()
     if [[ -n "${last_deploy}" ]]; then
         nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"last_deploy\" = \"${last_deploy}\"")
     fi
-    if [[ ${#ip[@]} > 0 ]]; then
-        for nic in ${!ip[@]}; do
+    if [[ ${#ip[@]} -gt 0 ]]; then
+        for nic in "${!ip[@]}"; do
             ip_address=${ip[${nic}]}
             nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"ip\" = \"${ip_address}\"")
         done
         unset nic
         unset ip_address
     fi
-    if [[ ${#mac[@]} > 0 ]]; then
-        for nic in ${!mac[@]}; do
+    if [[ ${#mac[@]} -gt 0 ]]; then
+        for nic in "${!mac[@]}"; do
             mac_address=${mac[${nic}]}
             nodes_json=$(echo "${nodes_json}" | jq ".\"${node_type}\".\"${node}\".\"nic\".\"${nic}\".\"mac\" = \"${mac_address}\"")
         done
@@ -1646,7 +1659,7 @@ function hooks()
 function first_boot_hooks()
 {
     local hooks_path=$1
-    if [[ ! -e ${hooks_path}/first_boot ]]; then 
+    if [[ ! -e ${hooks_path}/first_boot ]]; then
         mkdir -p ${hooks_path}/first_boot
     fi
     if [[ ! -e /usr/local/bin/first_boot ]]; then
@@ -1716,7 +1729,7 @@ function generate_rootfs()
     fi
     mkdir -p ${hooks_path}/first_boot
     systemctl enable first_boot
-    # disable network.service as it's not longer required for diskless 
+    # disable network.service as it's not longer required for diskless
     systemctl disable network.service
     # Identify remote file systems
     local remotefs_mount_points=$(df -P -T  | tail -n +2 | awk '{if($2 !~ /tmpfs|devtmpfs|ext|reiserfs|btrfs|xfs|zfs|ntfs|fat|iso|cdfs|squash|overlay/){print $7}}' | tr '\n' ' ')
@@ -1726,7 +1739,7 @@ function generate_rootfs()
     # Create required directory structure
     mkdir -p ${mount_point}/{bin,boot,dev,etc,home,lib64,mnt,proc,root/.ssh,sbin,sys,usr,var/{lib,tmp},var/lib/nfs,tmp,var/run/netreport,var/lock/subsys}
     # create remote file system mount points
-    for remotefs in ${remotefs_mount_points}; do 
+    for remotefs in ${remotefs_mount_points}; do
         mkdir -p ${mount_point}${remotefs}
     done
     unset remotefs
@@ -1736,6 +1749,9 @@ function generate_rootfs()
     bkp ${mount_point}/etc/fstab
     # Patch the network
     patch_network_configuration
+    # Clear PageCache, dentries and inodes
+    sync; echo 3 > /proc/sys/vm/drop_caches
+    # Create tarball
     tar -cf /dev/shm/rootfs.tar --acls -p --numeric-owner -C ${mount_point}/ .
     # Compress the tarball in parallel
     pigz -9 /dev/shm/rootfs.tar
@@ -1986,7 +2002,7 @@ function clone_node()
             warning_msg "This will clone $node and generate the image $image."
         fi
         check_host_status ${node}${NET_MGMT[5]}
-        ssh $node $0 clone node $@
+        ssh $node $0 clone node "$@"
         set_image_type $image ${image_type} ${overlayfs_type}
         if [[ ! -e ${SNOW_CONF}/boot/images/$image/first_boot ]]; then
             mkdir -p ${SNOW_CONF}/boot/images/$image/first_boot
@@ -2086,7 +2102,7 @@ function avail_domains()
             host_allocated=""
             for snow_node in ${SNOW_NODES[*]}; do
                 hw_status_in_host="$(ssh -o ConnectTimeout=5 ${snow_node} /usr/sbin/xl list -l ${domain} | jq  -r '.[].domid')"
-                if [[ "${hw_status_in_host}" > 0 ]]; then
+                if [[ "${hw_status_in_host}" -gt 0 ]]; then
                     hw_status="on"
                     host_allocated=${snow_node}
                     os_status="$(ssh -o ConnectTimeout=5 ${domain} uptime -p || echo 'down')"
@@ -2191,7 +2207,7 @@ function avail_nodes()
     fi
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "Node" "Cluster" "HW status" "OS status" "Image" "Template" "Last Deploy" 1>&3
     printf "%-20s  %-15s  %-10s  %-44s  %-20s  %-30s  %-22s\n" "----" "-------" "---------" "---------" "-----" "--------" "-----------" 1>&3
-    for node in ${nodes[@]}; do
+    for node in "${nodes[@]}"; do
         ping -c 1 -W 1 ${node}${NET_MGMT[5]} &> /dev/null
         if [[ "$?" != "0" ]]; then
             hw_status="IPMI down"
@@ -2292,7 +2308,7 @@ function get_server_distribution()
 {
     local nodelist=$1
     local nleng=$(node_list "${nodelist}" | wc -w)
-    if [[ $nleng > 1 ]]; then
+    if [[ $nleng -gt 1 ]]; then
         # Domains ranks are not yet supported
         is_vm=0
     else
@@ -2332,7 +2348,7 @@ function ncmd()
     fi
     shift
     check_host_status $(node_list "${nodelist}")
-    pdsh -w $nodelist $@
+    pdsh -w $nodelist "$@"
 }
 
 function nreboot()
@@ -2366,7 +2382,7 @@ function nshutdown()
 
 function shutdown_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}; do 
+    for domain in ${SELF_ACTIVE_DOMAINS}; do
         if (( "${#SNOW_NODES[@]}" > 1 )); then
             crm resource stop ${domain}
         else
@@ -2441,7 +2457,7 @@ function npoweroff()
 
 function poweroff_domains()
 {
-    for domain in ${SELF_ACTIVE_DOMAINS}; do 
+    for domain in ${SELF_ACTIVE_DOMAINS}; do
         npoweroff ${domain}
     done
     unset domain
@@ -2525,4 +2541,3 @@ if [ -d ${SNOW_TOOL}/share/hooks.d ]; then
   done
   unset i
 fi
-

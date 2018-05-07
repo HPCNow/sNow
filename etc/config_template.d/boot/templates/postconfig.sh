@@ -83,28 +83,38 @@ function setup_software()
     install_software "$pkgs"
 } 1>>$LOGFILE 2>&1
 
-setup_software         && error_check 0 'Stage  1/11: Software installed ' || error_check 1 'Stage 1/11: Software installed ' &
-spinner $!             'Stage  1/11: Installing Software '
-setup_networkfs        && error_check 0 'Stage  2/11: Distributed filesystem setup ' || error_check 1 'Stage 2/11: Distributed filesystem setup ' &
-spinner $!             'Stage  2/11: Setting distributed filesystem '
-setup_ssh              && error_check 0 'Stage  3/11: SSH service and sNow! users created ' || error_check 1 'Stage 3/11: SSH service and sNow! users created ' &
-spinner $!             'Stage  3/11: Creating SSH service and sNow! users '
-setup_env              && error_check 0 'Stage  4/11: User Environment configured ' || error_check 1 'Stage 4/11: User Environment configuration ' &
-spinner $!             'Stage  4/11: Configuring User Environment '
-install_lmod           && error_check 0 'Stage  5/11: Lmod install ' || error_check 1 'Stage 5/11: Lmod install ' &
-spinner $!             'Stage  5/11: Installing Lmod '
-install_easybuild      && error_check 0 'Stage  6/11: EasyBuild install ' || error_check 1 'Stage 6/11: EasyBuild install ' &
-spinner $!             'Stage  6/11: Installing EasyBuild '
-setup_ldap_client      && error_check 0 'Stage  7/11: LDAP client setup ' || error_check 1 'Stage 7/11: LDAP client setup ' &
-spinner $!             'Stage  7/11: Setting LDAP client '
-setup_ganglia_client   && error_check 0 'Stage  8/11: Ganglia client setup ' || error_check 1 'Stage 8/11: Ganglia client setup ' &
-spinner $!             'Stage  8/11: Setting Ganglia client '
-setup_workload_client  && error_check 0 'Stage  9/11: Workload Manager setup ' || error_check 1 'Stage 9/11: Workload Manager setup ' &
-spinner $!             'Stage  9/11: Setting Workload Manager '
-setup_syslog_client    && error_check 0 'Stage 10/11: Syslog client setup ' || error_check 1 'Stage 10/11: Syslog client setup ' &
-spinner $!             'Stage 10/11: Setting syslog client '
-setup_ntp_client       && error_check 0 'Stage 11/11: NTP client setup ' || error_check 1 'Stage 11/11: NTP client setup ' &
-spinner $!             'Stage 11/11: Setting NTP client '
+setup_software         && error_check 0 'Stage  1/12: Software installed ' || error_check 1 'Stage 1/12: Software installed ' &
+spinner $!             'Stage  1/12: Installing Software '
+setup_networkfs        && error_check 0 'Stage  2/12: Distributed filesystem setup ' || error_check 1 'Stage 2/12: Distributed filesystem setup ' &
+spinner $!             'Stage  2/12: Setting distributed filesystem '
+setup_ssh              && error_check 0 'Stage  3/12: SSH service and sNow! users created ' || error_check 1 'Stage 3/12: SSH service and sNow! users created ' &
+spinner $!             'Stage  3/12: Creating SSH service and sNow! users '
+setup_env              && error_check 0 'Stage  4/12: User Environment configured ' || error_check 1 'Stage 4/12: User Environment configuration ' &
+spinner $!             'Stage  4/12: Configuring User Environment '
+install_lmod           && error_check 0 'Stage  5/12: Lmod install ' || error_check 1 'Stage 5/12: Lmod install ' &
+spinner $!             'Stage  5/12: Installing Lmod '
+install_easybuild      && error_check 0 'Stage  6/12: EasyBuild install ' || error_check 1 'Stage 6/12: EasyBuild install ' &
+spinner $!             'Stage  6/12: Installing EasyBuild '
+setup_ldap_client      && error_check 0 'Stage  7/12: LDAP client setup ' || error_check 1 'Stage 7/12: LDAP client setup ' &
+spinner $!             'Stage  7/12: Setting LDAP client '
+setup_ganglia_client   && error_check 0 'Stage  8/12: Ganglia client setup ' || error_check 1 'Stage 8/12: Ganglia client setup ' &
+spinner $!             'Stage  8/12: Setting Ganglia client '
+setup_workload_client  && error_check 0 'Stage  9/12: Workload Manager setup ' || error_check 1 'Stage 9/12: Workload Manager setup ' &
+spinner $!             'Stage  9/12: Setting Workload Manager '
+setup_syslog_client    && error_check 0 'Stage 10/12: Syslog client setup ' || error_check 1 'Stage 10/12: Syslog client setup ' &
+spinner $!             'Stage 10/12: Setting syslog client '
+setup_ntp_client       && error_check 0 'Stage 11/12: NTP client setup ' || error_check 1 'Stage 11/12: NTP client setup ' &
+spinner $!             'Stage 11/12: Setting NTP client '
+
+if [[ ! -z ${DOCKER_VERSION} ]]; then
+    setup_docker_swarm_worker && error_check 0 'Stage 12/12 : sNow! Docker Swarm worker installation ' || error_check 1 'Stage 12/12 : sNow! Docker Swarm worker installation ' &
+    spinner $!         'Stage 12/12 : sNow! Docker Swarm worker installation '
+fi
+if [[ ! -z ${OPENNEBULA_VERSION} ]]; then
+    setup_opennebula   && error_check 0 'Stage 12/12 : sNow! OpenNebula installation ' || error_check 1 'Stage 12/12 : sNow! OpenNebula installation ' &
+    spinner $!         'Stage 12/12 : sNow! OpenNebula installation '
+fi
+
 hooks ${TEMPLATE_PATH}
 first_boot_hooks ${TEMPLATE_PATH}
 end_msg
