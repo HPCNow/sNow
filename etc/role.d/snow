@@ -274,11 +274,11 @@ if  [[ ! -z "$MONITOR_SERVER" ]]; then
             mkdir -p $SNOW_CONF/system_files/etc/ganglia
         fi
         chroot ${prefix} /usr/sbin/gmond -t > $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i 's|send_metadata_interval = 0|send_metadata_interval = 30|g' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i 's|name = "unspecified"|name = "sNow Domains"|g' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i '/^udp_send_channel {/,/^}/ {/}/s/.*/udp_send_channel {\n  host = monitor01\n  port = 8650\n  ttl = 1\n}/; t; d;}' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i '/^udp_recv_channel {/,/^}/ {/}/s/.*/udp_recv_channel {\n  port = 8650\n}/; t; d;}' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
-        sed -i '/^tcp_accept_channel {/,/^}/ {/}/s/.*/tcp_accept_channel {\n  port = 8650\n}/; t; d;}' $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
+        sed -i "s|send_metadata_interval = 0|send_metadata_interval = 30|g" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
+        sed -i "s|name = \"unspecified\"|name = \"sNow Domains\"|g" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^udp_send_channel {/,/^}/ {/}/s/.*/udp_send_channel {\n  host = ${MONITOR_SERVER}\n  port = 8650\n  ttl = 1\n}/; t; d;}" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^udp_recv_channel {/,/^}/ {/}/s/.*/udp_recv_channel {\n  port = 8650\n}/; t; d;}" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^tcp_accept_channel {/,/^}/ {/}/s/.*/tcp_accept_channel {\n  port = 8650\n}/; t; d;}" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
         sed -i "s|deaf = .*|deaf = no|g" $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf
     fi
     cp -p $SNOW_CONF/system_files/etc/ganglia/gmond_domains.conf ${prefix}/etc/ganglia/gmond.conf
