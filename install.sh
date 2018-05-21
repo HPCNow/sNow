@@ -259,7 +259,7 @@ function install_snow_dependencies()
             fi
         ;;
         ubuntu)
-            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch pbzip2 unzip python-pip apt-transport-https ca-certificates members git parallel axel python-software-properties sudo bzip2 dmidecode hwinfo ethtool linux-firmware freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools automake autoconf m4 libtool autoconf-archive gnu-standards gettext"
+            pkgs="build-essential libbz2-1.0 libssl-dev nfs-client rpcbind curl wget gawk patch pbzip2 unzip python-pip apt-transport-https ca-certificates members git parallel axel software-properties-common sudo bzip2 dmidecode hwinfo ethtool linux-firmware freeipmi genders nmap ntp ntpdate perftest openipmi ipmitool ifenslave raidutils lm-sensors dmsetup dnsutils fakeroot xfsprogs rsync syslinux-utils jq squashfs-tools automake autoconf m4 libtool autoconf-archive gnu-standards gettext"
             if is_snow_node && is_nfs_server ; then
                 pkgs="$pkgs nfs-kernel-server nfs-common"
             fi
