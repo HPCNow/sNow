@@ -21,7 +21,7 @@
 #
 #SHORT_DESCRIPTION: Installs LDAP master server.
 
-# Influences: 
+# Influences:
 # * https://wiki.debian.org/LDAP/PAM
 # * https://help.ubuntu.com/lts/serverguide/openldap-server.html
 # * https://weichbrodt.me/dokuwiki/tutorial:ldap:installopenldap
@@ -60,9 +60,9 @@ LDAP_ADMIN_PASSWORD="${LDAP_ADMIN_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_CONFIG_PASSWORD="${LDAP_CONFIG_PASSWORD:-$MASTER_PASSWORD}"
 LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
-if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then 
+if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then
     installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin ssl-cert pwgen
-    if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then
         mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
         cp -pr /sNow/snow-configspace/system_files/etc/ldap ${prefix}/etc/ldap
     else
@@ -110,7 +110,7 @@ EOF
         fi
 
         # Prepopulate LDAP server
-        if [[ -d "${prefix}/etc/ldap/prepopulate" ]]; then 
+        if [[ -d "${prefix}/etc/ldap/prepopulate" ]]; then
             init_files=${prefix}/etc/ldap/prepopulate/*.ldif
             for file in $init_files; do
                 filename=$(basename $file)
@@ -122,7 +122,7 @@ EOF
     fi
 
     # Enable TLS support
-    if [[ -e /sNow/snow-configspace/system_files/etc/ssl/slapd ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/ssl/slapd ]]; then
         mkdir -p ${prefix}/etc/ssl/slapd
         cp -pr /sNow/snow-configspace/system_files/etc/ssl/slapd/* ${prefix}/etc/ssl/slapd
     else
@@ -168,13 +168,14 @@ EOF
         # Add TLS settings to the config
         chroot ${prefix} /etc/init.d/slapd start
         sleep 5
+        # tls.ldif is not digested as expected in Debian 8. 
         chroot ${prefix} /usr/bin/ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/tls.ldif
         sleep 5
         killall slapd
     fi
     # Secure the keys
     chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
-    chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/ 
+    chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/
     cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
     chroot ${prefix} /bin/chown root:ssl-cert /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
     chroot ${prefix} /bin/chmod 640 /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
@@ -196,7 +197,7 @@ EOF
     cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
 
     # Setup ldapscripts
-    if [[ -e /sNow/snow-configspace/system_files/etc/ldapscripts ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/ldapscripts ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/ldapscripts/* ${prefix}/etc/ldapscripts/
     else
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#SERVER" "SERVER=\"ldap://localhost\""
