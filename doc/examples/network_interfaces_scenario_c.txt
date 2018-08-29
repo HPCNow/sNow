@@ -1,0 +1,75 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug eth0
+
+allow-hotplug eth1
+
+allow-hotplug eth2
+
+allow-hotplug eth3
+
+allow-hotplug eth4
+
+# sNow! Network Bridge
+auto xsnow0
+iface xsnow0 inet static
+        bridge_ports eth0
+        bridge_stp off          # disable Spanning Tree Protocol
+        bridge_waitport 0       # no delay unless port available
+        bridge_fd 0             # no forwarding delay
+        address 192.168.7.1
+        netmask 255.255.255.0
+        network 192.168.7.0
+        broadcast 192.168.7.255
+
+# Public Network Bridge
+auto xpub0
+iface xpub0 inet dhcp
+    bridge_ports eth1
+    bridge_stp off      # disable Spanning Tree Protocol
+    bridge_waitport 0   # no delay unless port available
+    bridge_fd 0         # no forwarding delay
+
+# Management Network Bridge (consoles and IPMIs)
+auto xmgmt0
+iface xmgmt0 inet static
+    bridge_ports eth2
+    bridge_stp off      # disable Spanning Tree Protocol
+    bridge_waitport 0   # no delay unless port available
+    bridge_fd 0         # no forwarding delay
+    address 10.0.0.1
+    netmask 255.255.255.0
+    network 10.0.0.0/24
+    broadcast 10.0.0.255
+
+# DMZ Network Bridge (Services exposed through the DMZ)
+auto xdmz0
+iface xdmz0 inet static
+    bridge_ports dummy0
+    bridge_stp off      # disable Spanning Tree Protocol
+    bridge_waitport 0   # no delay unless port available
+    bridge_fd 0         # no forwarding delay
+    address 172.16.0.1
+    netmask 255.255.255.0
+    network 172.16.0.0/24
+    broadcast 172.16.0.255
+
+# Low Latency Fabric Network Bridge (Infiniband | OPA)
+auto xllf0
+iface xllf0 inet static
+    bridge_ports eth4
+    bridge_stp off      # disable Spanning Tree Protocol
+    bridge_waitport 0   # no delay unless port available
+    bridge_fd 0         # no forwarding delay
+    address 10.1.0.1
+    netmask 255.255.255.0
+    network 10.1.0.0/24
+    broadcast 10.1.0.255

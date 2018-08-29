@@ -50,3 +50,11 @@ bin/*
 auto-save-list
 tramp
 .\#*
+
+# Jekyll documentation
+_site/
+.sass-cache/
+.jekyll-metadata
+_pdf
+.idea/
+.DS_Store

@@ -1,0 +1,392 @@
+# This is your sidebar TOC. The sidebar code loops through sections here and provides the appropriate formatting.
+
+entries:
+- title: sidebar
+  product: sNow!
+  version: 1.1
+  folders:
+
+  - title:
+    output: pdf
+    type: frontmatter
+    folderitems:
+    - title:
+      url: /titlepage
+      output: pdf
+      type: frontmatter
+    - title:
+      url: /tocpage
+      output: pdf
+      type: frontmatter
+
+  - title: Overview
+    output: web, pdf
+    folderitems:
+
+    - title: About sNow!
+      url: /index.html
+      output: web, pdf
+      type: homepage
+
+    - title: Licensing and Enterprise Support
+      url: /mydoc_intro_support.html
+      output: web, pdf
+
+    - title: Why sNow!
+      url: /mydoc_intro_why_snow.html
+      output: web, pdf
+
+    - title: Software ecosystem
+      url: /mydoc_intro_software_ecosystem.html
+      output: web, pdf
+
+    - title: Hardware requirements
+      url: /mydoc_intro_hardware_requirements.html
+      output: web, pdf
+
+  - title: Release Notes
+    output: web, pdf
+    folderitems:
+
+    - title: 1.1 Release Notes
+      url: /mydoc_release_notes_1_1.html
+      output: web, pdf
+
+  - title: Installation Guide
+    output: web, pdf
+    folderitems:
+
+    - title: Quick Installation
+      url: /mydoc_install_quick_installation.html
+      output: web, pdf
+
+      subfolders:
+      - title: 0. OS Installation
+        output: web, pdf
+        subfolderitems:
+
+        - title: Debian
+          url: /mydoc_install_os_debian.html
+          output: web
+
+        - title: Ubuntu
+          url: /mydoc_install_os_ubuntu.html
+          output: web
+
+    - title: 1. sNow! Installation
+      url: /mydoc_install_snow.html
+      output: web, pdf
+
+    - title: 2. SSH Access
+      url: /mydoc_install_ssh_access.html
+      output: web, pdf
+
+    - title: 3. Escalate to Root User
+      url: /mydoc_install_escalate_to_root.html
+      output: web, pdf
+
+      subfolders:
+      - title: 4. Network Configuration
+        output: web, pdf
+        subfolderitems:
+
+        - title: Setup Network Bridges
+          url: /mydoc_install_setup_network_bridges.html
+          output: web
+
+        - title: Configuration Example for Scenario A
+          url: /mydoc_install_scenario_a.html
+          output: web
+
+        - title: Configuration Example for Scenario B
+          url: /mydoc_install_scenario_b.html
+          output: web
+
+        - title: Configuration Example for Scenario C
+          url: /mydoc_install_scenario_c.html
+          output: web
+
+        - title: How to setup a sNow! bridge on top of a network bonding
+          url: /mydoc_install_network_bonding.html
+          output: web, pdf
+
+        - title: Enable Infiniband support with eIPoIB
+          url: /mydoc_install_infiniband_support.html
+          output: web, pdf
+
+    - title: 5. Hostname Setting
+      url: /mydoc_install_hostname_setting.html
+      output: web, pdf
+
+    - title: 6. sNow! Configuration
+      url: /mydoc_install_snow_conf.html
+      output: web, pdf
+
+    - title: 7. Select Domain Roles
+      url: /mydoc_install_select_roles.html
+      output: web, pdf
+      
+    - title: 8. Initialize Cluster
+      url: /mydoc_install_initial_configuration.html
+      output: web, pdf
+
+    - title: 9. Next Steps
+      url: /mydoc_install_next_steps.html
+      output: web, pdf
+
+  - title: Role Management
+    output: web, pdf
+    folderitems:
+
+    - title: Overview
+      url: /mydoc_role_overview.html
+      output: web, pdf
+
+    - title: List Roles
+      url: /mydoc_role_list.html
+      output: web, pdf
+
+    - title: Available Roles
+      url: /mydoc_role_available.html
+      output: web, pdf
+
+    - title: Custom Roles
+      url: /mydoc_role_custom.html
+      output: web, pdf
+
+  - title: Template Management
+    output: web, pdf
+    folderitems:
+
+    - title: Overview
+      url: /mydoc_template_overview.html
+      output: web, pdf
+
+#    - title: Available Templates
+#      url: /mydoc_template_available.html
+#      output: web, pdf
+
+    - title: List Templates
+      url: /mydoc_template_list.html
+      output: web, pdf
+
+    - title: Clone Templates
+      url: /mydoc_template_clone.html
+      output: web, pdf
+
+#    - title: Import & Export Templates
+#      url: /mydoc_template_import_export.html
+#      output: web, pdf
+
+    - title: Remove Templates
+      url: /mydoc_template_remove.html
+      output: web, pdf
+
+  - title: Image Management
+    output: web, pdf
+    folderitems:
+
+    - title: Overview
+      url: /mydoc_image_overview.html
+      output: web, pdf
+
+#    - title: Available Images
+#      url: /mydoc_image_available.html
+#      output: web, pdf
+
+    - title: Gather Images
+      url: /mydoc_image_gather.html
+      output: web, pdf
+
+    - title: List Images
+      url: /mydoc_image_list.html
+      output: web, pdf
+
+    - title: Clone Images
+      url: /mydoc_image_clone.html
+      output: web, pdf
+
+    - title: Modify Images
+      url: /mydoc_image_modify.html
+      output: web, pdf
+
+#    - title: Import & Export Images
+#      url: /mydoc_image_import_export.html
+#      output: web, pdf
+
+    - title: Remove Images
+      url: /mydoc_image_remove.html
+      output: web, pdf
+
+  - title: Domain Management
+    output: web, pdf
+    folderitems:
+
+    - title: Overview
+      url: /mydoc_domain_overview.html
+      output: web, pdf
+
+    - title: Download the domain template
+      url: /mydoc_domain_download_template.html
+      output: web, pdf
+
+    - title: Deploy Domains
+      url: /mydoc_domain_deploy.html
+      output: web, pdf
+
+    - title: List Domains
+      url: /mydoc_domain_list.html
+      output: web, pdf
+
+#    - title: List & Show
+#      url: /mydoc_domain_show.html
+#      output: web, pdf
+
+#    - title: Cloning
+#      url: /mydoc_domain_clone.html
+#      output: web, pdf
+
+#    - title: Add
+#      url: /mydoc_domain_add.html
+#      output: web, pdf
+
+    - title: Remove Domains
+      url: /mydoc_domain_remove.html
+      output: web, pdf
+
+    - title: Power Control
+      url: /mydoc_domain_power_control.html
+      output: web, pdf
+
+    - title: Console
+      url: /mydoc_domain_console.html
+      output: web, pdf
+
+  - title: Compute Node Management
+    output: web, pdf
+    folderitems:
+
+#    - title: Overview
+#      url: /mydoc_node_overview.html
+#      output: web, pdf
+
+    - title: OS deployment repository
+      url: /mydoc_node_os_deployment_repository.html
+      output: web, pdf
+
+    - title: How to collect the MAC addresses
+      url: /mydoc_node_how_to_collect_the_mac_addresses.html
+      output: web, pdf
+
+    - title: Deploy Compute Node
+      url: /mydoc_node_deploy.html
+      output: web, pdf
+
+    - title: List & Show Compute Node
+      url: /mydoc_node_list_and_show.html
+      output: web, pdf
+
+    - title: Clone Compute Node
+      url: /mydoc_image_gather.html
+      output: web, pdf
+
+    - title: Add Compute Node
+      url: /mydoc_node_add.html
+      output: web, pdf
+
+    - title: Set Compute Node
+      url: /mydoc_node_set.html
+      output: web, pdf
+
+    - title: Remove Compute Node
+      url: /mydoc_node_remove.html
+      output: web, pdf
+
+    - title: Power Control
+      url: /mydoc_node_power_control.html
+      output: web, pdf
+
+    - title: Console
+      url: /mydoc_node_console.html
+      output: web, pdf
+
+  - title: Administration
+    output: web, pdf
+    folderitems:
+
+    - title: Quick Reference Sheet
+      url: /mydoc_admin_quick_reference_sheet.html
+      output: web, pdf
+
+    - title: sNow! CLI
+      url: /mydoc_admin_snow_cli.html
+      output: web, pdf
+
+    - title: Backup
+      url: /mydoc_admin_backup.html
+      output: web, pdf
+
+    - title: How to create a local repository in your sNow! system
+      url: /mydoc_admin_create_local_repo.html
+      output: web, pdf
+
+  - title: Report a New Bug and Request New Features
+    output: web, pdf
+    folderitems:
+
+    - title: Report a New Bug and Request New Features
+      url: /mydoc_devel_bug_report_feature_request.html
+      output: web, pdf
+
+  - title: Scalability and High Availability
+    output: web, pdf
+    folderitems:
+
+    - title: Scalability and HA Overview
+      url: /mydoc_ha_overview.html
+      output: web, pdf
+
+    - title: Native High Availability
+      url: /mydoc_ha_native.html
+      output: web, pdf
+
+      subfolders:
+      - title: High Availability for virtualization
+        output: web, pdf
+        subfolderitems:
+
+        - title: Shared File System (loopback files)
+          url: /mydoc_ha_loopback_files.html
+          output: web, pdf
+
+#        - title: Shared Storage (SAN+LVM)
+#          url: /mydoc_ha_san_lvm.html
+#          output: web, pdf
+
+#        - title: Shared Storage (DRDB+LVM)
+#          url: /mydoc_ha_drdb_lvm.html
+#          output: web, pdf
+
+#        - title: Shared File System (NFSROOT)
+#          url: /mydoc_ha_nfsroot.html
+#          output: web, pdf
+
+        - title: Migrate from single sNow! server to sNow! HA cluster
+          url: /mydoc_ha_migration.html
+          output: web, pdf
+
+  - title: Development
+    output: web, pdf
+    folderitems:
+
+    - title: Contribute Back
+      url: /mydoc_devel_contribute_back.html
+      output: web, pdf
+
+#  - title: FAQ
+#    output: web, pdf
+#    folderitems:
+
+#    - title: FAQ
+#      url: /mydoc_faq.html
+#      output: web, pdf

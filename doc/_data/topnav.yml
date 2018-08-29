@@ -1,0 +1,28 @@
+## Topnav single links
+## if you want to list an external url, use external_url instead of url. the theme will apply a different link base.
+topnav:
+- title: Topnav
+  items:
+    - title: Website
+      external_url: http://hpcnow.com/index.php/snow
+
+#Topnav dropdowns
+topnav_dropdowns:
+- title: Topnav dropdowns
+  folders:
+    - title: Documentation
+      folderitems:
+        - title: sNow! Documentation
+          url: /index.html
+        - title: Quick Reference Guide
+          url: /mydoc_admin_quick_reference_sheet.html
+    - title: Development
+      folderitems:
+        - title: Source Code
+          external_url: http://bitbucket.org/hpcnow/snow-tools
+#        - title: Build Reports
+#          external_url: http://snow.hpcnow.com/build_reports.html
+        - title: Issue Tracking
+          external_url: https://bitbucket.org/hpcnow/snow-tools/issues?status=new&status=open
+        - title: Contributing Back
+          url: /mydoc_devel_contribute_back.html

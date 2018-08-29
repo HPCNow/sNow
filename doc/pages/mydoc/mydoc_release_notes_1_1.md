@@ -1,3 +1,14 @@
+---
+title: Release notes 1.1
+tags: [getting_started]
+keywords: release notes, announcements, what's new, new features
+last_updated: July 3, 2016
+summary: "Version 1.1 of sNow! cluster manager"
+sidebar: mydoc_sidebar
+permalink: mydoc_release_notes_1_1.html
+folder: mydoc
+---
+
 ## 1.1.0
 ### Major Fixes
 
@@ -267,19 +278,3 @@
 ### Minor Fixes
 * Included cracklib-runtime package as a workaround of a broken package dependency
 * Fix issue in setting up the ganglia grid name
-
-## 2.0.0
-
-### Important notes
-The migration to sNow! 2.0.0 from 1.1.16 is not automatic and there is no back compatibility. We suggest considering a new installation.
-
-### New Features and Changes
-* sNow! documentation has been merged into the same repository
-* sNow! 2.0.0 supports more OS distributions.
-* DNSMasq (DHCP + DNS + TFTP) is now part of the sNow! server. Those services are also available in the deploy role only for increasing the scalability of the solution.
-* The paths to the binaries, database and configuration files have changed.
-* Included repository management which allows to generate local repositories in order to ensure deployment consistency over long period of time.
-* Included Native support for UEFI
-* Included domain management which allows to create VM's or containers
-* Included network management which allows to define the multiple networks required in a cluster, and their configuration (bonding, vlan, bridges, etc.) and associate the mac and IP addresses of the compute nodes to setup the DHCP and DNS natively.
-* sNow! supports multiple OS distributions but the domains are developed based on Ubuntu 18.04 LTS.

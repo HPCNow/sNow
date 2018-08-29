@@ -1,0 +1,115 @@
+#########################################################################################
+# sNow! config file : ${SNOW_ETC}/install.conf
+# Copyright (C) 2008 Jordi Blasco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# sNow! Cluster Manager is an opensource project developed by Jordi Blasco <jordi.blasco@hpcnow.com>
+# For more information: www.hpcnow.com/snow
+#
+
+#                 [ Installation Paths ]
+#
+# The paths where the different parts of the snow suite will be stored.
+#
+
+SNOW_ROOT=/sNow
+SNOW_HOME=/home
+SNOW_BIN=${SNOW_ROOT}/bin
+SNOW_SBIN=${SNOW_ROOT}/sbin
+SNOW_ETC=${SNOW_ROOT}/etc
+SNOW_LIB=${SNOW_ROOT}/lib
+SNOW_SHARE=${SNOW_ROOT}/share
+SNOW_SRV=${SNOW_ROOT}/srv
+SNOW_VAR=${SNOW_ROOT}/var
+SNOW_LOG=${SNOW_ROOT}/var/log
+SNOW_MAN=${SNOW_ROOT}/man
+SNOW_TEST=${SNOW_ROOT}/test
+SNOW_CONTRIB=${SNOW_ROOT}/contrib
+SNOW_EASYBUILD=${SNOW_ROOT}/easybuild
+SNOW_DOC=${SNOW_ROOT}/doc
+
+#
+# The SNOW_ROOT will be exported to the compute nodes, during deploy
+# and also during the normal use of the compute cluster. Usually the
+# NFS server is the first sNow server, but you can change this behaviour.
+#
+
+NFS_SERVER=snow01
+
+#                 [ Virtualization Technology ]
+# The current and default virtualization technology for sNow! domains is XEN.
+# LXD support require complex manual intervention and it's still experimental
+# Please, don't change this parameter unless you know what you are doing.
+VIRT_TECH=XEN
+
+#                [ sNow! Management Servers ]
+#
+# Defines the list of sNow! management servers. The default value is snow01.
+# If you use more than one sNow! management server then you should define here
+# the list of hostnames in a blank separated list.
+#
+# Example of a system with two sNow! management servers:
+# SNOW_NODES=( snow01 snow02 )
+#
+# Example of a system with only one sNow! management server:
+SNOW_NODES=( snow01 )
+
+
+#               [ Admin Users ]
+#
+# The list of users and groups that will have administration rights on the
+# cluster. Administrators will be able to scalate privileges to root and
+# perform actions like deploying/boot/shutdown domains or nodes.
+#
+# Note that no password is generated for those users. The only way to access to
+# the system with these users is with a SSH key.
+# If you preffer, you can manually setup a password with: passwd snow
+
+ADMIN_USERS="root snow"
+ADMIN_GROUPS="root snow"
+MASTER_PASSWORD='HPCN0w!!'
+SNOW_GID=2000
+SNOW_GROUP=snow
+SNOW_UID=2000
+SNOW_USER=snow
+
+# By default, there is no support from HPCNow! and the hpcnow user is not created.
+# Uncomment and update the following parameters if you have already arranged
+# support from sNow! developers.
+#HPCNOW_Support=none
+#HPCNOW_UID=2001
+#HPCNOW_GID=2000
+#HPCNOW_USER=hpcnow
+#HPCNOW_GROUP=snow
+
+#
+#         [ Source Control and Continuous Integration Support ]
+# The following parameters allows to integrate the key configuration files,
+# deployment scripts and other key codes located in /sNow/snow-configspace with
+# your source control system. It supports GitHub and BitBucket through OAuth
+# tokens. The default values are empty.
+#
+# This is key to enable Continuous Integration Support and test changes in a
+# testing environment before to merge them into the production one.
+# Since the data contained in this folder is extremely sensitive, the GIT
+# repository MUST be private. Since BitBucket allows to use private
+# repositories for free, we suggest to explore this option. More information
+# about how to setup OAuth integrated applications is available in the GitHub
+# and BitBucket websites.
+#
+# Example:
+# PRIVATE_GIT_TOKEN=t54skl3333xxxxxxxxxxyyyy3333333srgrafsiJ
+# PRIVATE_GIT_REPO=bitbucket.org/YOUR_ACCOUNT/snow-configspace.git
+#
