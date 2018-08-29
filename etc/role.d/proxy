@@ -43,16 +43,16 @@ if [[ -f /sNow/snow-tools/share/common.sh ]]; then
     architecture_identification
 fi
 
-# Hostname 
+# Hostname
 GUEST_FQDN=$hostname
-GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}') 
+GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}')
 
 # NTP Server Setup
 SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 NTP_SERVER="${SITE_NTP_SERVER:-3.pool.ntp.org}"
-if  [[ ! -z "$SNOW_NTP_SERVER" ]]; then 
+if  [[ ! -z "$SNOW_NTP_SERVER" ]]; then
     installDebianPackage ${prefix} ntp
-    if [[ -e /sNow/snow-configspace/system_files/etc/ntp_server.conf ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/ntp_server.conf ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
     else
         cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp_server.conf
@@ -66,11 +66,11 @@ fi
 # Proxy Server Setup
 SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
 SNOW_PROXY_PORT=8080
-if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then 
+if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then
     installDebianPackage ${prefix} squid3
     mkdir -p /var/log/squid3
     chown proxy:proxy /var/log/squid3
-    if [[ -e /sNow/snow-configspace/system_files/etc/squid3 ]]; then 
+    if [[ -e /sNow/snow-configspace/system_files/etc/squid3 ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/squid3/* ${prefix}/etc/squid3/
     else
         mkdir -p /sNow/snow-configspace/system_files/etc/squid3
@@ -85,11 +85,11 @@ fi
 
 # SMTP SmartHost Setup
 SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-if  [[ ! -z "$SNOW_MAIL_SERVER" ]]; then 
+if  [[ ! -z "$SNOW_MAIL_SERVER" ]]; then
     # The following line fixes a issue with exim installation
     chroot ${prefix} /usr/sbin/addgroup --system Debian-exim --force-badname
-    installDebianPackage ${prefix} exim4-daemon-light exim4-config openssl 
-    if [[ -e /sNow/snow-configspace/system_files/etc/exim4 ]]; then 
+    installDebianPackage ${prefix} exim4-daemon-light exim4-config openssl
+    if [[ -e /sNow/snow-configspace/system_files/etc/exim4 ]]; then
         cp -pr /sNow/snow-configspace/system_files/etc/exim4/* ${prefix}/etc/exim4/
     else
         chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
@@ -105,15 +105,14 @@ exim4-config    exim4/no_config boolean true
 exim4-config    exim4/dc_local_interfaces string 127.0.0.1 ; $SNOW_MAIL_SERVER ; ::1
 exim4-config    exim4/dc_eximconfig_configtype select internet site; mail is sent and received directly using SMTP
 CONF
-        if  [[ ! -z "$SITE_MAIL_SERVER" ]]; then 
+        if  [[ ! -z "$SITE_MAIL_SERVER" ]]; then
             echo "exim4-config    exim4/dc_smarthost string $SITE_MAIL_SERVER" | chroot ${prefix} /usr/bin/debconf-set-selections
             echo "exim4-config    exim4/dc_eximconfig_configtype select mail sent by smarthost; received via SMTP or fetchmail" | chroot ${prefix} /usr/bin/debconf-set-selections
         fi
-        if  [[ ! -z "$SITE_MAIL_SERVER" && ! -z "$SITE_MAIL_USER" && ! -z "$SITE_MAIL_PASSWORD" ]]; then 
-            echo "$SITE_MAIL_SERVER:$SITE_MAIL_USER:$SITE_MAIL_PASSWORD" >> /etc/exim4/passwd.client
+        if  [[ ! -z "$SITE_MAIL_SERVER" && ! -z "$SITE_MAIL_USER" && ! -z "$SITE_MAIL_PASSWORD" ]]; then
+            echo "$SITE_MAIL_SERVER:$SITE_MAIL_USER:$SITE_MAIL_PASSWORD" >> ${prefix}/etc/exim4/passwd.client
         fi
         chroot ${prefix} /usr/bin/debconf-show exim4-config
         cp -pr ${prefix}/etc/exim4 /sNow/snow-configspace/system_files/etc/
     fi
 fi
-

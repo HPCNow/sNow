@@ -258,3 +258,12 @@
 * Fix issues with no-fetching option in stateless provisioning over NFS
 * Fix path of domain images. Default location is /sNow/domains/domain_name rather than /sNow/domains/domains/domain_name
 * Fixed console redirection in Xen kernels
+
+
+## 1.1.16
+### New Features and Changes
+* Included lftp in order to enable a fast way to download and create local package repositories
+
+### Minor Fixes
+* Included cracklib-runtime package as a workaround of a broken package dependency
+* Fix issue in setting up the ganglia grid name
