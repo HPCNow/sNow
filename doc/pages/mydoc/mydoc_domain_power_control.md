@@ -18,16 +18,16 @@ Otherwise, if you want to boot an specific domain, you can run the following com
 snow boot <domain_name>
 ```
 ## Automatic Boot (single sNow! server only)
-If you want your domains to run automatically when the snow01 system is rebooted, just add links to their XEN config files to the /etc/xen/auto directory. You will find the config files on /sNow/snow-tools/etc/domains.
+If you want your domains to run automatically when the snow01 system is rebooted, just add links to their XEN config files to the /etc/xen/auto directory. You will find the config files on ${SNOW_ETC}/domains.
 ```
 # ls -l
-lrwxrwxrwx 1 root root   41 nov 13 20:13 deploy01.cfg -> /sNow/snow-tools/etc/domains/deploy01.cfg
-lrwxrwxrwx 1 root root   40 nov  9 10:38 login01.cfg -> /sNow/snow-tools/etc/domains/login01.cfg
-lrwxrwxrwx 1 root root   42 jul 28 13:11 monitor01.cfg -> /sNow/snow-tools/etc/domains/monitor01.cfg
-lrwxrwxrwx 1 root root   40 jul 28 13:11 proxy01.cfg -> /sNow/snow-tools/etc/domains/proxy01.cfg
-lrwxrwxrwx 1 root root   40 jul 28 13:11 slurm01.cfg -> /sNow/snow-tools/etc/domains/slurm01.cfg
-lrwxrwxrwx 1 root root   42 jul 28 13:11 slurmdb01.cfg -> /sNow/snow-tools/etc/domains/slurmdb01.cfg
-lrwxrwxrwx 1 root root   41 jul 28 13:11 syslog01.cfg -> /sNow/snow-tools/etc/domains/syslog01.cfg
+lrwxrwxrwx 1 root root   41 nov 13 20:13 deploy01.cfg -> ${SNOW_ETC}/domains/deploy01.cfg
+lrwxrwxrwx 1 root root   40 nov  9 10:38 login01.cfg -> ${SNOW_ETC}/domains/login01.cfg
+lrwxrwxrwx 1 root root   42 jul 28 13:11 monitor01.cfg -> ${SNOW_ETC}/domains/monitor01.cfg
+lrwxrwxrwx 1 root root   40 jul 28 13:11 proxy01.cfg -> ${SNOW_ETC}/domains/proxy01.cfg
+lrwxrwxrwx 1 root root   40 jul 28 13:11 slurm01.cfg -> ${SNOW_ETC}/domains/slurm01.cfg
+lrwxrwxrwx 1 root root   42 jul 28 13:11 slurmdb01.cfg -> ${SNOW_ETC}/domains/slurmdb01.cfg
+lrwxrwxrwx 1 root root   41 jul 28 13:11 syslog01.cfg -> ${SNOW_ETC}/domains/syslog01.cfg
 ```
 ## Automatic Boot (sNow! server in HA cluster mode)
 The domains are automatically initiated when sNow! is operating as High Availability cluster. More information available in the [Scalability and High Availability](mydoc_ha_overview.html) section.

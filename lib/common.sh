@@ -1,4 +1,4 @@
-SNOW_ROOT#!/bin/bash
+#!/bin/bash
 #
 # This file contains the common functions used by sNow! Command Line Interface
 # Copyright (C) 2008 Jordi Blasco
@@ -1001,7 +1001,7 @@ function deploy_domain_xen()
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("LC_ALL=C xen-create-image --config=/sNow/snow-tools/etc/xen-tools.conf --roledir=/sNow/snow-tools/etc/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
+        system("LC_ALL=C xen-create-image --config=${SNOW_ETC}/xen-tools.conf --roledir=${SNOW_ETC}/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
         }'
     if [[ ! -f ${SNOW_ETC}/domains/${domain}.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"

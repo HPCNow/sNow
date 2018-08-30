@@ -29,31 +29,31 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
 
 # Rsyslog Server Setup
-SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 if  [[ ! -z "$SNOW_SYSLOG_SERVER" ]]; then 
     installDebianPackage ${prefix} rsyslog
-    if [[ -e /sNow/snow-configspace/system_files/etc/rsyslog.conf ]]; then 
-        cp -p /sNow/snow-configspace/system_files/etc/rsyslog.conf ${prefix}/etc/rsyslog.conf
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/rsyslog.conf ]]; then 
+        cp -p ${SNOW_SRV}/deploy_files/etc/rsyslog.conf ${prefix}/etc/rsyslog.conf
     else
-        mkdir -p /sNow/snow-configspace/system_files/etc/
+        mkdir -p ${SNOW_SRV}/deploy_files/etc/
         sed -i 's|#$ModLoad imtcp|$ModLoad imtcp|g' ${prefix}/etc/rsyslog.conf 
         sed -i 's|#$InputTCPServerRun 514|$InputTCPServerRun 514|g' ${prefix}/etc/rsyslog.conf 
-        cp -p ${prefix}/etc/rsyslog.conf /sNow/snow-configspace/system_files/etc/rsyslog.conf
+        cp -p ${prefix}/etc/rsyslog.conf ${SNOW_SRV}/deploy_files/etc/rsyslog.conf
     fi
     rm ${prefix}/etc/rsyslog.d/50-default.conf
 fi

@@ -29,16 +29,16 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
@@ -48,49 +48,49 @@ GUEST_FQDN=$hostname
 GUEST_HOSTNAME=$(echo $GUEST_FQDN | awk -F'.' '{print $1}')
 
 # NTP Server Setup
-SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 NTP_SERVER="${SITE_NTP_SERVER:-3.pool.ntp.org}"
 if  [[ ! -z "$SNOW_NTP_SERVER" ]]; then
     installDebianPackage ${prefix} ntp
-    if [[ -e /sNow/snow-configspace/system_files/etc/ntp_server.conf ]]; then
-        cp -pr /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/ntp_server.conf ]]; then
+        cp -pr ${SNOW_SRV}/deploy_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
     else
-        cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        echo "restrict ${NET_SNOW[3]}0 mask ${NET_SNOW[4]} notrust" >> /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        sed -i "s|__NTP_SERVER__|$NTP_SERVER|g" /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        chmod 644 /sNow/snow-configspace/system_files/etc/ntp_server.conf
-        cp -p /sNow/snow-configspace/system_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
+        cp -p ${SNOW_ETC}/config_template.d/ntp_client/ntp.conf ${SNOW_SRV}/deploy_files/etc/ntp_server.conf
+        echo "restrict ${NET_SNOW[3]}0 mask ${NET_SNOW[4]} notrust" >> ${SNOW_SRV}/deploy_files/etc/ntp_server.conf
+        sed -i "s|__NTP_SERVER__|$NTP_SERVER|g" ${SNOW_SRV}/deploy_files/etc/ntp_server.conf
+        chmod 644 ${SNOW_SRV}/deploy_files/etc/ntp_server.conf
+        cp -p ${SNOW_SRV}/deploy_files/etc/ntp_server.conf ${prefix}/etc/ntp.conf
     fi
 fi
 
 # Proxy Server Setup
-SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 SNOW_PROXY_PORT=8080
 if  [[ ! -z "$SNOW_PROXY_SERVER" ]]; then
     installDebianPackage ${prefix} squid3
     mkdir -p /var/log/squid3
     chown proxy:proxy /var/log/squid3
-    if [[ -e /sNow/snow-configspace/system_files/etc/squid3 ]]; then
-        cp -pr /sNow/snow-configspace/system_files/etc/squid3/* ${prefix}/etc/squid3/
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/squid3 ]]; then
+        cp -pr ${SNOW_SRV}/deploy_files/etc/squid3/* ${prefix}/etc/squid3/
     else
-        mkdir -p /sNow/snow-configspace/system_files/etc/squid3
-        cp -pr /sNow/snow-tools/etc/config_template.d/squid3/* /sNow/snow-configspace/system_files/etc/squid3/
-        sed -i "s|__ALLOWED_HOSTS__|${NET_SNOW[3]}0/${NET_SNOW[4]}|g" /sNow/snow-configspace/system_files/etc/squid3/*
-        sed -i "s|__PROXY_SERVER__|$SNOW_PROXY_SERVER|g" /sNow/snow-configspace/system_files/etc/squid3/*
-        sed -i "s|__PROXY_PORT__|$SNOW_PROXY_PORT|g" /sNow/snow-configspace/system_files/etc/squid3/*
-        chmod 644 /sNow/snow-configspace/system_files/etc/squid3/*
-        cp -p /sNow/snow-configspace/system_files/etc/squid3/* ${prefix}/etc/squid3/
+        mkdir -p ${SNOW_SRV}/deploy_files/etc/squid3
+        cp -pr ${SNOW_ETC}/config_template.d/squid3/* ${SNOW_SRV}/deploy_files/etc/squid3/
+        sed -i "s|__ALLOWED_HOSTS__|${NET_SNOW[3]}0/${NET_SNOW[4]}|g" ${SNOW_SRV}/deploy_files/etc/squid3/*
+        sed -i "s|__PROXY_SERVER__|$SNOW_PROXY_SERVER|g" ${SNOW_SRV}/deploy_files/etc/squid3/*
+        sed -i "s|__PROXY_PORT__|$SNOW_PROXY_PORT|g" ${SNOW_SRV}/deploy_files/etc/squid3/*
+        chmod 644 ${SNOW_SRV}/deploy_files/etc/squid3/*
+        cp -p ${SNOW_SRV}/deploy_files/etc/squid3/* ${prefix}/etc/squid3/
     fi
 fi
 
 # SMTP SmartHost Setup
-SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_MAIL_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 if  [[ ! -z "$SNOW_MAIL_SERVER" ]]; then
     # The following line fixes a issue with exim installation
     chroot ${prefix} /usr/sbin/addgroup --system Debian-exim --force-badname
     installDebianPackage ${prefix} exim4-daemon-light exim4-config openssl
-    if [[ -e /sNow/snow-configspace/system_files/etc/exim4 ]]; then
-        cp -pr /sNow/snow-configspace/system_files/etc/exim4/* ${prefix}/etc/exim4/
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/exim4 ]]; then
+        cp -pr ${SNOW_SRV}/deploy_files/etc/exim4/* ${prefix}/etc/exim4/
     else
         chroot ${prefix} /usr/bin/debconf-set-selections <<CONF
 exim4-config    exim4/hide_mailname boolean false
@@ -113,6 +113,6 @@ CONF
             echo "$SITE_MAIL_SERVER:$SITE_MAIL_USER:$SITE_MAIL_PASSWORD" >> ${prefix}/etc/exim4/passwd.client
         fi
         chroot ${prefix} /usr/bin/debconf-show exim4-config
-        cp -pr ${prefix}/etc/exim4 /sNow/snow-configspace/system_files/etc/
+        cp -pr ${prefix}/etc/exim4 ${SNOW_SRV}/deploy_files/etc/
     fi
 fi

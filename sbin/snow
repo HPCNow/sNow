@@ -33,16 +33,16 @@ fi
 #Logging
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
-SNOW_PATH=/sNow
-SNOW_HOME=${SNOW_PATH}/home
-SNOW_SOFT=${SNOW_PATH}/easybuild
-SNOW_CONF=${SNOW_PATH}/snow-configspace
-SNOW_TOOL=${SNOW_PATH}/snow-tools
-SNOW_LOG=${SNOW_PATH}/log
-readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
-readonly ENTERPRISE_EXTENSIONS=${SNOW_TOOL}/share/enterprise_extensions.sh
-readonly SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
-readonly SNOW_ACTIVE_DOMAINS=${SNOW_TOOL}/etc/active-domains.conf
+SNOW_ROOT=/sNow
+SNOW_HOME=${SNOW_ROOT}/home
+SNOW_SOFT=${SNOW_ROOT}/easybuild
+SNOW_SRV=${SNOW_ROOT}/snow-configspace
+SNOW_ROOT=${SNOW_ROOT}/snow-tools
+SNOW_LOG=${SNOW_ROOT}/log
+readonly CONFIG_FILE=${SNOW_ETC}/snow.conf
+readonly ENTERPRISE_EXTENSIONS=${SNOW_ROOT}/share/enterprise_extensions.sh
+readonly SNOW_DOMAINS=${SNOW_ETC}/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_ETC}/active-domains.conf
 readonly opt1=$1
 readonly opt2=$2
 readonly opt3=$3
@@ -67,8 +67,8 @@ else
     fi
 fi
 
-if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
-    source ${SNOW_TOOL}/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     logsetup
     get_os_distro
     architecture_identification

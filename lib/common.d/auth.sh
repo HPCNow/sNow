@@ -42,8 +42,8 @@ function setup_ldap_client()
         ;;
     esac
     install_software "$pkgs"
-    if [[ -f $SNOW_CONF/system_files/etc/sssd/sssd.conf ]]; then
-        cp -p $SNOW_CONF/system_files/etc/sssd/sssd.conf /etc/sssd/sssd.conf
+    if [[ -f $SNOW_SRV/system_files/etc/sssd/sssd.conf ]]; then
+        cp -p $SNOW_SRV/system_files/etc/sssd/sssd.conf /etc/sssd/sssd.conf
         chown root:root /etc/sssd/sssd.conf
         chmod 600 /etc/sssd/sssd.conf
         systemctl enable sssd.service

@@ -23,15 +23,15 @@ Example:
 Template Name                     Description
 -------------                     -----------
 opensuse-leap-42.2-x64-default    Default template based on OpenSUSE Leap 42.2
-                                  path: /sNow/snow-configspace/boot/templates/opensuse-leap-42.2-x64-default
+                                  path: ${SNOW_SRV}/templates/opensuse-leap-42.2-x64-default
 debian-9-x64-minimal              Minimal template based on Debian 9 (Stretch)
-                                  path: /sNow/snow-configspace/boot/templates/debian-9-x64-minimal
+                                  path: ${SNOW_SRV}/templates/debian-9-x64-minimal
 centos-7.0-x64-default            Default template based on CentOS 7.0
-                                  path: /sNow/snow-configspace/boot/templates/centos-7.0-x64-default
+                                  path: ${SNOW_SRV}/templates/centos-7.0-x64-default
 centos-7.4-x64-default            Default template based on CentOS 7.4 1708
-                                  path: /sNow/snow-configspace/boot/templates/centos-7.4-x64-default
+                                  path: ${SNOW_SRV}/templates/centos-7.4-x64-default
 centos-7.3-x64-minimal            Minimal template based on CentOS 7.3 1611
-                                  path: /sNow/snow-configspace/boot/templates/centos-7.3-x64-minimal
+                                  path: ${SNOW_SRV}/templates/centos-7.3-x64-minimal
                                   hooks:
                                   - 10-Configure_lscratch_IPM.sh
                                   - 20-Tune-fstab.sh
@@ -47,9 +47,9 @@ centos-7.3-x64-minimal            Minimal template based on CentOS 7.3 1611
                                   - 90-MDRaid-alert-setup.sh
                                   - 95-Tune-GRUB.sh
 centos-7.4-x64-minimal            Minimal template based on CentOS 7.4 1708
-                                  path: /sNow/snow-configspace/boot/templates/centos-7.4-x64-minimal
+                                  path: ${SNOW_SRV}/templates/centos-7.4-x64-minimal
 centos-7.3-x64-default            Default template based on CentOS 7.3 1611
-                                  path: /sNow/snow-configspace/boot/templates/centos-7.3-x64-default
+                                  path: ${SNOW_SRV}/templates/centos-7.3-x64-default
 debian-8-x64-minimal              Minimal template based on Debian 8 (Jessie)
-                                  path: /sNow/snow-configspace/boot/templates/debian-8-x64-minimal
+                                  path: ${SNOW_SRV}/templates/debian-8-x64-minimal
 ```

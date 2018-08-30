@@ -55,7 +55,7 @@ function install_beegfs_client()
     esac
     install_software "$pkgs"
     system_arch=$(uname -m)
-    BEEGFS_MGMTD=$(gawk '{if($2 ~ /beegfs-mgmtd/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+    BEEGFS_MGMTD=$(gawk '{if($2 ~ /beegfs-mgmtd/){print $1}}' $SNOW_ROOT/etc/domains.conf)
     if [[ -z ${prefix} ]]; then 
         /opt/beegfs/sbin/beegfs-setup-client -m ${BEEGFS_MGMTD}
         systemctl enable beegfs-helperd.service
@@ -79,11 +79,11 @@ function setup_networkfs()
 {
     local prefix=$1
     # Check for NFS mount points in the snow.conf
-    NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+    NFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_NFS/){cfs="TRUE"}}END{print cfs}' $SNOW_ROOT/etc/snow.conf)
     if [[ "$NFS_CLIENT" == "TRUE" ]]; then
         install_nfs_client $prefix
     fi
-    BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_TOOL/etc/snow.conf)
+    BEEGFS_CLIENT=$(gawk 'BEGIN{cfs="FALSE"}{if($1 ~ /^MOUNT_BEEGFS/){cfs="TRUE"}}END{print cfs}' $SNOW_ROOT/etc/snow.conf)
     if [[ "$BEEGFS_CLIENT" == "TRUE" ]]; then
         install_beegfs_client $prefix
     fi

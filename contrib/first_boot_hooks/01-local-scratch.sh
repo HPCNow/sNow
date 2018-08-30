@@ -3,7 +3,7 @@
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website: www.hpcnow.com/snow
 #
-source ${SNOW_PATH}/snow-tools/share/snow-env.sh
+source ${SNOW_ROOT}/snow-tools/share/snow-env.sh
 
 #Example 1: This example creates a raid 0 based on 4 local disks and also formats the raid with xfs
 #raid_level="0"

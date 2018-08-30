@@ -18,9 +18,9 @@ snow init
 {% include warning.html content="Please, do not run this command in a production environment unless it is required." %}
 
 When you run snow init it not only creates the domains.conf file, it also:
-* Creates the NFS configuration (if required) : ${SNOW_CONF}/system_files/etc/exports.d/snow.exports
-* Creates domains.conf : ${SNOW_CONF}/system_files/etc/domains.conf
-* It updates /etc/hosts with the compute nodes defined in the snow.conf : ${SNOW_CONF}/system_files/etc/static_hosts
+* Creates the NFS configuration (if required) : ${SNOW_SRV}/deploy_files/etc/exports.d/snow.exports
+* Creates domains.conf : ${SNOW_SRV}/deploy_files/etc/domains.conf
+* It updates /etc/hosts with the compute nodes defined in the snow.conf : ${SNOW_SRV}/deploy_files/etc/static_hosts
 * It updates /etc/ssh/ssh_known_hosts
 * It sets up /etc/ssh/shosts.equiv
 * It sets up the default /etc/ssh/ssh_config

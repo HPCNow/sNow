@@ -16,9 +16,9 @@ hostname="$(uname -n)"
 branch="develop"
 role=$1
 hash="$(date +%s | sha256sum | base64 | head -c 15)" # randomized
-SNOW_PATH=/sNow
-SNOW_TOOL=${SNOW_PATH}/snow-tools
-SNOW_DOMAINS=${SNOW_TOOL}/etc/domains.conf
+SNOW_ROOT=/sNow
+SNOW_ROOT=${SNOW_ROOT}/snow-tools
+SNOW_DOMAINS=${SNOW_ETC}/domains.conf
 self_active_domains=$(cat ${SNOW_DOMAINS} | grep -v ^# | gawk '{if($2 !~ /snow/){print $1}}')
 
 if [[ ! -z "$role" ]]; then 

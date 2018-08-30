@@ -30,32 +30,32 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
 
 # beegfs-mgmtd beegfs-meta beegfs-storage beegfs-admon
-BEEGFS_SERVER=$(gawk 'BEGIN{beegfs="FALSE"}{if($2 ~ /beegfs/){beegfs="TRUE"}}END{print beegfs}' $SNOW_TOOL/etc/domains.conf)
+BEEGFS_SERVER=$(gawk 'BEGIN{beegfs="FALSE"}{if($2 ~ /beegfs/){beegfs="TRUE"}}END{print beegfs}' $SNOW_ROOT/etc/domains.conf)
 if [[ "$BEEGFS_SERVER" == "TRUE" ]]; then
     wget -q http://www.beegfs.io/release/beegfs_${BEEGFS_VERSION}/dists/beegfs-deb8.list -P ${prefix}/etc/apt/sources.list.d/
     wget -q http://www.beegfs.io/release/latest-stable/gpg/DEB-GPG-KEY-beegfs -O- | chroot ${prefix} /usr/bin/apt-key add -
     chroot ${prefix} /usr/bin/apt-get update 
     installDebianPackage ${prefix} beegfs-mgmtd beegfs-meta beegfs-storage beegfs-admon
-    if [[ -e ${SNOW_CONF}/system_files/etc/beegfs ]]; then 
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/beegfs ]]; then 
         # Transfer the existing file to the final destination
         mkdir -p ${prefix}/etc/beegfs
-        cp -p ${SNOW_CONF}/system_files/etc/beegfs/* ${prefix}/etc/beegfs/
+        cp -p ${SNOW_SRV}/deploy_files/etc/beegfs/* ${prefix}/etc/beegfs/
     else
-        cp -pr ${prefix}/etc/beegfs ${SNOW_CONF}/system_files/etc/
+        cp -pr ${prefix}/etc/beegfs ${SNOW_SRV}/deploy_files/etc/
     fi
 fi

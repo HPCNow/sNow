@@ -3,4 +3,4 @@ default sNow
 label sNow
 menu label ^1) Install openSUSE Leap 42.1 with Local Repo using autoyast
 kernel templates/opensuse-leap-42.2-x86_64-default/vmlinuz
-append initrd=templates/opensuse-leap-42.2-x86_64-default/initrd.img splash=silent showopts install=__INSTALL_REPO__ autoyast=nfs://__NFS_SERVER__/sNow/snow-configspace/boot/templates/opensuse-leap-42.2-x86_64-default/opensuse-leap-42.2-x86_64-default.xml netdevice=eth0 ip=dhcp __CONSOLE_OPTIONS__
+append initrd=templates/opensuse-leap-42.2-x86_64-default/initrd.img splash=silent showopts install=__INSTALL_REPO__ autoyast=nfs://__NFS_SERVER__${SNOW_SRV}/templates/opensuse-leap-42.2-x86_64-default/opensuse-leap-42.2-x86_64-default.xml netdevice=eth0 ip=dhcp __CONSOLE_OPTIONS__

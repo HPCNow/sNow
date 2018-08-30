@@ -40,7 +40,7 @@ for domain in $(snow list domains| egrep -v "Domain|\-\-" | gawk '{print $1}'); 
   mkdir -p /sNow/domains/$domain
   dd if=/dev/snow_vg/${domain}-disk of=/sNow/domains/${domain}/${domain}-disk
   dd if=/dev/snow_vg/${domain}-swap of=/sNow/domains/${domain}/${domain}-swap
-  sed -i "s|phy:/dev/snow_vg/|tap:aio:/sNow/domains/$domain/|g" /sNow/snow-tools/etc/domains/$domain.cfg
+  sed -i "s|phy:/dev/snow_vg/|tap:aio:/sNow/domains/$domain/|g" ${SNOW_ETC}/domains/$domain.cfg
 done
 ```
 3. Run the script:
@@ -55,10 +55,10 @@ snow boot domain_name
 
 At this point, the new sNow! servers should have the NFS client setup and the sNow! release should be the latest stable release.
 
-Install sNow! software as usual with the ```install.sh``` file available in the /sNow/snow-tools:
+Install sNow! software as usual with the ```install.sh``` file available in the ${SNOW_ROOT}:
 
 ```
-cd /sNow/snow-tools
+cd ${SNOW_ROOT}
 ./install.sh
 ```
 
@@ -256,7 +256,7 @@ echo "property default-resource-stickiness=100" >> pacemaker.cfg
 echo "primitive xsnow-vip ocf:heartbeat:IPaddr2 params ip=\"10.1.0.254\" nic=\"xsnow0\" op monitor interval=\"10s\"" >> pacemaker.cfg
 for domain in ${domain_list}; do
     echo "primitive $domain ocf:heartbeat:Xen \\
-          params xmfile=\"/sNow/snow-tools/etc/domains/$domain.cfg\" \\
+          params xmfile=\"${SNOW_ETC}/domains/$domain.cfg\" \\
           op monitor interval=\"40s\" \\
           meta target-role=\"started\" allow-migrate=\"true\"
          " >> pacemaker.cfg
@@ -287,7 +287,7 @@ Execute the ```crm configure``` and define the first service in HA as follows:
 
 ```
 primitive deploy01 ocf:heartbeat:Xen \
- params xmfile="/sNow/snow-tools/etc/domains/deploy01.cfg" \
+ params xmfile="${SNOW_ETC}/domains/deploy01.cfg" \
  op monitor interval="40s" \
  meta target-role="started" allow-migrate="true"
 ```

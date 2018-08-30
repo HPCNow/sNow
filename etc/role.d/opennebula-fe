@@ -29,17 +29,17 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     # shellcheck disable=SC2034
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
@@ -48,7 +48,7 @@ fi
 OPENNEBULA_DB_NAME="${OPENNEBULA_DB_NAME:-opennebula}"
 OPENNEBULA_USER="${OPENNEBULA_USER:-oneadmin}"
 OPENNEBULA_PASSWORD="${OPENNEBULA_PASSWORD:-$MASTER_PASSWORD}"
-SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_ROOT/etc/domains.conf)
 if  [[ ! -z "$SNOW_OPENNEBULA_SERVER" ]]; then
     # Install OS dependencies
     installDebianPackage ${prefix} curl pbzip2 expect lsb-release
@@ -76,34 +76,34 @@ EOF
     # Setup the password for OPENNEBULA_USER
     chroot ${prefix} /bin/su -c "exit" - $OPENNEBULA_USER
     # Note that if you alredy have the password file available, no changes will be performed.
-    if [[ ! -e $SNOW_CONF/system_files/var/lib/one/.one ]]; then
+    if [[ ! -e $SNOW_SRV/system_files/var/lib/one/.one ]]; then
         echo "$OPENNEBULA_USER:$OPENNEBULA_PASSWORD" > ${prefix}/var/lib/one/.one/one_auth
-        if [[ ! -e $SNOW_CONF/system_files/var/lib ]]; then
-            mkdir -p $SNOW_CONF/system_files/var/lib
+        if [[ ! -e $SNOW_SRV/system_files/var/lib ]]; then
+            mkdir -p $SNOW_SRV/system_files/var/lib
         fi
-        cp -pr ${prefix}/var/lib/one $SNOW_CONF/system_files/var/lib/
+        cp -pr ${prefix}/var/lib/one $SNOW_SRV/system_files/var/lib/
     else
-        cp -pr $SNOW_CONF/system_files/var/lib/one ${prefix}/var/lib/
+        cp -pr $SNOW_SRV/system_files/var/lib/one ${prefix}/var/lib/
     fi
     # Note that if you alredy have the OpenNebula configuration (one) available, no changes will be performed.
-    if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
-        if [[ ! -e $SNOW_CONF/system_files/etc/one ]]; then
-            mkdir -p $SNOW_CONF/system_files/etc/one
+    if [[ ! -e $SNOW_SRV/system_files/etc/one ]]; then
+        if [[ ! -e $SNOW_SRV/system_files/etc/one ]]; then
+            mkdir -p $SNOW_SRV/system_files/etc/one
         fi
-        cp -pr ${prefix}/etc/one/* $SNOW_CONF/system_files/etc/one/
+        cp -pr ${prefix}/etc/one/* $SNOW_SRV/system_files/etc/one/
     else
-        cp -pr $SNOW_CONF/system_files/etc/one/* ${prefix}/etc/one/
+        cp -pr $SNOW_SRV/system_files/etc/one/* ${prefix}/etc/one/
     fi
     # Note that if you alredy have oneadmin SSH keys available, sNow! will use those.
-    if [[ ! -e $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
-        if [[ ! -e $SNOW_CONF/system_files/etc/rsa ]]; then
-            mkdir -p $SNOW_CONF/system_files/etc/rsa
+    if [[ ! -e $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
+        if [[ ! -e $SNOW_SRV/system_files/etc/rsa ]]; then
+            mkdir -p $SNOW_SRV/system_files/etc/rsa
         fi
-        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin
-        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa.pub $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub
+        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin
+        cp -pr ${prefix}/var/lib/one/.ssh/id_rsa.pub $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub
     else
-        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin ${prefix}/var/lib/one/.ssh/id_rsa
-        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ${prefix}/var/lib/one/.ssh/id_rsa.pub
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin ${prefix}/var/lib/one/.ssh/id_rsa
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub ${prefix}/var/lib/one/.ssh/id_rsa.pub
         cp -p ${prefix}/var/lib/one/.ssh/id_rsa.pub ${prefix}/var/lib/one/.ssh/authorized_keys
         chmod 600 ${prefix}/var/lib/one/.ssh/authorized_keys
         chmod 400 ${prefix}/var/lib/one/.ssh/id_rsa

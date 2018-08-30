@@ -73,8 +73,8 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/ethers|$SNOW_CONF/system_files/etc/ethers|IP and MAC addresses table|
-|/etc/hosts|$SNOW_CONF/system_files/etc/static_hosts|IP and hostname table|
+|/etc/ethers|$SNOW_SRV/system_files/etc/ethers|IP and MAC addresses table|
+|/etc/hosts|$SNOW_SRV/system_files/etc/static_hosts|IP and hostname table|
 
 Default ports
 
@@ -123,7 +123,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/ldap/slapd.d/* | $SNOW_CONF/system_files/etc/ldap/*| LDAP configuration files|
+|/etc/ldap/slapd.d/* | $SNOW_SRV/system_files/etc/ldap/*| LDAP configuration files|
 
 Default ports
 
@@ -141,7 +141,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/ssh/sshd_config.pub | $SNOW_CONF/system_files/etc/ssh/sshd_config.pub | Used to define the SSH daemon configuration to be exposed on the public network.|
+|/etc/ssh/sshd_config.pub | $SNOW_SRV/system_files/etc/ssh/sshd_config.pub | Used to define the SSH daemon configuration to be exposed on the public network.|
 
 
 Default ports
@@ -160,9 +160,9 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|etc/ganglia-webfrontend/apache.conf|$SNOW_CONF/system_files/etc/ganglia-webfrontend/apache.conf|Used to setup the Apache web server for Ganglia Web Frontend.|
-|/etc/ganglia/gmetad.conf|$SNOW_CONF/system_files/etc/ganglia/gmetad.conf|Used to setup the Gmetad.|
-|/etc/ganglia/gmond_${cluster}.conf|$SNOW_CONF/system_files/etc/ganglia/gmond_${cluster}.conf|Used to setup Gmond and collect the metrics consolidated for each cluster.|
+|etc/ganglia-webfrontend/apache.conf|$SNOW_SRV/system_files/etc/ganglia-webfrontend/apache.conf|Used to setup the Apache web server for Ganglia Web Frontend.|
+|/etc/ganglia/gmetad.conf|$SNOW_SRV/system_files/etc/ganglia/gmetad.conf|Used to setup the Gmetad.|
+|/etc/ganglia/gmond_${cluster}.conf|$SNOW_SRV/system_files/etc/ganglia/gmond_${cluster}.conf|Used to setup Gmond and collect the metrics consolidated for each cluster.|
 
 Default ports
 
@@ -201,7 +201,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/openvpn_as|$SNOW_CONF/system_files/etc/openvpn_as|Files used to setup the OpenVPN Access Server|
+|/etc/openvpn_as|$SNOW_SRV/system_files/etc/openvpn_as|Files used to setup the OpenVPN Access Server|
 
 Default ports
 
@@ -228,9 +228,9 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/ntp.conf|SNOW_CONF/system_files/etc/ntp_server.conf|Defines the NTP server configuration|
-|/etc/squid3/*|$SNOW_CONF/system_files/etc/squid3/*|Files that defines the Squid (proxy server) configuration|
-|/etc/exim4/*|$SNOW_CONF/system_files/etc/exim4/*|Files that defines the Exim email relay server|
+|/etc/ntp.conf|SNOW_SRV/system_files/etc/ntp_server.conf|Defines the NTP server configuration|
+|/etc/squid3/*|$SNOW_SRV/system_files/etc/squid3/*|Files that defines the Squid (proxy server) configuration|
+|/etc/exim4/*|$SNOW_SRV/system_files/etc/exim4/*|Files that defines the Exim email relay server|
 
 Default ports
 
@@ -274,8 +274,8 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/munge/munge.key|$SNOW_CONF/system_files/etc/munge/munge.key|Munge key file|
-|/etc/slurm/*|$SNOW_CONF/system_files/etc/slurm/*|Set of slurm configuration files|
+|/etc/munge/munge.key|$SNOW_SRV/system_files/etc/munge/munge.key|Munge key file|
+|/etc/slurm/*|$SNOW_SRV/system_files/etc/slurm/*|Set of slurm configuration files|
 
 Default ports
 
@@ -302,7 +302,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/slurm/slurmdbd.conf|$SNOW_CONF/system_files/etc/slurm/slurmdbd.conf|Slurm DB configuration file|
+|/etc/slurm/slurmdbd.conf|$SNOW_SRV/system_files/etc/slurm/slurmdbd.conf|Slurm DB configuration file|
 
 Default ports
 
@@ -357,8 +357,8 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/root/docker-compose.yml|${SNOW_CONF}/system_files/etc/docker-compose.yml|Contains all the containers to be deployed. If nothing is available in ${SNOW_CONF}it will install a few examples and Portainer.|
-|/root/docker_swarm.token|$SNOW_CONF/system_files/etc/docker_swarm.token|This file contains the token generated once the swarm manager boots for first time.|
+|/root/docker-compose.yml|${SNOW_SRV}/deploy_files/etc/docker-compose.yml|Contains all the containers to be deployed. If nothing is available in ${SNOW_SRV}it will install a few examples and Portainer.|
+|/root/docker_swarm.token|$SNOW_SRV/system_files/etc/docker_swarm.token|This file contains the token generated once the swarm manager boots for first time.|
 
 Default ports
 
@@ -379,7 +379,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/root/docker_swarm.token | $SNOW_CONF/system_files/etc/docker_swarm.token | This file contains the token generated once the Swarm Manager boots for first time.|
+|/root/docker_swarm.token | $SNOW_SRV/system_files/etc/docker_swarm.token | This file contains the token generated once the Swarm Manager boots for first time.|
 
 Default ports
 
@@ -396,7 +396,7 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/rsyslog.conf|$SNOW_CONF/system_files/etc/rsyslog.conf|Setup Rsyslog daemon|
+|/etc/rsyslog.conf|$SNOW_SRV/system_files/etc/rsyslog.conf|Setup Rsyslog daemon|
 
 Default ports
 
@@ -410,7 +410,7 @@ This role is responsible for installing and setting up the TORQUE workload manag
 Important note: At the time of writing, Maui 3.3.2 is not compatible with the latest stable version of TORQUE 6.1.1.1. In order to have Maui and TORQUE working, you should should consider installing TORQUE 5.1.3.
 
 {% include tip.html content="It's good practice to run a backup of the configuration. Consider including the following command in the crontab of your sNow! server: <br/>
-<pre>ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_CONF/system_files/etc/torque/torque.conf</pre> "%}
+<pre>ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_SRV/system_files/etc/torque/torque.conf</pre> "%}
 
 Key parameters in snow.conf
 
@@ -423,8 +423,8 @@ Key configuration files:
 
 |domain|snow-configspace|Function|
 |------|----------------|--------|
-|/etc/torque/torque.conf|$SNOW_CONF/system_files/etc/torque/torque.conf|Dump of the TORQUE configuration|
-|/usr/local/maui/maui.cfg |$SNOW_CONF/system_files/etc/maui/maui.cfg|The main Maui configuration file |
+|/etc/torque/torque.conf|$SNOW_SRV/system_files/etc/torque/torque.conf|Dump of the TORQUE configuration|
+|/usr/local/maui/maui.cfg |$SNOW_SRV/system_files/etc/maui/maui.cfg|The main Maui configuration file |
 
 Default ports
 

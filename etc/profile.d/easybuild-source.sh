@@ -4,13 +4,13 @@
 # For more information, visit the official website : www.hpcnow.com/snow
 #set -xv
 
-SNOW_PATH=/sNow
-SNOW_SOFT=$SNOW_PATH/easybuild
-SNOW_TOOL=$SNOW_PATH/snow-tools
+SNOW_ROOT=/sNow
+SNOW_SOFT=$SNOW_ROOT/easybuild
+SNOW_ROOT=$SNOW_ROOT/snow-tools
 LOGFILE=/dev/null
 
-if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
-    source ${SNOW_TOOL}/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi

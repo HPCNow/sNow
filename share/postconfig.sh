@@ -8,10 +8,10 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
-SNOW_PATH=/sNow
-SNOW_TOOL=$SNOW_PATH/snow-tools
-SNOW_CONF=$SNOW_PATH/snow-configspace
-readonly CONFIG_FILE=${SNOW_TOOL}/etc/snow.conf
+SNOW_ROOT=/sNow
+SNOW_ROOT=$SNOW_ROOT/snow-tools
+SNOW_SRV=$SNOW_ROOT/snow-configspace
+readonly CONFIG_FILE=${SNOW_ETC}/snow.conf
 
 # Default values for sNow! and HPCNow users
 if [[ -z ${sNow_USER} ]];then
@@ -51,20 +51,20 @@ else
     echo "sNow! config file NOT found!!!"
 fi
 
-if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
     LOGFILE=/root/snow-postinstall.log
     if [[ ! -f ${LOGFILE} ]]; then
         touch ${LOGFILE}
     fi
     RETAIN_NUM_LINES=10
-    source ${SNOW_TOOL}/share/common.sh
+    source ${SNOW_ROOT}/share/common.sh
     logsetup
     get_os_distro
     architecture_identification
 fi
 
 readonly TEMPLATE=${1:-$DEFAULT_TEMPLATE}
-readonly TEMPLATE_PATH=${SNOW_CONF}/boot/templates/$TEMPLATE
+readonly TEMPLATE_PATH=${SNOW_SRV}/templates/$TEMPLATE
 
 if [[ -f ${TEMPLATE_PATH}/config ]]; then
     echo "Loading $TEMPLATE configuration ..."

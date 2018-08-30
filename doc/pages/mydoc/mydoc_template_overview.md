@@ -23,7 +23,7 @@ This command provides relevant information about each available template in your
 
 The schema of the template is defined in the following example based on the default CentOS 7 template, which is located in the following folder:
 ```
-/sNow/snow-configspace/boot/templates/centos-7.3-default
+${SNOW_SRV}/templates/centos-7.3-default
 ```
 * ```initrd.img``` is a scheme for loading a temporary root file system into memory, which may be used as part of the Linux startup process.
 * ```vmlinuz``` is a compressed Linux kernel, and it is capable of loading the operating system into memory via PXE so that the computer becomes usable and applications can be run.

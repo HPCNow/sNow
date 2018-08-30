@@ -35,7 +35,7 @@ Install the required repos to syncronize with your local shared file system:
 ```
 rpm -Uvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-<VERSION>.noarch.rpm
 ```
-Use contrib scripts available in /sNow/snow-tools/contrib/repo_sync
+Use contrib scripts available in ${SNOW_ROOT}/contrib/repo_sync
 Setup the LOCALREPODIR variable inside the script and run it to update the CentOS repo.
 
 * sync-centos-official.sh (syncronize official CentOS repo)

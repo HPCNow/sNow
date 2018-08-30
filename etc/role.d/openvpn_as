@@ -29,16 +29,16 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
@@ -47,14 +47,14 @@ fi
 wget http://swupdate.openvpn.org/as/openvpn-as-2.0.25-Debian8.amd_64.deb -O ${prefix}/root/openvpn-as-2.0.25-Debian8.amd_64.deb
 
 # Stage domain entrypoint script
-cp -p $SNOW_TOOL/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_boot/openvpn_as.sh
+cp -p $SNOW_ROOT/etc/role.d/first_boot/openvpn_as.sh  ${prefix}/usr/local/first_boot/openvpn_as.sh
 sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 
 # Domain Setup
-if [[ -d /sNow/snow-configspace/system_files/etc/openvpn_as ]]; then
-    cp -pr /sNow/snow-configspace/system_files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
+if [[ -d ${SNOW_SRV}/deploy_files/etc/openvpn_as ]]; then
+    cp -pr ${SNOW_SRV}/deploy_files/etc/openvpn_as ${prefix}/usr/local/openvpn_as/etc
     sed -i "s|__OPENVPNAS_RECONFIGURE__|false|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 else
-    mkdir -p /sNow/snow-configspace/system_files/etc/openvpn_as
+    mkdir -p ${SNOW_SRV}/deploy_files/etc/openvpn_as
     sed -i "s|__OPENVPNAS_RECONFIGURE__|true|g" ${prefix}/usr/local/first_boot/openvpn_as.sh
 fi

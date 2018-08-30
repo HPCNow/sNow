@@ -295,7 +295,7 @@
             mkdir -p /sNow
             mount -o nolock __NFS_SERVER__:/sNow /sNow
             mount -o nolock __NFS_SERVER__:__SNOW_HOME__ __SNOW_HOME__
-            /sNow/snow-configspace/boot/templates/postconfig.sh __DEFAULT_TEMPLATE__
+            ${SNOW_SHARE}/postconfig.sh __DEFAULT_TEMPLATE__
             umount /sNow
             umount __SNOW_HOME__
           ]]>

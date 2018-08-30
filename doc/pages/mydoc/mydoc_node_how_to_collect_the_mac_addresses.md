@@ -20,7 +20,7 @@ fishermac /var/lib/misc/dnsmasq.leases > /etc/ethers
 ```
 4. Review the content of the /etc/ethers and correct the order of the generated list if required. You can also manually add addresses if needed.
 5. Restart the dnsmasq daemon in order to apply the new changes.
-6. Transfer the updated version of /etc/ethers to /sNow/snow-configspace/system_files/etc
+6. Transfer the updated version of /etc/ethers to ${SNOW_SRV}/deploy_files/etc
 ```
-scp -p deploy01:/etc/ethers /sNow/snow-configspace/system_files/etc/
+scp -p deploy01:/etc/ethers ${SNOW_SRV}/deploy_files/etc/
 ```

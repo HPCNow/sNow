@@ -1,6 +1,6 @@
 # Here you can define the role to be deployed in your domains
 # The role name MUST match with the bash script located in the following path
-#    /sNow/snow-tools/etc/role.d/[role-name]
+#    ${SNOW_ETC}/role.d/[role-name]
 snow01       snow
 deploy01     deploy
 ldap01       ldap-master

@@ -8,13 +8,13 @@
 #    exit
 #endif
 
-setenv SNOW_PATH "/sNow"
-setenv SNOW_SOFT "$SNOW_PATH/easybuild"
-setenv SNOW_TOOL "$SNOW_PATH/snow-tools"
+setenv SNOW_ROOT "/sNow"
+setenv SNOW_SOFT "$SNOW_ROOT/easybuild"
+setenv SNOW_ROOT "$SNOW_ROOT/snow-tools"
 setenv LOGFILE   "/dev/null"
 
-if ( -f ${SNOW_TOOL}/share/common.sh ) then
-    bash -c "source ${SNOW_TOOL}/share/common.sh ; get_os_distro; architecture_identification; exec csh"
+if ( -f ${SNOW_ROOT}/share/common.sh ) then
+    bash -c "source ${SNOW_ROOT}/share/common.sh ; get_os_distro; architecture_identification; exec csh"
 endif
 
 if ( "`hostname -s`" == "login*" && "$USER" == "snow" ) then

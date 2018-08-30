@@ -131,7 +131,7 @@ In order to evaluate new features available in the development version, you only
 To do so, just add the remote repo with the following instructions:
 
 ```
-cd /sNow/snow-tools
+cd ${SNOW_ROOT}
 git remote add hpcnow git@bitbucket.org:hpcnow/snow-tools.git
 git fetch hpcnow
 ```

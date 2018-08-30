@@ -20,7 +20,7 @@ Sometimes there are some changes that doesn’t require a reboot of the system o
 From one of the sNow! servers, where you have “read and write” access to the image, you can modify the file system (edit, copy, remove, etc) and the changes are going to be instantly available cluster wide.
 When you list the images available in your system, you also get the path where each image is located. The folder rootfs inside this path contains all the files of the OS image. Following on from the previous example, the files of the centos-minimal OS image are located in the folder:
 ```
-$ ls -l /sNow/snow-configspace/boot/images/centos-minimal/rootfs
+$ ls -l ${SNOW_SRV}/images/centos-minimal/rootfs
 total 64
 lrwxrwxrwx   1 root root    7 abr  3 10:43 bin -> usr/bin
 dr-xr-xr-x+  5 root root 4096 abr  3 11:15 boot

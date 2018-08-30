@@ -3,4 +3,4 @@ default sNow
 label sNow
 menu label ^1) Install CentOS 7.3 x64
 kernel templates/centos-7.3-default/vmlinuz
-append initrd=templates/centos-7.3-default/initrd.img inst.ks=nfs:__NFS_SERVER__:/sNow/snow-configspace/boot/templates/centos-7.3-default/centos-7.3-default.cfg inst.repo=__INSTALL_REPO__ inst.proxy=__INSTALL_PROXY__ inst.text netdevice=eth0 ip=dhcp __CONSOLE_OPTIONS__
+append initrd=templates/centos-7.3-default/initrd.img inst.ks=nfs:__NFS_SERVER__:${SNOW_SRV}/templates/centos-7.3-default/centos-7.3-default.cfg inst.repo=__INSTALL_REPO__ inst.proxy=__INSTALL_PROXY__ inst.text netdevice=eth0 ip=dhcp __CONSOLE_OPTIONS__

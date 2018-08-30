@@ -15,13 +15,13 @@ The ```active-domains.conf``` file provides a list of sNow! domains and the asso
 
 The first column of the ```active-domains.conf``` file contains the hostname of the domain, the second column contains the role or list or roles associated with the domain. Each domain can have one or more roles. In the case of multiple roles, use a comma separated list with no spaces.
 
-The following command line, provides a short description for each role available in ```/sNow/snow-tools/etc/roles.d```.
+The following command line, provides a short description for each role available in ```${SNOW_ETC}/roles.d```.
 ```
 snow list roles
 ```
-The file ```/sNow/snow-tools/etc/active-domains.conf-example``` contains the most popular roles used in general HPC clusters. To enable those roles, copy the example file as your working file:
+The file ```${SNOW_ETC}/active-domains.conf-example``` contains the most popular roles used in general HPC clusters. To enable those roles, copy the example file as your working file:
 ```
-cp -p /sNow/snow-tools/etc/active-domains.conf-example /sNow/snow-tools/etc/active-domains.conf
+cp -p ${SNOW_ETC}/active-domains.conf-example ${SNOW_ETC}/active-domains.conf
 ```
 * For more information about sNow! domain roles, visit the [Role Management - Overview](mydoc_role_overview.html) section.
 * For more information about the available roles, visit the [Role Management - Available Roles](mydoc_role_available.html) section.

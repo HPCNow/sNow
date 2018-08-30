@@ -4,23 +4,23 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 # sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
-SNOW_PATH=/sNow
-SNOW_TOOL=$SNOW_PATH/snow-tools
+SNOW_ROOT=/sNow
+SNOW_ROOT=$SNOW_ROOT/snow-tools
 # Load sNow! functions
-if [[ -f ${SNOW_TOOL}/share/common.sh ]]; then
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
     LOGFILE=/root/first-boot.log
     RETAIN_NUM_LINES=10
-    source ${SNOW_TOOL}/share/common.sh
+    source ${SNOW_ROOT}/share/common.sh
     logsetup
     get_os_distro
     architecture_identification
 fi
 # Load sNow! configuration
-if [[ -e ${SNOW_TOOL}/etc/snow.conf ]]; then
-    source ${SNOW_TOOL}/etc/snow.conf
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The ${SNOW_TOOL}/etc/snow.conf is not available."
-    error_exit "Please use the ${SNOW_TOOL}/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 
 if [[ -f ${HOOKS_PATH}/config ]]; then

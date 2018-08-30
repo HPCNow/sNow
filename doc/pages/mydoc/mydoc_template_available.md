@@ -28,7 +28,7 @@ You can also list all the available deployment templates with the following comm
 Template Name                     Description
 -------------                     -----------
 centos-7.3-default                Default template based on CentOS 7.3
-                                  path : /sNow/snow-configspace/boot/templates/centos-7.3-default
+                                  path : ${SNOW_SRV}/templates/centos-7.3-default
 centos-7.3-custom                 This template contains my custom hooks and configuration
-                                  path : /sNow/snow-configspace/boot/templates/centos-7.3-custom
+                                  path : ${SNOW_SRV}/templates/centos-7.3-custom
 ```

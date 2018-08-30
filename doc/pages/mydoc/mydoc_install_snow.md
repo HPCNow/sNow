@@ -43,7 +43,7 @@ At the time this document is written, XEN is the stable technology. LXD and DOCK
 export VIRT_TECH=XEN
 ```
 ### Source control and continuous integration support
-The following parameters allows you to integrate the key configuration files, deployment scripts and other key codes located in ```/sNow/snow-configspace``` with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
+The following parameters allows you to integrate the key configuration files, deployment scripts and other key codes located in ```${SNOW_SRV}``` with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
 This is key to enable Continuous Integration Support and test changes in a testing environment before merging them into the production environment.
 Since the data contained in this folder is extremely sensitive, the GIT repository MUST be private. Since BitBucket allows you to use private repositories for free, we suggest you explore this option. More information about how to setup OAuth integrated applications is available in the GitHub and BitBucket websites.
 Example:

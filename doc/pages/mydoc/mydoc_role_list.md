@@ -8,7 +8,7 @@ permalink: mydoc_role_list.html
 folder: mydoc
 ---
 
-The following command line, provides a short description for each role available in ```/sNow/snow-tools/etc/roles.d```.
+The following command line, provides a short description for each role available in ```${SNOW_ETC}/roles.d```.
 
 * For more information about sNow! domain roles, visit the [Available Roles](mydoc_role_available.html) section.
 * For more information about how to develop a custom role, visit the [Custom Roles](mydoc_role_custom.html) section.

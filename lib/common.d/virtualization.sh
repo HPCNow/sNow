@@ -81,8 +81,8 @@ function setup_docker_swarm_worker()
 {
     install_docker
     # Setup Docker Swarm Worker
-    SNOW_SWARM_MANAGER=$(gawk '{if($2 ~ /swarm-manager/){print $1}}' $SNOW_TOOL/etc/domains.conf)
-    SNOW_SWARM_MANAGER_IP=$(gawk '{if($2 ~ /swarm-manager/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    SNOW_SWARM_MANAGER=$(gawk '{if($2 ~ /swarm-manager/){print $1}}' $SNOW_ROOT/etc/domains.conf)
+    SNOW_SWARM_MANAGER_IP=$(gawk '{if($2 ~ /swarm-manager/){print $4}}' $SNOW_ROOT/etc/domains.conf)
     if  [[ ! -z "$SNOW_SWARM_MANAGER" && ! -z "$SITE_SWARM_MANAGER" ]]; then
         SWARM_MANAGER=$SNOW_SWARM_MANAGER
     else
@@ -97,14 +97,14 @@ function setup_docker_swarm_worker()
     # Register node as woker node in the Docker Swarm cluster
     if  [[ ! -z "$SWARM_MANAGER" ]]; then
         # Check if the token file already exists
-        if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then
+        if [[ -e ${SNOW_SRV}/deploy_files/etc/docker_swarm.token ]]; then
             mkdir /etc/portainer
-            docker swarm join --token "$(cat ${SNOW_CONF}/system_files/etc/docker_swarm.token)" ${SWARM_MANAGER_IP}:2377
+            docker swarm join --token "$(cat ${SNOW_SRV}/deploy_files/etc/docker_swarm.token)" ${SWARM_MANAGER_IP}:2377
         else
             check_host_status ${SWARM_MANAGER}
-            scp -p ${SWARM_MANAGER}:/root/docker_swarm.token ${SNOW_CONF}/system_files/etc/docker_swarm.token
-            if [[ -e ${SNOW_CONF}/system_files/etc/docker_swarm.token ]]; then
-                error_msg "Docker Swarm Worker requires the file ${SNOW_CONF}/system_files/etc/docker_swarm.token"
+            scp -p ${SWARM_MANAGER}:/root/docker_swarm.token ${SNOW_SRV}/deploy_files/etc/docker_swarm.token
+            if [[ -e ${SNOW_SRV}/deploy_files/etc/docker_swarm.token ]]; then
+                error_msg "Docker Swarm Worker requires the file ${SNOW_SRV}/deploy_files/etc/docker_swarm.token"
                 error_msg "Which is generated once the Docker Swarm manager is booted for first time"
             fi
         fi
@@ -265,7 +265,7 @@ function install_opennebula()
             pkgs="opennebula-node bridge-utils"
         ;;
         rhel|redhat|centos)
-            cp -p ${SNOW_TOOL}/etc/config_template.d/opennebula/opennebula_centos.repo /etc/yum.repos.d/opennebula.repo
+            cp -p ${SNOW_ETC}/config_template.d/opennebula/opennebula_centos.repo /etc/yum.repos.d/opennebula.repo
             replace_text /etc/yum.repos.d/opennebula.repo "^baseurl" "baseurl=https://downloads.opennebula.org/repo/${OPENNEBULA_VERSION}/CentOS/${OS_VERSION_MAJOR}/x86_64"
             pkgs="opennebula-node-kvm bridge-utils"
         ;;
@@ -280,18 +280,18 @@ function install_opennebula()
     esac
     install_software "$pkgs"
     # Note that if you alredy have oneadmin SSH keys available, sNow! will use those.
-    if [[ ! -e $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
-        if [[ ! -e $SNOW_CONF/system_files/etc/rsa ]]; then
-            mkdir -p $SNOW_CONF/system_files/etc/rsa
+    if [[ ! -e $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
+        if [[ ! -e $SNOW_SRV/system_files/etc/rsa ]]; then
+            mkdir -p $SNOW_SRV/system_files/etc/rsa
         fi
-        cp -p /var/lib/one/.ssh/id_rsa $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin
-        cp -p /var/lib/one/.ssh/id_rsa.pub $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub
+        cp -p /var/lib/one/.ssh/id_rsa $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin
+        cp -p /var/lib/one/.ssh/id_rsa.pub $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub
     else
         if [[ ! -e /var/lib/one/.ssh ]]; then
             mkdir -p /var/lib/one/.ssh
         fi
-        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin /var/lib/one/.ssh/id_rsa
-        cp -p $SNOW_CONF/system_files/etc/rsa/id_rsa_oneadmin.pub /var/lib/one/.ssh/id_rsa.pub
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin /var/lib/one/.ssh/id_rsa
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub /var/lib/one/.ssh/id_rsa.pub
         cp -p /var/lib/one/.ssh/id_rsa.pub /var/lib/one/.ssh/authorized_keys
         chmod 600 /var/lib/one/.ssh/authorized_keys
         chmod 400 /var/lib/one/.ssh/id_rsa
@@ -356,7 +356,7 @@ function setup_opennebula()
         setup_network_bridges
         # First iteration supports only KVM
         # For LXD support review https://github.com/OpenNebula/addon-lxdone/blob/master/Setup.md
-        SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+        SNOW_OPENNEBULA_SERVER=$(gawk '{if($2 ~ /opennebula-fe/){print $1}}' $SNOW_ROOT/etc/domains.conf)
         ssh ${SNOW_OPENNEBULA_SERVER} onehost create "$(uname -n)" -i kvm -v kvm
     fi
 } 1>>$LOGFILE 2>&1

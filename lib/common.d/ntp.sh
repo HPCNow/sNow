@@ -21,7 +21,7 @@
 #
 function setup_ntp_client()
 {
-    SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    SNOW_NTP_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
     if  [[ ! -z "$SNOW_NTP_SERVER" && ! -z "$SITE_NTP_SERVER" ]]; then 
         NTP_SERVER=$SNOW_NTP_SERVER
     else
@@ -29,13 +29,13 @@ function setup_ntp_client()
     fi
     if  [[ ! -z "$NTP_SERVER" ]]; then 
         install_software "ntp"
-        if [[ -e /sNow/snow-configspace/system_files/etc/ntp.conf ]]; then 
-            cp -p /sNow/snow-configspace/system_files/etc/ntp.conf /etc/
+        if [[ -e ${SNOW_SRV}/deploy_files/etc/ntp.conf ]]; then 
+            cp -p ${SNOW_SRV}/deploy_files/etc/ntp.conf /etc/
         else
-            cp -p /sNow/snow-tools/etc/config_template.d/ntp_client/ntp.conf /sNow/snow-configspace/system_files/etc/ntp.conf
-            sed -i "s/__NTP_SERVER__/$NTP_SERVER/g" /sNow/snow-configspace/system_files/etc/ntp.conf
-            chmod 644 /sNow/snow-configspace/system_files/etc/ntp.conf
-            cp -p /sNow/snow-configspace/system_files/etc/ntp.conf /etc/
+            cp -p ${SNOW_ETC}/config_template.d/ntp_client/ntp.conf ${SNOW_SRV}/deploy_files/etc/ntp.conf
+            sed -i "s/__NTP_SERVER__/$NTP_SERVER/g" ${SNOW_SRV}/deploy_files/etc/ntp.conf
+            chmod 644 ${SNOW_SRV}/deploy_files/etc/ntp.conf
+            cp -p ${SNOW_SRV}/deploy_files/etc/ntp.conf /etc/
         fi
         case $OS in
             debian|ubuntu)

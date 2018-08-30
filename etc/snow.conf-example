@@ -1,5 +1,5 @@
 #########################################################################################
-# sNow! config file : /sNow/snow-tools/etc/snow.conf
+# sNow! config file : ${SNOW_ETC}/snow.conf
 # Copyright (C) 2008 Jordi Blasco
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,22 +27,22 @@
 # doing
 #
 
-SNOW_PATH=/sNow
+SNOW_ROOT=/sNow
 SNOW_HOME=/home
-SNOW_SOFT=${SNOW_PATH}/easybuild
-SNOW_CONF=${SNOW_PATH}/snow-configspace
-SNOW_TOOL=${SNOW_PATH}/snow-tools
+SNOW_SOFT=${SNOW_ROOT}/easybuild
+SNOW_SRV=${SNOW_ROOT}/snow-configspace
+SNOW_ROOT=${SNOW_ROOT}/snow-tools
 
 #
 # Path where snow writes it's log. Rember to keep the 600 permisions
 # on it as it may contain plain text passwords
 #
 
-SNOW_LOG=${SNOW_PATH}/log
+SNOW_LOG=${SNOW_ROOT}/log
 LOGFILE=${SNOW_LOG}/snow.log
 
 #
-# The SNOW_PATH will be exported to the compute nodes, during deploy
+# The SNOW_ROOT will be exported to the compute nodes, during deploy
 # and also during the normal use of the compute cluster. Usually the
 # NFS server is the first sNow server, but you can change this behaviour.
 #
@@ -120,7 +120,7 @@ sNow_USER=snow
 #
 #         [ Source Control and Continuous Integration Support ]
 # The following parameters allows to integrate the key configuration files,
-# deployment scripts and other key codes located in /sNow/snow-configspace with
+# deployment scripts and other key codes located in ${SNOW_SRV} with
 # your source control system. It supports GitHub and BitBucket through OAuth
 # tokens. The default values are empty.
 #
@@ -363,18 +363,18 @@ DHCP_NIC=eth0
 # MOUNT_NFS[3]="my-nfs-server:/projects         /projects      nfs    bg,tcp,defaults 0 0"
 
 # If NFS is your main shared file system, then the following two lines become
-# mandatory, as they define the mount points for $SNOW_PATH and $HOME
-MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_PATH}        ${SNOW_PATH}   nfs    bg,tcp,noatime,nodiratime,defaults 0 0"
+# mandatory, as they define the mount points for $SNOW_ROOT and $HOME
+MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_ROOT}        ${SNOW_ROOT}   nfs    bg,tcp,noatime,nodiratime,defaults 0 0"
 MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,noatime,nodiratime,defaults 0 0"
 
-# If you are using a different shared file system, then the $SNOW_PATH and
+# If you are using a different shared file system, then the $SNOW_ROOT and
 # $HOME must be available in the sNow! management nodes and some node(s) must
 # re-export those file systems through NFS.
 #
 # NFS Performance considerations:
 # * Consider to increase the number of NFS daemons (RPCNFSDCOUNT) in the server
 # * Consider to include FS-Cache option in the clients (fsc)
-# * Consider to disable async in the ${SNOW_PATH} exports (highly recommended if you don't trust the hardware)
+# * Consider to disable async in the ${SNOW_ROOT} exports (highly recommended if you don't trust the hardware)
 
 #             [ Slurm Configuration ]
 #
@@ -392,7 +392,7 @@ SLURMDBD_PASSWORD='whatever'
 #
 # The following option forces to use associations and QoS for accounting.
 # Fairsharing is the most common approach to share resources. Consider to use
-# the helper script "$SNOW_TOOLS/contrib/slurm_fairshare/slurm_share_tree.sh"
+# the helper script "$SNOW_ROOT/contrib/slurm_fairshare/slurm_share_tree.sh"
 # to define how to share the computational resources within your groups and users
 #ACCOUNTING_STORAGE_ENFORCE=associations,qos
 #

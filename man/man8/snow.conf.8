@@ -7,7 +7,7 @@ snow.conf \- sNow! configuration file
 The snow.conf is the main configuration file of sNow!. It provides a complete list of parameters wich will be used to setup the complete HPC cluster.
 .SH DESCRIPTION
 The snow.conf is the main configuration file of sNow! which contains the extensive list of parameters that will be used by sNow Tools to manage your cluster.
-A template of this file is available in /sNow/snow-tools/etc/snow.conf-example. In order to get started, copy the template file to /sNow/snow-tools/etc/snow.conf and work with the snow.conf
+A template of this file is available in ${SNOW_ETC}/snow.conf-example. In order to get started, copy the template file to ${SNOW_ETC}/snow.conf and work with the snow.conf
 Be aware that newer release may include more parameters to setup and in order to transit from a previous release to a newer one will require to extend your current snow.conf with some new parameters.
 
 This man page provides a short description of each parameter. For more information, visit the official website : http://www.hpckp.org/snow
@@ -23,27 +23,27 @@ The following paths define where the code and binaries are going to be stored. M
 
 .RS
 .TP
-\fBSNOW_PATH\fR
+\fBSNOW_ROOT\fR
 The main sNow! root where all the sub-projects usually are stored. Default value is /sNow
 
 .TP
-\fBSNOW_HOME=$SNOW_PATH/home\fR
+\fBSNOW_HOME=$SNOW_ROOT/home\fR
 This parameter defines the default path to the shared home directory.
 
 .TP
-\fBSNOW_SOFT=$SNOW_PATH/easybuild\fR
+\fBSNOW_SOFT=$SNOW_ROOT/easybuild\fR
 This parameter defines the default path to the EasyBuild root folder.
 
 .TP
-\fBSNOW_CONF=$SNOW_PATH/snow-configspace\fR
+\fBSNOW_SRV=$SNOW_ROOT/snow-configspace\fR
 This parameter defines the default path to the snow-configspace folder.
 
 .TP
-\fBSNOW_UTIL=$SNOW_PATH/snow-utils\fR
+\fBSNOW_UTIL=$SNOW_ROOT/snow-utils\fR
 This parameter defines the default path to the snow-utils folder.
 
 .TP
-\fBSNOW_TOOL=$SNOW_PATH/snow-tools\fR
+\fBSNOW_ROOT=$SNOW_ROOT/snow-tools\fR
 This parameter defines the default path to the snow-tools folder.
 
 .RE
@@ -115,7 +115,7 @@ HPCNow_USER=hpcnow
 
 .TP
 \fBSource Control and Continous Integration Support\fR
-The following parameters allows to integrate the key configuration files, deployment scripts and other key codes located in /sNow/snow-configspace with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
+The following parameters allows to integrate the key configuration files, deployment scripts and other key codes located in ${SNOW_SRV} with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
 This is key to enable Continous Integration Support and test changes in a testing enviroment before to merge them into the production one.
 Since the data contained in this folder is extremely sensitive, the GIT repository MUST be private. Since BitBucket allows to use private repositories for free, we suggest to explore this option.
 More information about how to setup OAuth integrated applications with GitHub and BitBucket in the sNow! website.

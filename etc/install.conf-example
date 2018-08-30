@@ -97,7 +97,7 @@ SNOW_USER=snow
 #
 #         [ Source Control and Continuous Integration Support ]
 # The following parameters allows to integrate the key configuration files,
-# deployment scripts and other key codes located in /sNow/snow-configspace with
+# deployment scripts and other key codes located in ${SNOW_SRV} with
 # your source control system. It supports GitHub and BitBucket through OAuth
 # tokens. The default values are empty.
 #

@@ -80,7 +80,7 @@ if [[ -z ${SNOW_SBIN} ]]; then
     SNOW_SBIN=${SNOW_ROOT}/sbin
 fi
 if [[ -z ${SNOW_ETC} ]]; then
-    SNOW_ETC=${SNOW_ROOT}/etc
+    SNOW_ETC=${SNOW_ETC}
 fi
 if [[ -z ${SNOW_LIB} ]]; then
     SNOW_LIB=${SNOW_ROOT}/lib
@@ -142,10 +142,10 @@ if [[ -z "${HPCNOW_SUPPORT}" ]]; then
     HPCNOW_SUPPORT=none
 fi
 
-readonly CONFIG_FILE=${SNOW_ROOT}/etc/snow.conf
+readonly CONFIG_FILE=${SNOW_ETC}/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_ROOT}/lib/enterprise_extensions.sh
-readonly SNOW_DOMAINS=${SNOW_ROOT}/etc/domains.conf
-readonly SNOW_ACTIVE_DOMAINS=${SNOW_ROOT}/etc/active-domains.conf
+readonly SNOW_DOMAINS=${SNOW_ETC}/domains.conf
+readonly SNOW_ACTIVE_DOMAINS=${SNOW_ETC}/active-domains.conf
 
 
 if ! [[ -d ${SNOW_ROOT} ]]; then
@@ -178,11 +178,48 @@ function is_nfs_server()
     return $?
 } &>/dev/null
 
+function setup_snow_env() {
+  echo "#!/bin/bash" > /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_ROOT=${SNOW_ROOT}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_HOME=${SNOW_HOME}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_BIN=${SNOW_BIN}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_SBIN=${SNOW_SBIN}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_ETC=${SNOW_ETC}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_LIB=${SNOW_LIB}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_SHARE=${SNOW_SHARE}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_SRV=${SNOW_SRV}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_VAR=${SNOW_VAR}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_LOG=${SNOW_LOG}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_MAN=${SNOW_MAN}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_TEST=${SNOW_TEST}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_CONTRIB=${SNOW_CONTRIB}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_EASYBUILD=${SNOW_EASYBUILD}" >> /etc/profile.d/00-snow-env.sh
+  echo "export SNOW_DOC=${SNOW_DOC}" >> /etc/profile.d/00-snow-env.sh
+  echo "#!/bin/csh" > /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_ROOT ${SNOW_ROOT}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_BIN ${SNOW_BIN}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_SBIN ${SNOW_SBIN}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_ETC ${SNOW_ETC}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_LIB ${SNOW_LIB}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_SHARE ${SNOW_SHARE}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_SRV ${SNOW_SRV}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_VAR ${SNOW_VAR}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_LOG ${SNOW_LOG}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_MAN ${SNOW_MAN}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_TEST ${SNOW_TEST}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_CONTRIB ${SNOW_CONTRIB}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_EASYBUILD ${SNOW_EASYBUILD}" >> /etc/profile.d/00-snow-env.csh
+  echo "setenv SNOW_DOC ${SNOW_DOC}" >> /etc/profile.d/00-snow-env.csh
+  ln -sf ${SNOW_ETC}/profile.d/snow-source.sh /etc/profile.d/
+  ln -sf ${SNOW_ETC}/profile.d/snow-source.csh /etc/profile.d/
+
+} 1>>$LOGFILE 2>&1
+
 function install_snow_repos()
 {
 if is_snow_node; then
     # If the configspace is not available, it must be created from scratch or pulled from git
-    if [[ ! -e $SNOW_SRV ]]; then
+    if [[ ! -e ${SNOW_SRV} ]]; then
         # Justify why snow-configspace is created from scratch
         if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
             echo "PRIVATE_GIT_TOKEN is not set. The snow-configspace will be created from scratch."
@@ -196,9 +233,9 @@ if is_snow_node; then
             mkdir -p $SNOW_SRV/deploy_files/etc/ssh/
             cp -pr /etc/ssh/ssh_host_* $SNOW_SRV/deploy_files/etc/ssh/
             if [[ -f ./etc/snow.conf ]]; then
-                cp -p ./etc/snow.conf ${SNOW_ROOT}/etc/
+                cp -p ./etc/snow.conf ${SNOW_ETC}/
             elif [[ -f ./snow.conf ]]; then
-                cp -p ./snow.conf ${SNOW_ROOT}/etc/
+                cp -p ./snow.conf ${SNOW_ETC}/
             fi
         else
             git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_SRV || echo "ERROR: please review your tokens and repo URL."
@@ -337,6 +374,7 @@ echo "[I] Downloading required files... This may take a while, Please wait."
 install_snow_repos
 eula
 load_snow_env
+setup_snow_env
 setup_software         && error_check 0 'Stage 1/6 : Software installed ' || error_check 1 'Stage 1/6 : Software installed ' &
 spinner $!             'Stage 1/6 : Installing Software '
 setup_filesystems      && error_check 0 'Stage 2/6 : Filesystem setup ' || error_check 1 'Stage 2/6 : Filesystem setup ' &

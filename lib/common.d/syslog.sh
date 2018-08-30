@@ -21,16 +21,16 @@
 #
 function setup_syslog_client()
 {
-    SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+    SNOW_SYSLOG_SERVER=$(gawk '{if($2 ~ /syslog/){print $4}}' $SNOW_ROOT/etc/domains.conf)
     SYSLOG_SERVER="${SITE_SYSLOG_SERVER:-$SNOW_SYSLOG_SERVER}"
     if  [[ ! -z "${SYSLOG_SERVER}" ]]; then 
         install_software "rsyslog"
-        if [[ -e ${SNOW_CONF}/system_files/etc/rsyslog.d/50-default.conf ]]; then 
-            cp -p ${SNOW_CONF}/system_files/etc/rsyslog.d/50-default.conf /etc/rsyslog.d/50-default.conf
+        if [[ -e ${SNOW_SRV}/deploy_files/etc/rsyslog.d/50-default.conf ]]; then 
+            cp -p ${SNOW_SRV}/deploy_files/etc/rsyslog.d/50-default.conf /etc/rsyslog.d/50-default.conf
         else
-            mkdir -p ${SNOW_CONF}/system_files/etc/rsyslog.d
+            mkdir -p ${SNOW_SRV}/deploy_files/etc/rsyslog.d
             echo "*.*                         @@${SYSLOG_SERVER}:514" >> /etc/rsyslog.d/50-default.conf
-            cp -p /etc/rsyslog.d/50-default.conf ${SNOW_CONF}/system_files/etc/rsyslog.d/50-default.conf
+            cp -p /etc/rsyslog.d/50-default.conf ${SNOW_SRV}/deploy_files/etc/rsyslog.d/50-default.conf
         fi
     fi
 } 1>>$LOGFILE 2>&1

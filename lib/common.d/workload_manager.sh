@@ -21,8 +21,8 @@
 #
 function install_slurm_client()
 {
-    ln -sf $SNOW_TOOL/bin/slurm-source.sh /etc/profile.d/slurm.sh
-    ln -sf $SNOW_TOOL/bin/slurm-source.csh /etc/profile.d/slurm.csh
+    ln -sf $SNOW_ROOT/bin/slurm-source.sh /etc/profile.d/slurm.sh
+    ln -sf $SNOW_ROOT/bin/slurm-source.csh /etc/profile.d/slurm.csh
     groupadd -g $SLURM_GID slurm
     useradd -u $SLURM_UID -g $SLURM_GID -s /bin/false slurm
     case $OS in
@@ -42,13 +42,13 @@ function install_slurm_client()
         ;;
     esac
     install_software "$pkgs"
-    cp -p $SNOW_CONF/system_files/etc/munge/munge.key /etc/munge/munge.key
+    cp -p $SNOW_SRV/system_files/etc/munge/munge.key /etc/munge/munge.key
     chown -R munge:munge /etc/munge
     chmod 600 /etc/munge/munge.key
     systemctl enable munge.service
     systemctl start munge.service
     mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-    cp -pr $SNOW_CONF/system_files/etc/slurm/* /etc/slurm/
+    cp -pr $SNOW_SRV/system_files/etc/slurm/* /etc/slurm/
     chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     systemctl enable slurmd.service
     systemctl start slurmd.service
@@ -84,7 +84,7 @@ function install_torque_client()
     cp /sNow/OS/Linux/${system_arch}/torque/${TORQUE_VERSION}/contrib/systemd/trqauthd.service /usr/lib/systemd/system/
     systemctl enable trqauthd.service
     systemctl start trqauthd.service
-    SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
+    SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_ROOT/etc/domains.conf)
     if  [[ ! -z "$SNOW_TORQUE_MASTER" && ! -z "$SITE_TORQUE_MASTER" ]]; then 
         TORQUE_MASTER=$SNOW_TORQUE_MASTER
     else
@@ -97,7 +97,7 @@ function install_torque_client()
 function setup_workload_client()
 {
     # Slurm Workload Manager
-    if [[ -f $SNOW_CONF/system_files/etc/slurm/slurm.conf ]]; then
+    if [[ -f $SNOW_SRV/system_files/etc/slurm/slurm.conf ]]; then
         install_slurm_client
     fi
     # Torque Workload Manager

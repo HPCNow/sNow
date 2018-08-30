@@ -30,22 +30,22 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
 
-SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_TOOL/etc/domains.conf)
-SNOW_TORQUE_MASTER_IP=$(gawk '{if($2 ~ /torque-master/){print $4}}' $SNOW_TOOL/etc/domains.conf)
+SNOW_TORQUE_MASTER=$(gawk '{if($2 ~ /torque-master/){print $1}}' $SNOW_ROOT/etc/domains.conf)
+SNOW_TORQUE_MASTER_IP=$(gawk '{if($2 ~ /torque-master/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 MAUI_VERSION=${MAUI_VERSION:-master}
 torque_major_release=$(echo ${TORQUE_VERSION} | cut -d. -f1)
 #maui_major_release=$(echo ${MAUI_VERSION} | cut -d. -f1)
@@ -82,15 +82,15 @@ EOF
     mkdir -p /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}
     cp -p ${prefix}/root/torque/${TORQUE_VERSION}/torque-package-* /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}/
     cp -pr ${prefix}/root/torque/${TORQUE_VERSION}/contrib /sNow/OS/Linux/x86_64/torque/${TORQUE_VERSION}/
-    cp -p $SNOW_TOOL/etc/role.d/first_boot/torque_create_cluster.sh ${prefix}/usr/local/first_boot/01-torque_create_cluster.sh
+    cp -p $SNOW_ROOT/etc/role.d/first_boot/torque_create_cluster.sh ${prefix}/usr/local/first_boot/01-torque_create_cluster.sh
     sed -i "s|__TORQUE_VERSION__|$TORQUE_VERSION|g" ${prefix}/usr/local/first_boot/01-torque_create_cluster.sh
     # Check if Torque configuration file already exists
-    if [[ -e $SNOW_CONF/system_files/etc/torque/torque.conf ]]; then 
+    if [[ -e $SNOW_SRV/system_files/etc/torque/torque.conf ]]; then 
         # Transfer the existing configuration file to the final destination
-        cp -p $SNOW_CONF/system_files/etc/torque/torque.conf ${prefix}/etc/torque/torque.conf
+        cp -p $SNOW_SRV/system_files/etc/torque/torque.conf ${prefix}/etc/torque/torque.conf
         warning_msg "It's a good practice to run a backup of the configuration."
         warning_msg "Consider to include the following command in your crontab:"
-        warning_msg "ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_CONF/system_files/etc/torque/torque.conf"
+        warning_msg "ssh ${TORQUE_MASTER} /usr/local/bin/qmgr -c 'p s' > $SNOW_SRV/system_files/etc/torque/torque.conf"
     fi
     # Build and install Maui scheduler
     # Maui is not compatible with Torque > 5.
@@ -107,14 +107,14 @@ EOF
             echo 'PATH=/usr/local/maui/bin:/usr/local/maui/sbin:$PATH' > /etc/profile.d/maui.sh
 EOF
         mkdir -p /usr/lib/systemd/system
-        cp -p $SNOW_TOOL/etc/config_template.d/maui/maui.service ${prefix}/usr/lib/systemd/system/maui.service
+        cp -p $SNOW_ROOT/etc/config_template.d/maui/maui.service ${prefix}/usr/lib/systemd/system/maui.service
         chroot ${prefix} /bin/systemctl enable maui.service
-        if [[ -e $SNOW_CONF/system_files/etc/maui/maui.cfg ]]; then 
-            cp -p $SNOW_CONF/system_files/etc/maui/maui.cfg ${prefix}/usr/local/maui/maui.cfg
+        if [[ -e $SNOW_SRV/system_files/etc/maui/maui.cfg ]]; then 
+            cp -p $SNOW_SRV/system_files/etc/maui/maui.cfg ${prefix}/usr/local/maui/maui.cfg
         else
             replace_text ${prefix}/usr/local/maui/maui.cfg "^SERVERHOST" "SERVERHOST            ${TORQUE_MASTER}"
-            mkdir -p $SNOW_CONF/system_files/etc/maui
-            cp -p ${prefix}/usr/local/maui/maui.cfg $SNOW_CONF/system_files/etc/maui/
+            mkdir -p $SNOW_SRV/system_files/etc/maui
+            cp -p ${prefix}/usr/local/maui/maui.cfg $SNOW_SRV/system_files/etc/maui/
         fi
     fi
 fi

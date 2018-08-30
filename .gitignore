@@ -33,7 +33,7 @@ etc/vms.conf
 etc/nodes.json
 etc/slurm.env
 
-# Ignore all the files in $SNOW_TOOLS/bin except the mandatory files
+# Ignore all the files in $SNOW_ROOT/bin except the mandatory files
 bin/*
 !bin/easybuild-source.csh
 !bin/easybuild-source.sh

@@ -12,10 +12,10 @@ folder: mydoc
 
 The sNow! configuration file (**snow.conf**) is the main configuration file of sNow! It provides a complete list of parameters which will be used to setup the HPC cluster.
 
-A template of this file is available in /sNow/snow-tools/etc/snow.conf-example. In order to get started, copy the template file to ```/sNow/snow-tools/etc/snow.conf``` and then edit snow.conf to suit your particular needs.
+A template of this file is available in ${SNOW_ETC}/snow.conf-example. In order to get started, copy the template file to ```${SNOW_ETC}/snow.conf``` and then edit snow.conf to suit your particular needs.
 
 ```
-cp -p /sNow/snow-tools/etc/snow.conf-example /sNow/snow-tools/etc/snow.conf
+cp -p ${SNOW_ETC}/snow.conf-example ${SNOW_ETC}/snow.conf
 ```
 
 Be aware that newer releases may include more parameters to setup and migrating from a previous release to a newer one will require you to extend your current snow.conf with some new parameters.
@@ -27,9 +27,9 @@ This document provides a short description of each parameter.
 The ```NFS_SERVER``` defines the NFS server where all the sNow! files will be stored. The /sNow filesystem is exported to the compute nodes via NFS for running the post-install scripts and for other purposes. If the NFS_SERVER matches with the sNow! server, the "snow init" command will apply the required changes in the system like adding the needed paths to /etc/exports. The default value for the NFS_SERVER is snow01 and it should be the same server you defined during installation.
 ## sNow! paths
 The following paths define where the code and binaries are going to be stored. Most of them are NOT customizable yet but they will be in upcoming releases. Keep the following paths as static for the time being
-* SNOW_PATH: The main sNow! root directory where all the subfolders usually are stored. Default value is /sNow
+* SNOW_ROOT: The main sNow! root directory where all the subfolders usually are stored. Default value is /sNow
 ```
-SNOW_PATH=/sNow
+SNOW_ROOT=/sNow
 ```
 * SNOW_HOME: This parameter defines the default path to the shared home directory.
 ```
@@ -37,15 +37,15 @@ SNOW_HOME=/home
 ```
 * SNOW_SOFT: This parameter defines the default path to the EasyBuild root folder.
 ```
-SNOW_SOFT=$SNOW_PATH/easybuild
+SNOW_SOFT=$SNOW_ROOT/easybuild
 ```
-* SNOW_CONF: This parameter defines the default path to the snow-configspace folder.
+* SNOW_SRV: This parameter defines the default path to the snow-configspace folder.
 ```
-SNOW_CONF=$SNOW_PATH/snow-configspace
+SNOW_SRV=$SNOW_ROOT/snow-configspace
 ```
-* SNOW_TOOL: This parameter defines the default path to the snow-tools folder.
+* SNOW_ROOT: This parameter defines the default path to the snow-tools folder.
 ```
-SNOW_TOOL=$SNOW_PATH/snow-tools
+SNOW_ROOT=$SNOW_ROOT/snow-tools
 ```
 ## Domains Image
 The following options define where the domains OS files will be stored. This allows you to use root and swap filesystems for the domains in LVM volumes and loopback files.
@@ -90,7 +90,7 @@ Defines a list of admin users eligible to access via SSH to the domains and depl
 ## Admin Groups
 Defines a list of admin groups eligible to access via SSH to the domains and deployed compute nodes from the sNow! nodes. The default value is ADMIN_GROUPS="root snow"
 ## Source control and continuous integration support
-The following parameters allow you to integrate the key configuration files, deployment scripts and other key codes located in /sNow/snow-configspace with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
+The following parameters allow you to integrate the key configuration files, deployment scripts and other key codes located in ${SNOW_SRV} with your source control system. It supports GitHub and BitBucket through OAuth tokens. The default values are empty.
 This is key to enabling continuous integration support and testing changes in a testing environment before to merging them into  production.
 Since the data contained in this folder is extremely sensitive, the GIT repository MUST be private. Since BitBucket allows you to use private repositories for free, we suggest to explore this option. More information about how to setup OAuth integrated applications is available in the GitHub and BitBucket websites.
 Example:
@@ -219,7 +219,7 @@ SITE_MAIL_PASSWORD=
 SITE_SYSLOG_SERVER=192.168.7.1
 ```
 ## Shared file system support
-sNow! supports integration with the most popular shared filesystems in HPC environments via hooks. sNow! has native support for NFS clients. If you are using a different shared file system, then the $SNOW_PATH and $HOME must be available in the sNow! management nodes and some node(s) must re-export those file systems through NFS.
+sNow! supports integration with the most popular shared filesystems in HPC environments via hooks. sNow! has native support for NFS clients. If you are using a different shared file system, then the $SNOW_ROOT and $HOME must be available in the sNow! management nodes and some node(s) must re-export those file systems through NFS.
 ### NFS clients
 The NFS mounts can be defined in a BASH array element format, where each mount is identified with a unique number from 1 to 100. Remember that you will need to update the /etc/exports in your server and reload the NFS configuration with “exportfs -ra”.
 ```
@@ -229,9 +229,9 @@ Example:
 ```
 MOUNT_NFS[3]="snow01:/projects             /projects        nfs    bg,tcp,defaults 0 0"
 ```
-If NFS is your main shared file system, then the following two lines become mandatory, as they define the required mount points for $SNOW_PATH and $HOME, which are needed for sNow! to function correctly.
+If NFS is your main shared file system, then the following two lines become mandatory, as they define the required mount points for $SNOW_ROOT and $HOME, which are needed for sNow! to function correctly.
 ```
-MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_PATH}        ${SNOW_PATH}   nfs    bg,tcp,defaults 0 0"
+MOUNT_NFS[1]="${NFS_SERVER}:${SNOW_ROOT}        ${SNOW_ROOT}   nfs    bg,tcp,defaults 0 0"
 MOUNT_NFS[2]="${NFS_SERVER}:${SNOW_HOME}        ${SNOW_HOME}   nfs    bg,tcp,defaults 0 0"
 ```
 ## Slurm configuration
@@ -249,7 +249,7 @@ ACCOUNTING_STORAGE_ENFORCE=associations,qos
 ```
 Fairsharing is the most common approach to share resources but it requires some manual intervention. Consider using the following helper script to define how to share the computational resources between your groups and users:
 ```
-$SNOW_TOOLS/contrib/slurm_fairshare/slurm_share_tree.sh
+$SNOW_ROOT/contrib/slurm_fairshare/slurm_share_tree.sh
 ```
 If you you don't need QoS or fairshare, you can consider to implement one of the two following options:
 

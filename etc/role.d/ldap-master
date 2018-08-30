@@ -34,23 +34,23 @@ else
     echo "Installation problem"
 fi
 # Load sNow! configuration
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     declare -A CLUSTERS
-    source /sNow/snow-tools/etc/snow.conf
+    source ${SNOW_ETC}/snow.conf
 else
-    error_msg  "The /sNow/snow-tools/etc/snow.conf is not available."
-    error_exit "Please use the /sNow/snow-tools/etc/snow.conf-example to setup your environment."
+    error_msg  "The ${SNOW_ETC}/snow.conf is not available."
+    error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f /sNow/snow-tools/share/common.sh ]]; then
-    source /sNow/snow-tools/share/common.sh
+if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+    source ${SNOW_ROOT}/share/common.sh
     get_os_distro
     architecture_identification
 fi
 set -xv
 # LDAP Server Setup
-SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_TOOL/etc/domains.conf)
-SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_TOOL/etc/domains.conf)
+SNOW_LDAP_SERVER=$(gawk '{if($2 ~ /ldap-master|ldap-replica|ldap-slave/){print $4}}' $SNOW_ROOT/etc/domains.conf)
+SNOW_LDAP_URI=$(gawk -v proto=$LDAP_PROTO 'BEGIN{i=0}{if($2 ~ /ldap-/){ldap[i]=$4; i++}}END{uri=proto"://"ldap[0]; for (j = 1; j < i; j++){uri=uri" ,"proto"://"ldap[j]}; print uri}' $SNOW_ROOT/etc/domains.conf)
 LDAP_PROTO="${SITE_LDAP_PROTO:-ldap}"
 SNOW_LDAP_BASE=$(echo "dc=$DOMAIN" | sed 's/\./,dc=/g')
 LDAP_BASE="${SITE_LDAP_BASE:-$SNOW_LDAP_BASE}"
@@ -62,12 +62,12 @@ LDAP_ORGANIZATION="${LDAP_ORGANIZATION:-${LDAP_BASE}}"
 
 if  [[ ! -z "$SNOW_LDAP_SERVER" ]]; then
     installDebianPackage ${prefix} slapd ldap-utils ldapscripts openssl gnutls-bin ssl-cert pwgen
-    if [[ -e /sNow/snow-configspace/system_files/etc/ldap/slapd.d ]]; then
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/ldap/slapd.d ]]; then
         mv ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
-        cp -pr /sNow/snow-configspace/system_files/etc/ldap ${prefix}/etc/ldap
+        cp -pr ${SNOW_SRV}/deploy_files/etc/ldap ${prefix}/etc/ldap
     else
         cp -pr ${prefix}/etc/ldap ${prefix}/etc/ldap.dist
-        cp -pr /sNow/snow-tools/etc/config_template.d/ldap_server/* ${prefix}/etc/ldap/
+        cp -pr ${SNOW_ETC}/config_template.d/ldap_server/* ${prefix}/etc/ldap/
         #echo "ulimit -n 8192" >> ${prefix}/etc/default/slapd
         # Check available options with: debconf-show slapd
         cat <<-EOF | chroot ${prefix} /usr/bin/debconf-set-selections
@@ -122,9 +122,9 @@ EOF
     fi
 
     # Enable TLS support
-    if [[ -e /sNow/snow-configspace/system_files/etc/ssl/slapd ]]; then
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/ssl/slapd ]]; then
         mkdir -p ${prefix}/etc/ssl/slapd
-        cp -pr /sNow/snow-configspace/system_files/etc/ssl/slapd/* ${prefix}/etc/ssl/slapd
+        cp -pr ${SNOW_SRV}/deploy_files/etc/ssl/slapd/* ${prefix}/etc/ssl/slapd
     else
         # Create dir for certificates
         mkdir -p ${prefix}/etc/ssl/slapd
@@ -176,7 +176,7 @@ EOF
     # Secure the keys
     chroot ${prefix} /usr/sbin/adduser openldap ssl-cert
     chroot ${prefix} /bin/chown -R openldap:openldap /etc/ldap/slapd.d /var/lib/ldap/ /var/run/slapd/
-    cp -pr ${prefix}/etc/ldap/slapd.d /sNow/snow-configspace/system_files/etc/ldap/
+    cp -pr ${prefix}/etc/ldap/slapd.d ${SNOW_SRV}/deploy_files/etc/ldap/
     chroot ${prefix} /bin/chown root:ssl-cert /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
     chroot ${prefix} /bin/chmod 640 /etc/ssl/slapd/{cacert,ldaps_slapd_key,ldaps_slapd_cert}.pem
     # Give apparmor access to cert files - Ubuntu
@@ -194,11 +194,11 @@ EOF
     echo "URI ldap:// ldapi://" >> ${prefix}/etc/ldap/ldap.conf
     echo "TLS_CACERT /etc/ssl/slapd/cacert.pem" >> ${prefix}/etc/ldap/ldap.conf
     echo "TLS_REQCERT ALLOW" >> ${prefix}/etc/ldap/ldap.conf
-    cp -pr ${prefix}/etc/ssl /sNow/snow-configspace/system_files/etc/
+    cp -pr ${prefix}/etc/ssl ${SNOW_SRV}/deploy_files/etc/
 
     # Setup ldapscripts
-    if [[ -e /sNow/snow-configspace/system_files/etc/ldapscripts ]]; then
-        cp -pr /sNow/snow-configspace/system_files/etc/ldapscripts/* ${prefix}/etc/ldapscripts/
+    if [[ -e ${SNOW_SRV}/deploy_files/etc/ldapscripts ]]; then
+        cp -pr ${SNOW_SRV}/deploy_files/etc/ldapscripts/* ${prefix}/etc/ldapscripts/
     else
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#SERVER" "SERVER=\"ldap://localhost\""
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#SUFFIX" "SUFFIX=\"$LDAP_BASE\""
@@ -208,6 +208,6 @@ EOF
         replace_text ${prefix}/etc/ldapscripts/ldapscripts.conf "^#LDAPBINOPTS=\"-ZZ\"" "LDAPBINOPTS=\"-ZZ\""
         echo -n "${LDAP_ADMIN_PASSWORD}" > ${prefix}/etc/ldapscripts/ldapscripts.passwd
         chmod 400 ${prefix}/etc/ldapscripts/ldapscripts.passwd
-        cp -pr ${prefix}/etc/ldapscripts /sNow/snow-configspace/system_files/etc/
+        cp -pr ${prefix}/etc/ldapscripts ${SNOW_SRV}/deploy_files/etc/
     fi
 fi
