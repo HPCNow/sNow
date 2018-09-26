@@ -37,12 +37,12 @@ function setup_ganglia_client()
     esac
     install_software "$pkgs"
     cluster=$(jq ".compute.${HOSTNAME}.cluster" ${SNOW_ETC}/nodes.json |sed -e 's|"||g')
-    if [[ ! -e $SNOW_SRV/system_files/etc/ganglia/gmond_${cluster}.conf ]]; then 
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/ganglia/gmond_${cluster}.conf ]]; then 
         warning_msg "Ganglia configuration not found. Using default values." 
-        /usr/sbin/gmond -t > $SNOW_SRV/system_files/etc/ganglia/gmond_${cluster}.conf
-        sed -i "s|name = \"unspecified\"|name = \"${cluster}\"|g" $SNOW_SRV/system_files/etc/ganglia/gmond_${cluster}.conf
+        /usr/sbin/gmond -t > $SNOW_SRV/deploy_files/etc/ganglia/gmond_${cluster}.conf
+        sed -i "s|name = \"unspecified\"|name = \"${cluster}\"|g" $SNOW_SRV/deploy_files/etc/ganglia/gmond_${cluster}.conf
     fi
-    cp -p $SNOW_SRV/system_files/etc/ganglia/gmond_${cluster}.conf /etc/ganglia/gmond.conf
+    cp -p $SNOW_SRV/deploy_files/etc/ganglia/gmond_${cluster}.conf /etc/ganglia/gmond.conf
     chown root:root /etc/ganglia/gmond.conf
     chmod 640 /etc/ganglia/gmond.conf
     case $OS in

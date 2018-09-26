@@ -42,13 +42,13 @@ function install_slurm_client()
         ;;
     esac
     install_software "$pkgs"
-    cp -p $SNOW_SRV/system_files/etc/munge/munge.key /etc/munge/munge.key
+    cp -p $SNOW_SRV/deploy_files/etc/munge/munge.key /etc/munge/munge.key
     chown -R munge:munge /etc/munge
     chmod 600 /etc/munge/munge.key
     systemctl enable munge.service
     systemctl start munge.service
     mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-    cp -pr $SNOW_SRV/system_files/etc/slurm/* /etc/slurm/
+    cp -pr $SNOW_SRV/deploy_files/etc/slurm/* /etc/slurm/
     chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     systemctl enable slurmd.service
     systemctl start slurmd.service
@@ -97,7 +97,7 @@ function install_torque_client()
 function setup_workload_client()
 {
     # Slurm Workload Manager
-    if [[ -f $SNOW_SRV/system_files/etc/slurm/slurm.conf ]]; then
+    if [[ -f $SNOW_SRV/deploy_files/etc/slurm/slurm.conf ]]; then
         install_slurm_client
     fi
     # Torque Workload Manager

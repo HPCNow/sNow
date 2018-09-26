@@ -280,18 +280,18 @@ function install_opennebula()
     esac
     install_software "$pkgs"
     # Note that if you alredy have oneadmin SSH keys available, sNow! will use those.
-    if [[ ! -e $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
-        if [[ ! -e $SNOW_SRV/system_files/etc/rsa ]]; then
-            mkdir -p $SNOW_SRV/system_files/etc/rsa
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa/id_rsa_oneadmin.pub ]]; then
+        if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa ]]; then
+            mkdir -p $SNOW_SRV/deploy_files/etc/rsa
         fi
-        cp -p /var/lib/one/.ssh/id_rsa $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin
-        cp -p /var/lib/one/.ssh/id_rsa.pub $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub
+        cp -p /var/lib/one/.ssh/id_rsa $SNOW_SRV/deploy_files/etc/rsa/id_rsa_oneadmin
+        cp -p /var/lib/one/.ssh/id_rsa.pub $SNOW_SRV/deploy_files/etc/rsa/id_rsa_oneadmin.pub
     else
         if [[ ! -e /var/lib/one/.ssh ]]; then
             mkdir -p /var/lib/one/.ssh
         fi
-        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin /var/lib/one/.ssh/id_rsa
-        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_oneadmin.pub /var/lib/one/.ssh/id_rsa.pub
+        cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_oneadmin /var/lib/one/.ssh/id_rsa
+        cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_oneadmin.pub /var/lib/one/.ssh/id_rsa.pub
         cp -p /var/lib/one/.ssh/id_rsa.pub /var/lib/one/.ssh/authorized_keys
         chmod 600 /var/lib/one/.ssh/authorized_keys
         chmod 400 /var/lib/one/.ssh/id_rsa

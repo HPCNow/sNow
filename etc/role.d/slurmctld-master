@@ -67,22 +67,22 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
     # Setup Munge key slurm
     # Note that if you alredy have the config files available, no changes will be performed.
     chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
-    if [[ ! -e $SNOW_SRV/system_files/etc/munge/munge.key ]]; then
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/munge/munge.key ]]; then
         dd if=/dev/urandom bs=1 count=1024 > ${prefix}/etc/munge/munge.key 
-        mkdir -p $SNOW_SRV/system_files/etc/munge
-        cp -p ${prefix}/etc/munge/munge.key $SNOW_SRV/system_files/etc/munge/munge.key
+        mkdir -p $SNOW_SRV/deploy_files/etc/munge
+        cp -p ${prefix}/etc/munge/munge.key $SNOW_SRV/deploy_files/etc/munge/munge.key
     else
-        cp -p $SNOW_SRV/system_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
+        cp -p $SNOW_SRV/deploy_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
     fi
     chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
     chroot ${prefix} /bin/chmod 700 /etc/munge
     chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key 
     echo "SLURM_CONF=/etc/slurm/slurm.conf" >> ${prefix}/etc/default/slurmctld
-    if [[ -e $SNOW_SRV/system_files/etc/slurm/slurm.conf ]]; then 
-        # The current configuration located in $SNOW_SRV/system_files/etc/slurm 
+    if [[ -e $SNOW_SRV/deploy_files/etc/slurm/slurm.conf ]]; then 
+        # The current configuration located in $SNOW_SRV/deploy_files/etc/slurm 
         # will be used for this sNow! domain.
         chroot ${prefix} /bin/mkdir -p /etc/slurm /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-        cp -pr $SNOW_SRV/system_files/etc/slurm ${prefix}/etc/
+        cp -pr $SNOW_SRV/deploy_files/etc/slurm ${prefix}/etc/
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     else
         # Setup initial Slurm Database configuration based on the environment.
@@ -126,13 +126,13 @@ if  [[ ! -z "$SNOW_SLURMCTLD_MASTER" ]]; then
         chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
         echo "Slurm master has been setup. Please, update the current slurm configuration files to your needs."
         chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
-        cp -pr ${prefix}/etc/slurm/* $SNOW_SRV/system_files/etc/slurm/
+        cp -pr ${prefix}/etc/slurm/* $SNOW_SRV/deploy_files/etc/slurm/
     fi
-    if [[ -e $SNOW_SRV/system_files/etc/profile.d/slurm-source.sh ]]; then
-        cp -p $SNOW_SRV/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    if [[ -e $SNOW_SRV/deploy_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_SRV/deploy_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
     else
         cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm-source.* ${prefix}/etc/profile.d/
-        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm-source.* $SNOW_SRV/system_files/etc/profile.d/
+        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm-source.* $SNOW_SRV/deploy_files/etc/profile.d/
     fi
 fi
 

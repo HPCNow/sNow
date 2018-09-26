@@ -58,7 +58,7 @@ mkdir -p ${prefix}/srv/tftp
 SNOW_DNS_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 TFTP_SERVER=$(gawk '{if($2 ~ /deploy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
 installDebianPackage ${prefix} dnsmasq
-if [[ ! -f $SNOW_SRV/system_files/etc/dnsmasq.conf ]]; then
+if [[ ! -f $SNOW_SRV/deploy_files/etc/dnsmasq.conf ]]; then
     cp -p ${prefix}/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf.orig
     last_ip=$(last_ip_in_range ${NET_COMP[2]}/${NET_COMP[4]})
     echo "
@@ -79,23 +79,23 @@ enable-tftp
 read-ethers
 tftp-root=/srv/tftp
 " > ${prefix}/etc/dnsmasq.conf
-    cp -p ${prefix}/etc/dnsmasq.conf $SNOW_SRV/system_files/etc/dnsmasq.conf
+    cp -p ${prefix}/etc/dnsmasq.conf $SNOW_SRV/deploy_files/etc/dnsmasq.conf
 else
-    cp -p $SNOW_SRV/system_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
+    cp -p $SNOW_SRV/deploy_files/etc/dnsmasq.conf ${prefix}/etc/dnsmasq.conf
 fi
 
-if [[ ! -e $SNOW_SRV/system_files/etc/ethers ]]; then
+if [[ ! -e $SNOW_SRV/deploy_files/etc/ethers ]]; then
     touch ${prefix}/etc/ethers
-    cp -p ${prefix}/etc/ethers $SNOW_SRV/system_files/etc/ethers
+    cp -p ${prefix}/etc/ethers $SNOW_SRV/deploy_files/etc/ethers
 else
-    cp -p $SNOW_SRV/system_files/etc/ethers ${prefix}/etc/ethers
+    cp -p $SNOW_SRV/deploy_files/etc/ethers ${prefix}/etc/ethers
 fi
 
-cp -p $SNOW_SRV/system_files/etc/static_hosts ${prefix}/etc/static_hosts
+cp -p $SNOW_SRV/deploy_files/etc/static_hosts ${prefix}/etc/static_hosts
 cp -p $SNOW_ROOT/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
 # DNS Client Setup
-if [[ -e $SNOW_SRV/system_files/etc/resolv.conf ]]; then 
+if [[ -e $SNOW_SRV/deploy_files/etc/resolv.conf ]]; then 
     echo "search $DOMAIN ${DNS_SEARCH_LIST}" > ${prefix}/etc/resolv.conf
     if [[ ! -z "$SITE_DNS_SERVER" ]]; then
         SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
@@ -138,9 +138,9 @@ if [[ ! -f $SNOW_SRV/boot/templates/postconfig.sh ]]; then
 fi
 
 # HPCNow repos
-if [[ ! -e $SNOW_SRV/system_files/etc/repos ]]; then
-    mkdir -p $SNOW_SRV/system_files/etc/repos
-    cp -pr $SNOW_ROOT/etc/config_template.d/repos/* $SNOW_SRV/system_files/etc/repos/
+if [[ ! -e $SNOW_SRV/deploy_files/etc/repos ]]; then
+    mkdir -p $SNOW_SRV/deploy_files/etc/repos
+    cp -pr $SNOW_ROOT/etc/config_template.d/repos/* $SNOW_SRV/deploy_files/etc/repos/
 fi
 
 # Download linux kernels to boot OS from PXE defined in $SNOW_ROOT/etc/config_template.d/boot/templates/pxe_kernels.conf

@@ -66,18 +66,18 @@ function setup_dnsmasq()
 
 
     # Setup DNSMASQ
-    if [[ ! -e $SNOW_SRV/system_files/etc/ethers ]]; then
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/ethers ]]; then
         touch ${prefix}/etc/ethers
-        cp -p ${prefix}/etc/ethers $SNOW_SRV/system_files/etc/ethers
+        cp -p ${prefix}/etc/ethers $SNOW_SRV/deploy_files/etc/ethers
     else
-        cp -p $SNOW_SRV/system_files/etc/ethers ${prefix}/etc/ethers
+        cp -p $SNOW_SRV/deploy_files/etc/ethers ${prefix}/etc/ethers
     fi
 
-    cp -p $SNOW_SRV/system_files/etc/static_hosts ${prefix}/etc/static_hosts
+    cp -p $SNOW_SRV/deploy_files/etc/static_hosts ${prefix}/etc/static_hosts
     cp -p $SNOW_ROOT/etc/config_template.d/dhcp/fishermac ${prefix}/usr/local/bin/
 
     # DNS Client Setup
-    if [[ -e $SNOW_SRV/system_files/etc/resolv.conf ]]; then
+    if [[ -e $SNOW_SRV/deploy_files/etc/resolv.conf ]]; then
         echo "search $DOMAIN ${DNS_SEARCH_LIST}" > ${prefix}/etc/resolv.conf
         if [[ ! -z "$SITE_DNS_SERVER" ]]; then
             SITE_DNS=$(echo $SITE_DNS_SERVER | tr ',' '\n' | gawk '{print "nameserver "$1}')
@@ -120,9 +120,9 @@ function setup_dnsmasq()
     fi
 
     # HPCNow repos
-    if [[ ! -e $SNOW_SRV/system_files/etc/repos ]]; then
-        mkdir -p $SNOW_SRV/system_files/etc/repos
-        cp -pr $SNOW_ROOT/etc/config_template.d/repos/* $SNOW_SRV/system_files/etc/repos/
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/repos ]]; then
+        mkdir -p $SNOW_SRV/deploy_files/etc/repos
+        cp -pr $SNOW_ROOT/etc/config_template.d/repos/* $SNOW_SRV/deploy_files/etc/repos/
     fi
 
     # Download linux kernels to boot OS from PXE defined in $SNOW_ROOT/etc/config_template.d/boot/templates/pxe_kernels.conf

@@ -44,7 +44,7 @@ if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
 fi
 
 # Slurm Client Setup
-if [[ -e $SNOW_SRV/system_files/etc/slurm/slurm.conf ]]; then
+if [[ -e $SNOW_SRV/deploy_files/etc/slurm/slurm.conf ]]; then
     chroot ${prefix} /usr/bin/apt-get update -q
     installDebianPackage ${prefix} curl pbzip2 slurm-llnl slurm-client
     chroot ${prefix} /bin/systemctl enable munge.service
@@ -58,28 +58,28 @@ if [[ -e $SNOW_SRV/system_files/etc/slurm/slurm.conf ]]; then
         chroot ${prefix} /usr/sbin/usermod -u $SLURM_UID -g $SLURM_GID slurm
     fi
     # Setup Munge key and Slurm
-    cp -p $SNOW_SRV/system_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
+    cp -p $SNOW_SRV/deploy_files/etc/munge/munge.key ${prefix}/etc/munge/munge.key
     chroot ${prefix} /bin/mkdir -p /var/log/munge /var/lib/munge /etc/munge /var/run/munge
     chroot ${prefix} /bin/chown -R munge:munge /var/log/munge /var/lib/munge /etc/munge /var/run/munge
     chroot ${prefix} /bin/chmod 700 /etc/munge
     chroot ${prefix} /bin/chmod 600 /etc/munge/munge.key
     chroot ${prefix} /bin/chown -R munge:munge /etc/munge
-    cp -pr $SNOW_SRV/system_files/etc/slurm ${prefix}/etc/
+    cp -pr $SNOW_SRV/deploy_files/etc/slurm ${prefix}/etc/
     chroot ${prefix} /bin/mkdir -p /var/run/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     chroot ${prefix} /bin/chown -R slurm:slurm /etc/slurm /var/spool/slurmd /var/spool/slurm /var/log/slurm
     # Transfer Slurm user scripts
     ln -sf $SNOW_ROOT/etc/config_template.d/slurm_client/interactive ${SNOW_ROOT}/bin/
     ln -sf $SNOW_ROOT/etc/config_template.d/slurm_client/eb_wrap ${SNOW_ROOT}/bin/
     #ln -sf $SNOW_ROOT/etc/config_template.d/slurm_client/slurm_share_tree.sh ${SNOW_ROOT}/bin/
-    if [[ ! -e $SNOW_SRV/system_files/etc/profile.d/slurm-source.sh ]]; then
-        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm-source.* $SNOW_SRV/system_files/etc/profile.d/
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/profile.d/slurm-source.sh ]]; then
+        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm-source.* $SNOW_SRV/deploy_files/etc/profile.d/
     fi
-    ln -sf $SNOW_SRV/system_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
+    ln -sf $SNOW_SRV/deploy_files/etc/profile.d/slurm-source.* ${prefix}/etc/profile.d/
     # Transfer slurm default environment for interactive usage
-    if [[ ! -e $SNOW_SRV/system_files/etc/slurm.env ]]; then
-        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm.env $SNOW_SRV/system_files/etc/
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/slurm.env ]]; then
+        cp -p $SNOW_ROOT/etc/config_template.d/slurm_client/slurm.env $SNOW_SRV/deploy_files/etc/
     fi
-    ln -sf $SNOW_SRV/system_files/etc/slurm.env $SNOW_ROOT/etc/slurm.env
+    ln -sf $SNOW_SRV/deploy_files/etc/slurm.env $SNOW_ROOT/etc/slurm.env
 fi
 
 ln -sf ${SNOW_ROOT}/bin/snow-source.sh ${prefix}/etc/profile.d/snow.sh

@@ -65,7 +65,7 @@ if  [[ ! -z "$SWARM_MANAGER" ]]; then
     # Check if the configuration file already exists
     if [[ ! -e ${SNOW_SRV}/deploy_files/etc/docker-compose.yml ]]; then
         # Transfer the existing file to the final destination
-        cp -p $SNOW_ROOT/etc/config_template.d/swarm/docker-compose.yml $SNOW_SRV/system_files/etc/docker-compose.yml
+        cp -p $SNOW_ROOT/etc/config_template.d/swarm/docker-compose.yml $SNOW_SRV/deploy_files/etc/docker-compose.yml
     fi
-    cp -p $SNOW_SRV/system_files/etc/docker-compose.yml ${prefix}/root/
+    cp -p $SNOW_SRV/deploy_files/etc/docker-compose.yml ${prefix}/root/
 fi

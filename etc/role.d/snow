@@ -99,7 +99,7 @@ cp -p $SNOW_HOME/$sNow_USER/.ssh/id_rsa ${prefix}/root/.ssh/id_rsa
 chown -R root:root ${prefix}/root/.ssh
 chmod 700 ${prefix}/root/.ssh
 chmod 640 ${prefix}/root/.ssh/authorized_keys
-cp -pr $SNOW_SRV/system_files/etc/ssh/ssh_host_* ${prefix}/etc/ssh/
+cp -pr $SNOW_SRV/deploy_files/etc/ssh/ssh_host_* ${prefix}/etc/ssh/
 replace_text ${prefix}/etc/ssh/ssh_config "StrictHostKeyChecking" "StrictHostKeyChecking no"
 #sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
 
@@ -269,19 +269,19 @@ fi
 
 if  [[ ! -z "$MONITOR_SERVER" ]]; then
     installDebianPackage ${prefix} ganglia-monitor
-    if [[ ! -e $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf ]]; then
-        if [[ ! -e $SNOW_SRV/system_files/etc/ganglia ]]; then
-            mkdir -p $SNOW_SRV/system_files/etc/ganglia
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf ]]; then
+        if [[ ! -e $SNOW_SRV/deploy_files/etc/ganglia ]]; then
+            mkdir -p $SNOW_SRV/deploy_files/etc/ganglia
         fi
-        chroot ${prefix} /usr/sbin/gmond -t > $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "s|send_metadata_interval = 0|send_metadata_interval = 30|g" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "s|name = \"unspecified\"|name = \"sNow Domains\"|g" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "/^udp_send_channel {/,/^}/ {/}/s/.*/udp_send_channel {\n  host = ${MONITOR_SERVER}\n  port = 8650\n  ttl = 1\n}/; t; d;}" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "/^udp_recv_channel {/,/^}/ {/}/s/.*/udp_recv_channel {\n  port = 8650\n}/; t; d;}" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "/^tcp_accept_channel {/,/^}/ {/}/s/.*/tcp_accept_channel {\n  port = 8650\n}/; t; d;}" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
-        sed -i "s|deaf = .*|deaf = no|g" $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf
+        chroot ${prefix} /usr/sbin/gmond -t > $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "s|send_metadata_interval = 0|send_metadata_interval = 30|g" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "s|name = \"unspecified\"|name = \"sNow Domains\"|g" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^udp_send_channel {/,/^}/ {/}/s/.*/udp_send_channel {\n  host = ${MONITOR_SERVER}\n  port = 8650\n  ttl = 1\n}/; t; d;}" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^udp_recv_channel {/,/^}/ {/}/s/.*/udp_recv_channel {\n  port = 8650\n}/; t; d;}" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "/^tcp_accept_channel {/,/^}/ {/}/s/.*/tcp_accept_channel {\n  port = 8650\n}/; t; d;}" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
+        sed -i "s|deaf = .*|deaf = no|g" $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf
     fi
-    cp -p $SNOW_SRV/system_files/etc/ganglia/gmond_domains.conf ${prefix}/etc/ganglia/gmond.conf
+    cp -p $SNOW_SRV/deploy_files/etc/ganglia/gmond_domains.conf ${prefix}/etc/ganglia/gmond.conf
 fi
 
 # Secondary Network Interface

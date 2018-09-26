@@ -59,12 +59,12 @@ if  [[ ! -z "$ICINGA_SERVER" ]]; then
     installDebianPackage ${prefix} icinga2 monitoring-plugins vim-icinga2 vim-addon-manager icingaweb2 icingacli
     chroot ${prefix} /usr/bin/vim-addon-manager -w install icinga2
     # Setup PHP timezone
-    if [[ -e $SNOW_SRV/system_files/etc/icinga2/php.ini ]]; then 
-        cp -p $SNOW_SRV/system_files/etc/icinga2/php.ini ${prefix}/etc/php5/apache2/php.ini
+    if [[ -e $SNOW_SRV/deploy_files/etc/icinga2/php.ini ]]; then 
+        cp -p $SNOW_SRV/deploy_files/etc/icinga2/php.ini ${prefix}/etc/php5/apache2/php.ini
     else
-        mkdir -p $SNOW_SRV/system_files/etc/icinga2
+        mkdir -p $SNOW_SRV/deploy_files/etc/icinga2
         replace_text ${prefix}/etc/php5/apache2/php.ini "^date.timezone" "date.timezone = $TIMEZONE"
-        cp -p ${prefix}/etc/php5/apache2/php.ini $SNOW_SRV/system_files/etc/icinga2/php.ini
+        cp -p ${prefix}/etc/php5/apache2/php.ini $SNOW_SRV/deploy_files/etc/icinga2/php.ini
     fi
     # Setup MySQL server
     exit
@@ -74,10 +74,10 @@ if  [[ ! -z "$ICINGA_SERVER" ]]; then
     #chroot ${prefix} /usr/bin/mysql_secure_installation
     installDebianPackage ${prefix} icinga2-ido-mysql
     # Setting Up Icinga 2 REST API
-    if [[ -e $SNOW_SRV/system_files/etc/icinga2/pki/ca.crt ]]; then 
-        cp -pr $SNOW_SRV/system_files/etc/icinga2 ${prefix}/etc/
+    if [[ -e $SNOW_SRV/deploy_files/etc/icinga2/pki/ca.crt ]]; then 
+        cp -pr $SNOW_SRV/deploy_files/etc/icinga2 ${prefix}/etc/
         mkdir -p ${prefix}/var/lib/icinga2
-        cp -pr $SNOW_SRV/system_files/var/lib/icinga2/ca ${prefix}/var/lib/icinga2/
+        cp -pr $SNOW_SRV/deploy_files/var/lib/icinga2/ca ${prefix}/var/lib/icinga2/
     else
         chroot ${prefix} /usr/sbin/icinga2 api setup
         replace_text ${prefix}/etc/icinga2/conf.d/api-users.conf "password =" "password = ${MASTER_PASSWORD}"
