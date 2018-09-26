@@ -55,23 +55,26 @@ function setup_user()
         echo "${user_name} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
     fi
 
-    if [[ ! -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
+    # Note that if you already have SSH keys available, sNow! will use those.
+    if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub ]]; then
+        if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa ]]; then
+            mkdir -p $SNOW_SRV/deploy_files/etc/rsa
+        fi
+        if [[ ! -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
+            sudo -u ${user_name} ssh-keygen -t rsa -f $SNOW_HOME/${user_name}/.ssh/id_rsa -q -P ""
+        fi
+        cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}
+        cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub
+    else
         if [[ ! -e $SNOW_HOME/${user_name}/.ssh ]]; then
             mkdir -p $SNOW_HOME/${user_name}/.ssh
-            chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh
         fi
-        # Note that if you already have SSH keys available, sNow! will use those.
-        if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub ]]; then
-            if [[ ! -e $SNOW_SRV/deploy_files/etc/rsa ]]; then
-                mkdir -p $SNOW_SRV/deploy_files/etc/rsa
-            fi
-            sudo -u ${user_name} ssh-keygen -t rsa -f $SNOW_HOME/${user_name}/.ssh/id_rsa -q -P ""
-            cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}
-            cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub
-        else
-            cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name} $SNOW_HOME/${user_name}/.ssh/id_rsa
-            cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub $SNOW_HOME/${user_name}/.ssh/id_rsa.pub
-        fi
+        cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name} $SNOW_HOME/${user_name}/.ssh/id_rsa
+        cp -p $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}.pub $SNOW_HOME/${user_name}/.ssh/id_rsa.pub
+        chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh
+    fi
+
+    if [[ ! -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
         bkp $SNOW_HOME/${user_name}/.ssh/authorized_keys
         cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_HOME/${user_name}/.ssh/authorized_keys
         chmod 600 $SNOW_HOME/${user_name}/.ssh/authorized_keys
@@ -81,6 +84,8 @@ function setup_user()
         echo "    UserKnownHostsFile /dev/null" >> $SNOW_HOME/${user_name}/.ssh/config
         echo "    PasswordAuthentication no" >> $SNOW_HOME/${user_name}/.ssh/config
         chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh/
+    else
+        error_msg "Error setting up sNow! SSH keys."
     fi
 } 1>>$LOGFILE 2>&1
 

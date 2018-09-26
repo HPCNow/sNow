@@ -219,7 +219,7 @@ function install_snow_repos()
 {
 if is_snow_node; then
     # If the configspace is not available, it must be created from scratch or pulled from git
-    if [[ ! -e ${SNOW_SRV} ]]; then
+    if [[ ! -e "${SNOW_SRV}/deploy_files" ]]; then
         # Justify why snow-configspace is created from scratch
         if [[ -z "$PRIVATE_GIT_TOKEN" ]]; then
             echo "PRIVATE_GIT_TOKEN is not set. The snow-configspace will be created from scratch."
@@ -238,7 +238,7 @@ if is_snow_node; then
                 cp -p ./snow.conf ${SNOW_ETC}/
             fi
         else
-            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_SRV || echo "ERROR: please review your tokens and repo URL."
+            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO $SNOW_SRV/ || echo "ERROR: please review your tokens and repo URL."
         fi
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
