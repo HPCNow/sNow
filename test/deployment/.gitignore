@@ -1,0 +1,3 @@
+#ignore kernels, ramdisks initrds
+*/linux
+*/initrd.gz

@@ -1,0 +1,6 @@
+default sNow
+# install
+label sNow
+menu label ^1) Install sNow! - Ubuntu 18.04 amd64
+kernel snow-ci/ubuntu/linux
+append initrd=snow-ci/ubuntu/initrd.gz auto=true interface=auto hostname=unassigned-hostname domain=unassigned-domain priority=critical preseed/url=tftp://10.250.0.1/snow-ci/ubuntu/snow-ha_ubuntu-18.04-x86_64.cfg  console=tty0 console=ttyS0,115200n8

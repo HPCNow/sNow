@@ -1,0 +1,52 @@
+# This file describes the network interfaces available on your system
+# and how to activate them.
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The network interfaces do not have an assigned IP as they are
+# used for the bridges
+auto enp5s0f1
+allow-hotplug enp5s0f1
+
+auto enp5s0f0
+allow-hotplug enp5s0f0
+
+# sNow! Network Bridge
+auto xsnow0
+iface xsnow0 inet static
+    	bridge_ports enp5s0f0
+    	bridge_stp off      	# disable Spanning Tree Protocol
+    	bridge_waitport 0   	# no delay unless port available
+    	bridge_fd 0         	# no forwarding delay
+    	address 10.1.0.1
+    	netmask 255.255.0.0
+    	network 10.1.0.0
+    	broadcast 10.1.254.255
+
+# Alias to access the IPMI interfaces on the compute nodes
+# which are also connected to the internal network
+auto xsnow0:mgmt
+iface xsnow0:mgmt inet static
+    	address 10.10.0.1
+    	netmask 255.255.0.0
+    	network 10.10.0.0
+    	broadcast 10.10.254.255
+
+# The public network bridge with the NAT rules
+auto xpub0
+iface xpub0 inet dhcp
+    bridge_ports enp5s0f1
+    bridge_stp off      	# disable Spanning Tree Protocol
+    bridge_waitport 0   	# no delay unless port available
+    bridge_fd 0         	# no forwarding delay
+    #address YOUR_LAN_IP_ADDRESS (eg. 10.10.0.201)
+    #netmask YOUR_LAN_NETMASK (eg. 255.0.0.0)
+    #network YOUR_LAN_NETWORK (eg. 10.0.0.0)
+    #broadcast YOUR_LAN_BROADCAST (10.255.255.255)
+    #gateway YOUR_LAN_GATEWAY (eg. 10.10.0.1)
+    #dns-nameservers YOUR_LAN_NAMESERVERS (eg. 8.8.8.8,4.4.4.4)
+    #dns-search YOUR_LAN_DOMAIN_SEARCH (eg. mydomain.com)
+    pre-up iptables -t nat -A POSTROUTING -s 10.1.0.0/16 -d 10.1.0.0/16 -j ACCEPT
+    pre-up iptables -t nat -A POSTROUTING -s 10.1.0.0/16 -j MASQUERADE

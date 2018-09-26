@@ -1,0 +1,6 @@
+default sNow
+# install
+label sNow
+menu label ^1) Install debian 9 amd64 minimal
+kernel snow-ci/debian/linux
+append initrd=snow-ci/debian/initrd.gz auto=true interface=auto hostname=unassigned-hostname domain=unassigned-domain priority=critical preseed/url=tftp://10.250.0.1/snow-ci/debian/ha-snow_debian-9-x86_64.cfg  console=tty0 console=ttyS0,115200n8
