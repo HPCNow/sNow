@@ -91,18 +91,18 @@ function setup_ssh()
         echo "root:${MASTER_PASSWORD}" | chpasswd
     fi
     # shellcheck disable=SC2154
-    setup_user "${sNow_USER}" "${sNow_UID}" "${sNow_GID}" "${sNow_GROUP}" "nopasswd" "/bin/bash" "sNow! Admin User"
+    setup_user "${SNOW_USER}" "${SNOW_UID}" "${SNOW_GID}" "${SNOW_GROUP}" "nopasswd" "/bin/bash" "sNow! Admin User"
     # shellcheck disable=SC2154
     if [[ "${HPCNow_Support}" != "none" ]]; then
         setup_user "${HPCNow_USER}" "${HPCNow_UID}" "${HPCNow_GID}" "${HPCNow_GROUP}" "nopasswd" "/bin/bash" "HPCNow! Admin User"
     fi
     # Setup SSH keys
-    if [[ -e $SNOW_SRV/system_files/etc/rsa/id_rsa_${sNow_USER}.pub ]]; then
+    if [[ -e $SNOW_SRV/system_files/etc/rsa/id_rsa_${SNOW_USER}.pub ]]; then
         if [[ ! -e /root/.ssh ]]; then
             mkdir -p /root/.ssh
         fi
-        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_${sNow_USER} /root/.ssh/id_rsa
-        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_${sNow_USER}.pub /root/.ssh/id_rsa.pub
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_${SNOW_USER} /root/.ssh/id_rsa
+        cp -p $SNOW_SRV/system_files/etc/rsa/id_rsa_${SNOW_USER}.pub /root/.ssh/id_rsa.pub
         bkp /root/.ssh/authorized_keys
         cp -p /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
         chmod 700 /root/.ssh
