@@ -29,7 +29,7 @@ The credentials are updated via Jenkins. If you want to test a complete deployme
 - Default password after deployment: HPCNOW
 - Default password after snow init: HPCN0w!!
 
-## Actions performed:
+## Actions Performed in Continuous Deployment:
 1. Deploy sNow! nodes (snowha01 and snowha02) from scratch
 2. Install BeeGFS clients
 3. Install sNow! Cluster Manager

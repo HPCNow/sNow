@@ -23,8 +23,7 @@ snow_release="milestone-2.0.0"
 if [[ ! -e /sNow ]]; then
     mkdir /sNow
 fi
-cd /sNow
-git clone https://github.com/HPCNow/sNow.git -b ${snow_release}
+git clone https://github.com/HPCNow/sNow.git -b ${snow_release} /sNow/
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf snow.conf.
 if [[ -e /sNow/etc/snow.conf ]]; then
     cp -p /sNow/test/deployment/ubuntu/netplan_snow02 /etc/netplan/01-netcfg.yaml
@@ -32,6 +31,7 @@ else
     cp -p /sNow/test/deployment/ubuntu/netplan_snow01 /etc/netplan/01-netcfg.yaml
 fi
 export SNOW_EULA=accepted
+cd /sNow
 ./install.sh ${snow_release}
 
 apt update

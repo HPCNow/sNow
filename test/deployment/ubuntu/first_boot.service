@@ -1,0 +1,12 @@
+[Unit]
+Description=First boot of sNow! servers
+After=network.target rpcbind.service sNow.mount
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 30
+ExecStart=/usr/local/bin/first_boot start
+ExecStop=/usr/local/bin/first_boot stop
+
+[Install]
+WantedBy=multi-user.target

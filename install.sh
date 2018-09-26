@@ -80,7 +80,7 @@ if [[ -z ${SNOW_SBIN} ]]; then
     SNOW_SBIN=${SNOW_ROOT}/sbin
 fi
 if [[ -z ${SNOW_ETC} ]]; then
-    SNOW_ETC=${SNOW_ETC}
+    SNOW_ETC=${SNOW_ROOT}/etc
 fi
 if [[ -z ${SNOW_LIB} ]]; then
     SNOW_LIB=${SNOW_ROOT}/lib
