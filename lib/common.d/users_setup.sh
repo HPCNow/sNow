@@ -74,7 +74,7 @@ function setup_user()
         chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}/.ssh
     fi
 
-    if [[ ! -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
+    if [[ -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
         bkp $SNOW_HOME/${user_name}/.ssh/authorized_keys
         cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa.pub $SNOW_HOME/${user_name}/.ssh/authorized_keys
         chmod 600 $SNOW_HOME/${user_name}/.ssh/authorized_keys
