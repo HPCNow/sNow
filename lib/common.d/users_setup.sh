@@ -93,8 +93,8 @@ function setup_ssh()
     # shellcheck disable=SC2154
     setup_user "${SNOW_USER}" "${SNOW_UID}" "${SNOW_GID}" "${SNOW_GROUP}" "nopasswd" "/bin/bash" "sNow! Admin User"
     # shellcheck disable=SC2154
-    if [[ "${HPCNow_Support}" != "none" ]]; then
-        setup_user "${HPCNow_USER}" "${HPCNow_UID}" "${HPCNow_GID}" "${HPCNow_GROUP}" "nopasswd" "/bin/bash" "HPCNow! Admin User"
+    if [[ "${HPCNOW_SUPPORT}" != "none" ]]; then
+        setup_user "${HPCNOW_USER}" "${HPCNOW_UID}" "${HPCNOW_GID}" "${HPCNOW_GROUP}" "nopasswd" "/bin/bash" "HPCNow! Admin User"
     fi
     # Setup SSH keys
     if [[ -e $SNOW_SRV/system_files/etc/rsa/id_rsa_${SNOW_USER}.pub ]]; then
