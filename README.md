@@ -44,13 +44,13 @@ In general, the target environments for sNow! are those looking for:
 ## Feedback, Suggestions and Bug Reports
 
 Please feel free to send feedback and suggestions to the main developers of this open-source project at info@hpcnow.com
-The sNow! development team is taking care of all the bugs reported on the official [Bitbucket project](https://bitbucket.org/hpcnow/snow-tools/issues?status=new&status=open )
+The sNow! development team is taking care of all the bugs reported on the official [GitHub project](https://github.com/HPCNow/sNow/issues)
 
 # Contact Information
 
 * [sNow! website](https://hpcnow.github.io/snow-web/)
 * [HPCNow! website](http://hpcnow.com)
-* [Source code](https://bitbucket.org/hpcnow/snow-tools)
+* [Source code](https://github.com/HPCNow/sNow.git)
 * [sNow! labs](https://github.com/hpcnow/snow-labs)
 * [Professional support](https://hpcnow.github.io/snow-web/support.html)
 * [Contribute back](https://hpcnow.github.io/snow-documentation/mydoc_contribute_back.html)

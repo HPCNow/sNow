@@ -243,7 +243,7 @@ if is_snow_node; then
     fi
     # Clone the git repo from HPCNow! or pull the updates from SNOW_VERSION release.
     if ! is_git_repo ${SNOW_ROOT}; then
-        git clone http://bitbucket.org/hpcnow/snow-tools.git -b ${SNOW_VERSION} ${SNOW_ROOT} || echo "ERROR: please review the connection to bitbucket."
+        git clone https://github.com/HPCNow/sNow.git -b ${SNOW_VERSION} ${SNOW_ROOT} || echo "ERROR: please review the connection to GitHub."
     else
         cd ${SNOW_ROOT} || exit
         git fetch
@@ -273,7 +273,7 @@ if [[ -f ${SNOW_LIB}/common.sh ]]; then
     fi
 else
     echo "ERROR: There is a problem installing the public git repository to your file system"
-    echo "       Please, review if you have access to this URL: http://bitbucket.org/hpcnow/snow-tools.git"
+    echo "       Please, review if you have access to this URL: https://github.com/HPCNow/sNow.git"
     echo "       and you have write access to the folder ${SNOW_ROOT}"
     exit 1
 fi
@@ -353,7 +353,7 @@ function setup_software()
 function eula()
 {
     if [[ ! -f  ${SNOW_ROOT}/eula.txt ]]; then
-        echo "[E] The local sNow! tools repository is corrupted. Please, test your connection to bitbucket."
+        echo "[E] The local sNow! tools repository is corrupted. Please, test your connection to GitHub."
     fi
     more  ${SNOW_ROOT}/eula.txt
     if [[ "${SNOW_EULA}" == "accepted" ]]; then

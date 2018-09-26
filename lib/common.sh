@@ -22,7 +22,7 @@
 
 function error_exit()
 {
-    local e_msg="${1:-'Unknown Error: Please report the issue to https://bitbucket.org/hpcnow/snow-tools/issues'}"
+    local e_msg="${1:-'Unknown Error: Please report the issue to https://github.com/HPCNow/sNow/issues'}"
     printf "\r\e[0K[\e[0;31m%c\e[m] %s \e[0;31m\e[m \n" "E" "${e_msg}" 1>&3
     sig=1
     exit 1
@@ -208,7 +208,7 @@ function end_msg()
 
     Get enterprise features and end user enterprise support from HPCNow!
     Please help us to improve this project, report bugs and issues to:
-    https://bitbucket.org/hpcnow/snow-tools/issues
+    https://github.com/HPCNow/sNow/issues
     If you found some error during the installation, please review the
     log file: $LOGFILE
     Some changes may require to reboot the system. Please, consider to do it
@@ -222,7 +222,7 @@ function install_error_msg()
     echo "
     --------------------------------------------------------------------------
     Please help us to improve this project, report bugs and issues to :
-    https://bitbucket.org/hpcnow/snow-tools/issues
+    https://github.com/HPCNow/sNow/issues
     If you found some error during the installation, please review the
     log file : $LOGFILE
     --------------------------------------------------------------------------
@@ -830,11 +830,11 @@ function update_tools()
     if [[ ! -d ${SNOW_ROOT} ]]; then
         mkdir -p ${SNOW_ROOT}
         cd ${SNOW_ROOT}
-        git clone http://bitbucket.org/hpcnow/snow-tools.git . || error_exit "Please, review the communication to the Internet."
+        git clone https://github.com/HPCNow/sNow.git . || error_exit "Please, review the communication to the Internet."
         cd -
     else
         cd ${SNOW_ROOT}
-        git pull http://bitbucket.org/hpcnow/snow-tools.git || error_exit "Please, review if you have not commited some local changes in the repository."
+        git pull https://github.com/HPCNow/sNow.git || error_exit "Please, review if you have not commited some local changes in the repository."
         cd -
     fi
 } 1>>$LOGFILE 2>&1
@@ -847,11 +847,11 @@ function update_configspace()
         if [[ ! -d ${SNOW_SRV}  ]]; then
             mkdir -p ${SNOW_SRV}
             cd ${SNOW_SRV}
-            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO . || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            git clone https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO . || error_exit "ERROR: please review the SSH certificates in your repository."
             cd -
         else
             cd ${SNOW_SRV}
-            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your bitbucket."
+            git pull https://$PRIVATE_GIT_TOKEN:x-oauth-basic@$PRIVATE_GIT_REPO || error_exit "ERROR: please review the SSH certificates in your repository."
             cd -
         fi
     fi
