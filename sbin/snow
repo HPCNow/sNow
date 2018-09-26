@@ -33,12 +33,6 @@ fi
 #Logging
 readonly RETAIN_NUM_LINES=10
 # Load the configuration
-SNOW_ROOT=/sNow
-SNOW_HOME=${SNOW_ROOT}/home
-SNOW_SOFT=${SNOW_ROOT}/easybuild
-SNOW_SRV=${SNOW_ROOT}/snow-configspace
-SNOW_ROOT=${SNOW_ROOT}/snow-tools
-SNOW_LOG=${SNOW_ROOT}/log
 readonly CONFIG_FILE=${SNOW_ETC}/snow.conf
 readonly ENTERPRISE_EXTENSIONS=${SNOW_ROOT}/share/enterprise_extensions.sh
 readonly SNOW_DOMAINS=${SNOW_ETC}/domains.conf
@@ -58,7 +52,7 @@ if [[ -f ${CONFIG_FILE} ]]; then
     source ${CONFIG_FILE}
     export PDSH_RCMD_TYPE
 else
-    readonly LOGFILE=/sNow/log/snow.log
+    readonly LOGFILE=${SNOW_LOG}/snow.log
     if [[ "$opt1" =~ ^([h][e][l][p]|[-][h][e][l][p]|[-][-][h][e][l][p]|[\?])$ ]]; then
         echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
     else
@@ -67,8 +61,8 @@ else
     fi
 fi
 
-if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
-    source ${SNOW_ROOT}/share/common.sh
+if [[ -f ${SNOW_LIB}/common.sh ]]; then
+    source ${SNOW_LIB}/common.sh
     logsetup
     get_os_distro
     architecture_identification
