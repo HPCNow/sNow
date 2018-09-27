@@ -19,6 +19,7 @@
 #apt install linux-headers-$(uname -r) -y
 
 snow_release="milestone-2.0.0"
+source /etc/profile.d/00-snow-env.sh
 ### sNow! Installation
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 if [[ -e /sNow/etc/snow.conf ]]; then
