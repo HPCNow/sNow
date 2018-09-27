@@ -61,6 +61,10 @@ function setup_user()
             mkdir -p $SNOW_SRV/deploy_files/etc/rsa
         fi
         if [[ ! -f $SNOW_HOME/${user_name}/.ssh/id_rsa ]]; then
+            if [[ ! -e $SNOW_HOME/${user_name}/.ssh ]]; then
+                mkdir -p $SNOW_HOME/${user_name}/.ssh
+                chown -R ${user_name}:${user_group} $SNOW_HOME/${user_name}
+            fi
             sudo -u ${user_name} ssh-keygen -t rsa -f $SNOW_HOME/${user_name}/.ssh/id_rsa -q -P ""
         fi
         cp -p $SNOW_HOME/${user_name}/.ssh/id_rsa $SNOW_SRV/deploy_files/etc/rsa/id_rsa_${user_name}
