@@ -23,6 +23,7 @@ snow_release="milestone-2.0.0"
 if [[ ! -e /sNow ]]; then
     mkdir /sNow
 fi
+rm -fr /sNow/* /sNow/.git /sNow/.gitignore
 git clone https://github.com/HPCNow/sNow.git -b ${snow_release} /sNow/
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf snow.conf.
 if [[ -e /sNow/etc/snow.conf ]]; then
