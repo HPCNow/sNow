@@ -25,18 +25,11 @@ if [[ ! -e /sNow ]]; then
 fi
 rm -fr /sNow/* /sNow/.git /sNow/.gitignore
 git clone https://github.com/HPCNow/sNow.git -b ${snow_release} /sNow/
-cp -p /sNow/test/deployment/ubuntu/single-snow.conf snow.conf
 if [[ -e /sNow/etc/snow.conf ]]; then
     cp -p /sNow/test/deployment/ubuntu/netplan_snow02 /etc/netplan/01-netcfg.yaml
 else
     cp -p /sNow/test/deployment/ubuntu/netplan_snow01 /etc/netplan/01-netcfg.yaml
 fi
-export SNOW_EULA=accepted
-cd /sNow
-./install.sh ${snow_release}
-
-apt update
-apt upgrade -y
 
 cat /sNow/test/deployment/ubuntu/hosts >> /etc/hosts
 

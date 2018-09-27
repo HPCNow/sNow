@@ -15,9 +15,23 @@
 ###
 ### You should have received a copy of the GNU General Public License
 ### along with this program.  If not, see <http://www.gnu.org/licenses/>.
-### 
+###
 #apt install linux-headers-$(uname -r) -y
 
+snow_release="milestone-2.0.0"
+### sNow! Installation
+cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
+if [[ -e /sNow/etc/snow.conf ]]; then
+    cp -p /sNow/test/deployment/ubuntu/netplan_snow02 /etc/netplan/01-netcfg.yaml
+else
+    cp -p /sNow/test/deployment/ubuntu/netplan_snow01 /etc/netplan/01-netcfg.yaml
+fi
+export SNOW_EULA=accepted
+cd /sNow
+./install.sh ${snow_release}
+
+apt update
+apt upgrade -y
 ### sNow! Configuration
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/snow-tools/etc/snow.conf
 cp -p /sNow/test/deployment/ubuntu/active-domains.conf /sNow/snow-tools/etc/
