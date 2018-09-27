@@ -12,7 +12,13 @@ network:
   bridges:
     xpub0:
       interfaces: [ enp5s0f1 ]
-      dhcp: yes
+      dhcp4: no
+      addresses:
+        - 10.250.0.3/24
+      gateway4: 10.250.0.1
+      nameservers:
+        search: [hpcnow.com, in.hpcnow.com]
+        addresses: [10.250.0.1, 8.8.8.8]
     xsnow0:
       interfaces: [ enp5s0f0 ]
       addresses:
