@@ -19,7 +19,7 @@
 #apt install linux-headers-$(uname -r) -y
 
 snow_release="milestone-2.0.0"
-source /etc/profile.d/00-snow-env.sh
+source /etc/profile
 ### sNow! Installation
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 if [[ -e /sNow/etc/snow.conf ]]; then
@@ -34,8 +34,8 @@ cd /sNow
 apt update
 apt upgrade -y
 ### sNow! Configuration
-cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/snow-tools/etc/snow.conf
-cp -p /sNow/test/deployment/ubuntu/active-domains.conf /sNow/snow-tools/etc/
+cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
+cp -p /sNow/test/deployment/ubuntu/active-domains.conf /sNow/etc/
 source /etc/profile.d/snow.sh
 snow init
 

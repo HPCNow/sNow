@@ -23,7 +23,7 @@ git clone https://github.com/HPCNow/snow-ci
 
 ### sNow Servers Configuration
 cd /root/snow-ci/debian
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     cp -p interfaces_snow02 /etc/network/interfaces 
 else
     cp -p interfaces_snow01 /etc/network/interfaces 

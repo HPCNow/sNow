@@ -6,7 +6,7 @@
 #set -xv
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
-# sNow! paths
+# Load sNow! paths
 # SNOW_HOME and SNOW_SOFT can be setup in different paths
 SNOW_ROOT=/sNow
 SNOW_ROOT=$SNOW_ROOT/snow-tools
@@ -51,13 +51,13 @@ else
     echo "sNow! config file NOT found!!!"
 fi
 
-if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+if [[ -f ${SNOW_LIB}/common.sh ]]; then
     LOGFILE=/root/snow-postinstall.log
     if [[ ! -f ${LOGFILE} ]]; then
         touch ${LOGFILE}
     fi
     RETAIN_NUM_LINES=10
-    source ${SNOW_ROOT}/share/common.sh
+    source ${SNOW_LIB}/common.sh
     logsetup
     get_os_distro
     architecture_identification

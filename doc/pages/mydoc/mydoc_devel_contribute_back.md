@@ -11,7 +11,7 @@ folder: mydoc
 
 If you want to get involved in the development of sNow! and be able to contribute back to this project, you will need a Bitbucket account.
 
-The official GIT repository is available here: https://bitbucket.org/hpcnow/snow-tools
+The official GIT repository is available here: https://github.com/HPCNow/sNow
 
 The sNow! development workflow relies on a strict branching model designed around the project release. Each new feature should reside in its own branch, which can be pushed to the central repository for backup/collaboration. In order to contribute a new feature, use develop as the parent branch. When a feature is complete, it will get merged back into develop through a pull request. Features should never interact directly with master.
 
@@ -22,21 +22,21 @@ The sNow! development workflow relies on a strict branching model designed aroun
 * [Git Workflow](https://www.youtube.com/watch?v%3DgLWSJXBbJuE)
 
 ## Fork sNow!
-First, you'll need to fork the sNow! repo that you want to contribute on [Bitbucket](https://bitbucket.org).
-If you do not have a Bitbucket account yet, you'll need to get one. It’s free!
+First, you'll need to fork the sNow! repo that you want to contribute on [GitHub](https://github.org).
+If you do not have a GitHub account yet, you'll need to get one. It’s free!
 You should also register an SSH public key, so you can easily clone, push to and pull from your repository. We also recommend to use [SourceTree Application](https://www.sourcetreeapp.com) in order to visualize and organise your git repos.
 ### Clone your sNow! repository
 Clone your fork of the sNow! repository to your favorite workstation.
 
 ```
-git clone git@bitbucket.org:<YOUR_BITBUCKET_ACCOUNT>/snow-tools.git
+git clone git@github.com:<YOUR_GITHUB_ACCOUNT>/sNow.git
 ```
 ### Pull in the develop branch
 Pull the develop branch from the main sNow! repository:
 
 ```
-cd snow-tools
-git remote add hpcnow git@bitbucket.org:hpcnow/snow-tools.git
+cd ${SNOW_ROOT}
+git remote add hpcnow git@github.com:HPCNow/sNow.git
 git fetch hpcnow
 git branch develop hpcnow/develop
 git checkout develop
@@ -71,7 +71,7 @@ Make sure you commit your work, and try to do it in bite-size chunks, so the com
 For example:
 
 ```
-git add snow-tools/etc/roles.d/whatever
+git add ${SNOW_ETC}/roles.d/whatever
 git commit -m "New role whatever"
 ```
 If you are working on several things at the same time, try and keep things isolated in separate branches, to keep it manageable (both for you, and for reviewing your contributions, see below).
@@ -88,7 +88,7 @@ If you're contributing code to an existing issue you can also convert the issue 
 
 {% include image.html file="pull_request.png" url="./images/pull_request.png" alt="pull request" caption="Source Atlassian Documentation" %}
 Issue a pull request for your branch into the main sNow! repository, as follows:
-1. go to your git repo hosted in bitbucket: https://bitbucket.org/<YOUR_BITBUCKET_ACCOUNT>/snow-tools
+1. go to your git repo hosted in GitHub: https://github.com/<YOUR_GITHUB_ACCOUNT>/sNow.git
 2. issue a pull request (see previous screenshot) for your branch to the develop branch of the main sNow! repository.
 3. Add any comment you consider relevant for the development team.
 
@@ -132,7 +132,7 @@ To do so, just add the remote repo with the following instructions:
 
 ```
 cd ${SNOW_ROOT}
-git remote add hpcnow git@bitbucket.org:hpcnow/snow-tools.git
+git remote add hpcnow git@github.com:HPCNow/sNow.git
 git fetch hpcnow
 ```
 Create a new branch using the develop branch and pull the new data:

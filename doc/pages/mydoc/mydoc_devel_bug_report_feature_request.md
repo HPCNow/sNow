@@ -8,7 +8,7 @@ folder: mydoc
 ---
 
 ## Report a New Bug
-Visit the official [bitbucket project](https://bitbucket.org/hpcnow/snow-tools/issues) website and report the problem by creating a new issue.
+Visit the official [GitHub project](https://github.com/HPCNow/sNow/issues) website and report the problem by creating a new issue.
 * Meaningful title
 * Version affected
 * Short and concise description including :

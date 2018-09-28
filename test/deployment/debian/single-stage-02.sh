@@ -34,7 +34,7 @@ snow deploy swarm02
 snow deploy one01
 
 ### update the memory used by each domain in order to fit the testing node
-sed -i "s|2048|512|g" /sNow/snow-tools/etc/domains/*.cfg
+sed -i "s|2048|512|g" ${SNOW_ETC}/domains/*.cfg
 
 ### Boot Domains
 snow boot domains

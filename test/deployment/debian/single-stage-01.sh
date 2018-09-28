@@ -20,15 +20,15 @@ snow_release="opennebula"
 ### sNow! Installation
 cd /root/snow-ci/debian
 cd /sNow/
-git clone http://bitbucket.org/hpcnow/snow-tools.git -b ${snow_release}
+git clone https://github.com/HPCNow/sNow.git -b ${snow_release}
 cd /sNow/snow-tools
 export SNOW_EULA=accepted
 ./install.sh ${snow_release}
 #apt install linux-headers-$(uname -r) -y
 
 ### sNow! Configuration
-cp -p /root/snow-ci/debian/single-snow.conf /sNow/snow-tools/etc/snow.conf
-cp -p /root/snow-ci/debian/active-domains.conf /sNow/snow-tools/etc/
+cp -p /root/snow-ci/debian/single-snow.conf ${SNOW_ETC}/snow.conf
+cp -p /root/snow-ci/debian/active-domains.conf ${SNOW_ETC}/
 source /etc/profile.d/snow.sh
 snow init
 

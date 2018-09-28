@@ -15,14 +15,13 @@ The sNow! default configuration will setup a completely functional HPC cluster. 
 ## Default install (recommended)
 ```
 cd /sNow
-git clone http://bitbucket.org/hpcnow/snow-tools.git
-cd snow-tools
+git clone https://github.com/HPCNow/sNow.git .
 ./install.sh
 ```
 ### Custom install
 ```
-git clone http//bitbucket.org/hpcnow/snow-tools.git
-cd snow-tools
+git clone https://github.com/HPCNow/sNow.git
+cd sNow
 ```
 You can customise the installation by exporting environment variables according to your needs. After several installations we have seen a common need for updating the sNow! admin user UID and GID in order to avoid conflicts with the existing users in LDAP. Other than that, the rest of default options are suitable for most cases.
 ### Define sNow! nodes

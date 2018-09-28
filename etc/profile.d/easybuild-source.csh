@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh
 # This script is part of sNow!
 # Developed by Jordi Blasco <jordi.blasco@hpcnow.com>
 # For more information, visit the official website : www.hpcnow.com/snow
@@ -8,13 +8,10 @@
 #    exit
 #endif
 
-setenv SNOW_ROOT "/sNow"
-setenv SNOW_SOFT "$SNOW_ROOT/easybuild"
-setenv SNOW_ROOT "$SNOW_ROOT/snow-tools"
 setenv LOGFILE   "/dev/null"
 
-if ( -f ${SNOW_ROOT}/share/common.sh ) then
-    bash -c "source ${SNOW_ROOT}/share/common.sh ; get_os_distro; architecture_identification; exec csh"
+if ( -f ${SNOW_LIB}/common.sh ) then
+    bash -c "source ${SNOW_LIB}/common.sh ; get_os_distro; architecture_identification; exec csh"
 endif
 
 if ( "`hostname -s`" == "login*" && "$USER" == "snow" ) then

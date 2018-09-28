@@ -1,8 +1,7 @@
 #!/bin/bash
-SNOW_ROOT=/sNow
 if [[ $(id -u) -eq 0 ]]; then
-    export PATH=${SNOW_ROOT}/snow-tools/sbin:$PATH
+    export PATH=${SNOW_SBIN}:$PATH
 fi
-export PATH=${SNOW_ROOT}/snow-tools/bin:$PATH
-export MANPATH=${SNOW_ROOT}/snow-tools/man:$MANPATH
+export PATH=${SNOW_BIN}:$PATH
+export MANPATH=${SNOW_MAN}:$MANPATH
 export PDSH_RCMD_TYPE=ssh

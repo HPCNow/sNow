@@ -27,14 +27,13 @@
 # doing
 #
 
-SNOW_ROOT=/sNow
-SNOW_HOME=/home
-SNOW_SOFT=${SNOW_ROOT}/easybuild
-SNOW_SRV=${SNOW_ROOT}/snow-configspace
-SNOW_ROOT=${SNOW_ROOT}/snow-tools
+#SNOW_ROOT=/sNow
+#SNOW_HOME=/home
+#SNOW_SOFT=${SNOW_ROOT}/easybuild
+#SNOW_SRV=${SNOW_ROOT}/srv
 
 #
-# Path where snow writes it's log. Rember to keep the 600 permisions
+# Path where snow writes it's log. Remember to keep the 600 permissions
 # on it as it may contain plain text passwords
 #
 
@@ -98,7 +97,7 @@ SNOW_NODES=( snow01 )
 #
 # Note that no password is generated for those users. The only way to access to
 # the system with these users is with a SSH key.
-# If you preffer, you can manually setup a password with: passwd snow
+# If you prefer, you can manually setup a password with: passwd snow
 
 ADMIN_USERS="root snow"
 ADMIN_GROUPS="root snow"
@@ -337,7 +336,7 @@ DHCP_NIC=eth0
 #             [ (optional) Site Network Services ]
 #
 # sNow! provides easy integration with your existing environment through the
-# SITE_SERVICES variables. The following parametres define integration with
+# SITE_SERVICES variables. The following parameters define integration with
 # standard services usually required by an HPC cluster. Other services can be
 # integrated via hooks (see section 12 of sNow! administrator documentation).
 #
@@ -399,7 +398,7 @@ SLURMDBD_PASSWORD='whatever'
 # nojobs - This will make it so no job information is stored in accounting.
 # nosteps - This will make it so no step information is stored in accounting.
 # Both nojobs and nosteps could be helpful in an environment where you want to
-# use limits but don't really care about utilization.
+# use limits but don't really care about utilisation.
 #
 # More information here: https://slurm.schedmd.com/accounting.html
 ACCOUNTING_STORAGE_ENFORCE=nojobs

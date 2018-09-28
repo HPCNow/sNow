@@ -22,7 +22,7 @@ cd /root
 git clone https://github.com/HPCNow/sNow.git
 cd snow-tools
 wget -O snow.conf "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/snow.conf" --no-check-certificate
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     wget -O /etc/netplan/01-netcfg.yaml "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/netplan_snow02" --no-check-certificate
 else
     wget -O /etc/netplan/01-netcfg.yaml "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/netplan_snow01" --no-check-certificate

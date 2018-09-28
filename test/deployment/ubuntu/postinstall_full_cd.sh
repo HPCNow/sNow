@@ -18,10 +18,10 @@
 ###
 version=master
 cd /root
-git clone http://bitbucket.org/hpcnow/snow-tools.git -b $version
+git clone https://github.com/HPCNow/sNow.git -b $version
 cd snow-tools
 wget -O snow.conf "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/snow.conf" --no-check-certificate
-if [[ -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ -e ${SNOW_ETC}/snow.conf ]]; then
     wget -O /etc/netplan/01-netcfg.yaml "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/netplan_snow02" --no-check-certificate
 else
     wget -O /etc/netplan/01-netcfg.yaml "https://raw.githubusercontent.com/HPCNow/snow-ci/master/ubuntu/netplan_snow01" --no-check-certificate

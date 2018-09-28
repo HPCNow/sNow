@@ -39,13 +39,9 @@ SNOW_HOME=/home
 ```
 SNOW_SOFT=$SNOW_ROOT/easybuild
 ```
-* SNOW_SRV: This parameter defines the default path to the snow-configspace folder.
+* SNOW_SRV: This parameter defines the default path to the deployment files, templates, domains and images folder.
 ```
-SNOW_SRV=$SNOW_ROOT/snow-configspace
-```
-* SNOW_ROOT: This parameter defines the default path to the snow-tools folder.
-```
-SNOW_ROOT=$SNOW_ROOT/snow-tools
+SNOW_SRV=$SNOW_ROOT/srv
 ```
 ## Domains Image
 The following options define where the domains OS files will be stored. This allows you to use root and swap filesystems for the domains in LVM volumes and loopback files.
@@ -53,13 +49,13 @@ The following options define where the domains OS files will be stored. This all
 ```
 IMG_DST='lvm=snow_vg'
 ```
-* Loopback files - The domains will be stored inside a loopback file located inside /sNow/domains folder.
+* Loopback files - The domains will be stored inside a loopback file located inside /sNow/srv/domains folder.
 ```
-IMG_DST='dir=/sNow/domains'
+IMG_DST='dir=/sNow/srv/domains'
 ```
 * NFSROOT - The domains file system will be stored in NFS server and booted via NFSROOT.
 ```
-IMG_DST='nfs=$NFS_SERVER:/sNow/domains' (experimental)
+IMG_DST='nfs=$NFS_SERVER:/sNow/srv/domains' (experimental)
 ```
 {% include note.html content="The NFSROOT option requires complex manual intervention and it is still experimental." %}
 ## sNow! Nodes

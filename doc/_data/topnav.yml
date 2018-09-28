@@ -19,10 +19,10 @@ topnav_dropdowns:
     - title: Development
       folderitems:
         - title: Source Code
-          external_url: http://bitbucket.org/hpcnow/snow-tools
+          external_url: https://github.com/HPCNow/sNow
 #        - title: Build Reports
 #          external_url: http://snow.hpcnow.com/build_reports.html
         - title: Issue Tracking
-          external_url: https://bitbucket.org/hpcnow/snow-tools/issues?status=new&status=open
+          external_url: https://github.com/HPCNow/sNow/issues
         - title: Contributing Back
           url: /mydoc_devel_contribute_back.html

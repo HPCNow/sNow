@@ -1,5 +1,4 @@
 #!/bin/csh
-set SNOWROOT /sNow
-setenv PATH $SNOWROOT/snow-tools/bin:$PATH
-setenv MANPATH $SNOWROOT/snow-tools/man:$MANPATH
+setenv PATH $SNOW_BIN:$PATH
+setenv MANPATH $SNOW_MAN:$MANPATH
 setenv PDSH_RCMD_TYPE "ssh"

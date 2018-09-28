@@ -36,9 +36,9 @@ mount /sNow
 
 ### sNow! Installation
 cd /root/snow-ci/debian
-if [[ ! -e /sNow/snow-tools/etc/snow.conf ]]; then
+if [[ ! -e ${SNOW_ETC}/snow.conf ]]; then
     cd /sNow/
-    git clone http://bitbucket.org/hpcnow/snow-tools.git
+    git clone https://github.com/HPCNow/sNow.git
 fi
 cd /sNow/snow-tools
 export NFS_SERVER=beegfs01
@@ -46,9 +46,9 @@ export SNOW_EULA=accepted
 ./install.sh
 
 ### sNow! Configuration
-if [[ ! -e /sNow/snow-tools/etc/snow.conf ]]; then
-    cp -p /root/snow-ci/debian/ha-snow.conf /sNow/snow-tools/etc/snow.conf
-    cp -p /root/snow-ci/debian/active-domains.conf /sNow/snow-tools/etc/
+if [[ ! -e ${SNOW_ETC}/snow.conf ]]; then
+    cp -p /root/snow-ci/debian/ha-snow.conf ${SNOW_ETC}/snow.conf
+    cp -p /root/snow-ci/debian/active-domains.conf ${SNOW_ETC}/
     source /etc/profile.d/snow.sh
     snow init
 else
