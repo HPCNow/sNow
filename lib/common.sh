@@ -718,10 +718,10 @@ function init_domains_conf()
     local force=$1
     # sNow! Domains configuration table
     if [[ ! -f ${SNOW_SRV}/deploy_files/etc/domains.conf ]]; then
-        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_SRV}/domains.conf
+        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_ETC}/domains.conf
     fi
-    if [[ ! -e ${SNOW_SRV}/domains.conf || "$force" == "yes" ]]; then
-        cat ${SNOW_SRV}/domains.conf-example > ${SNOW_SRV}/domains.conf
+    if [[ ! -e ${SNOW_ETC}/domains.conf || "$force" == "yes" ]]; then
+        cat ${SNOW_ETC}/domains.conf-example > ${SNOW_ETC}/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
             local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
             local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
@@ -745,8 +745,8 @@ function init_domains_conf()
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_SRV}/deploy_files/etc/domains.conf
         fi
-        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_SRV}/domains.conf
-        warning_msg "Review the domains config file: ${SNOW_SRV}/domains.conf"
+        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_ETC}/domains.conf
+        warning_msg "Review the domains config file: ${SNOW_ETC}/domains.conf"
     fi
 }
 
@@ -905,7 +905,7 @@ function update_firewall()
                 printf "-A PREROUTING -p "$1" -i "pub_nic" --dport "$2" -j DNAT --to "ip[$4]":"$3"\n"
                 }
             }
-        }' ${SNOW_SRV}/domains.conf ${SNOW_ETC}/dmz_portmap.conf >> /etc/ufw/before.rules
+        }' ${SNOW_ETC}/domains.conf ${SNOW_ETC}/dmz_portmap.conf >> /etc/ufw/before.rules
 
         # Add gateway rules
         echo "-A POSTROUTING -s ${NET_SNOW[3]}/${NET_SNOW[4]} -d ${NET_SNOW[3]}/${NET_SNOW[4]} -j ACCEPT" >> /etc/ufw/before.rules

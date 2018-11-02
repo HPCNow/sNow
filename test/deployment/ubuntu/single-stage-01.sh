@@ -36,7 +36,7 @@ apt upgrade -y
 ### sNow! Configuration
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 cp -p /sNow/test/deployment/ubuntu/active-domains.conf /sNow/etc/
-source /etc/profile.d/snow.sh
+source /etc/profile
 snow init
 
 ### Enable stage 02

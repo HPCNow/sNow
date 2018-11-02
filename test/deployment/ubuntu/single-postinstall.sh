@@ -45,3 +45,4 @@ chown root /usr/local/first_boot
 cp -p /sNow/test/deployment/ubuntu/single-stage-01.sh /usr/local/first_boot/
 chmod 700 /usr/local/first_boot/single-stage-01.sh
 systemctl enable first_boot
+netplan apply
