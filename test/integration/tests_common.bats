@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 export SNOW_ROOT=.
-source ${SNOW_ROOT}/share/common.sh
+source ${SNOW_LIB}/common.sh
 
 @test "valid ip format" {
     valid_ip 8.8.4.4

@@ -37,8 +37,8 @@ else
     error_exit "Please use the ${SNOW_ETC}/snow.conf-example to setup your environment."
 fi
 # Load sNow! functions
-if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
-    source ${SNOW_ROOT}/share/common.sh
+if [[ -f ${SNOW_LIB}/common.sh ]]; then
+    source ${SNOW_LIB}/common.sh
     get_os_distro
     architecture_identification
 fi

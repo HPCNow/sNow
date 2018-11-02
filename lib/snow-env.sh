@@ -23,8 +23,8 @@ if [[ -f ${CONFIG_FILE} ]]; then
     export PDSH_RCMD_TYPE
 fi
 
-if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
-    source ${SNOW_ROOT}/share/common.sh
+if [[ -f ${SNOW_LIB}/common.sh ]]; then
+    source ${SNOW_LIB}/common.sh
     logsetup
     get_os_distro
     architecture_identification

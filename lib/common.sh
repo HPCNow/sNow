@@ -718,10 +718,10 @@ function init_domains_conf()
     local force=$1
     # sNow! Domains configuration table
     if [[ ! -f ${SNOW_SRV}/deploy_files/etc/domains.conf ]]; then
-        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_ETC}/domains.conf
+        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_SRV}/domains.conf
     fi
-    if [[ ! -e ${SNOW_ETC}/domains.conf || "$force" == "yes" ]]; then
-        cat ${SNOW_ETC}/domains.conf-example > ${SNOW_ETC}/domains.conf
+    if [[ ! -e ${SNOW_SRV}/domains.conf || "$force" == "yes" ]]; then
+        cat ${SNOW_SRV}/domains.conf-example > ${SNOW_SRV}/domains.conf
         if [[ ! -z ${NET_DMZ[0]} ]]; then
             local macdmz=$(ip -f link addr show ${NET_DMZ[0]} | grep ether | gawk '{print $2}')
             local macsnow=$(ip -f link addr show ${NET_SNOW[0]} | grep ether | gawk '{print $2}')
@@ -745,8 +745,8 @@ function init_domains_conf()
                     }
                 }' ${SNOW_ACTIVE_DOMAINS} >> ${SNOW_SRV}/deploy_files/etc/domains.conf
         fi
-        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_ETC}/domains.conf
-        warning_msg "Review the domains config file: ${SNOW_ETC}/domains.conf"
+        ln -s ${SNOW_SRV}/deploy_files/etc/domains.conf ${SNOW_SRV}/domains.conf
+        warning_msg "Review the domains config file: ${SNOW_SRV}/domains.conf"
     fi
 }
 
@@ -905,7 +905,7 @@ function update_firewall()
                 printf "-A PREROUTING -p "$1" -i "pub_nic" --dport "$2" -j DNAT --to "ip[$4]":"$3"\n"
                 }
             }
-        }' ${SNOW_ETC}/domains.conf ${SNOW_ETC}/dmz_portmap.conf >> /etc/ufw/before.rules
+        }' ${SNOW_SRV}/domains.conf ${SNOW_ETC}/dmz_portmap.conf >> /etc/ufw/before.rules
 
         # Add gateway rules
         echo "-A POSTROUTING -s ${NET_SNOW[3]}/${NET_SNOW[4]} -d ${NET_SNOW[3]}/${NET_SNOW[4]} -j ACCEPT" >> /etc/ufw/before.rules
@@ -953,23 +953,23 @@ function update_firewall()
 
 function update_xen_image()
 {
-if [[ ! -d ${SNOW_ROOT}/domains/template ]]; then
-    mkdir -p ${SNOW_ROOT}/domains/template
-    wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_ROOT}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-    wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_ROOT}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+if [[ ! -d ${SNOW_SRV}/domains/template ]]; then
+    mkdir -p ${SNOW_SRV}/domains/template
+    wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_SRV}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+    wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_SRV}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
 else
-    if [[ -f ${SNOW_ROOT}/domains/template/snow-template.tar.bz2 ]]; then
-        local md5local=$(md5sum ${SNOW_ROOT}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
-        wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_ROOT}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
-        local md5hpcnow=$(cat ${SNOW_ROOT}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
+    if [[ -f ${SNOW_SRV}/domains/template/snow-template.tar.bz2 ]]; then
+        local md5local=$(md5sum ${SNOW_SRV}/domains/template/snow-template.tar.bz2 | gawk '{ print $1 }')
+        wget http://snow.hpcnow.com/snow-template.md5sum -P ${SNOW_SRV}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        local md5hpcnow=$(cat ${SNOW_SRV}/domains/template/snow-template.md5sum | gawk '{ print $1 }')
         if [[ "$md5local" != "$md5hpcnow" ]]; then
             info_msg "Downloading most recent sNow! domain template"
-            wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_ROOT}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+            wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_SRV}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
         else
             info_msg "sNow domain template is up-to-date."
         fi
     else
-        wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_ROOT}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
+        wget http://snow.hpcnow.com/snow-template.tar.bz2 -P ${SNOW_SRV}/domains/template || error_exit "ERROR: the image can not be downloaded. Please check your network setup."
     fi
 fi
 } 1>>$LOGFILE 2>&1
@@ -978,7 +978,7 @@ function deploy_domain_xen()
 {
     local domain=$1
     get_server_distribution ${domain}
-    if [[ -f ${SNOW_ETC}/domains/${domain}.cfg ]]; then
+    if [[ -f ${SNOW_SRV}/domains/${domain}.cfg ]]; then
         if [[ "$opt3" != "force" ]]; then
             error_exit "The domain ${domain} already exist, please use 'force' option to overwrite the domain or remove it first with: snow remove ${domain}."
         else
@@ -1001,17 +1001,17 @@ function deploy_domain_xen()
         hostname=$1; role=$2; dev_nic1=$3; ip_nic1=$4; bridge_nic1=$5; mac_nic1=$6; mask_nic1=$7; gw_nic1=$8
         }
         END{
-        system("LC_ALL=C xen-create-image --config=${SNOW_ETC}/xen-tools.conf --roledir=${SNOW_ETC}/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
+        system("LC_ALL=C xen-create-image --config=${SNOW_ETC}/xen-tools.conf --install-source=${SNOW_SRV}/domains/template/snow-template.tar.bz2 --output=${SNOW_SRV}/domains --roledir=${SNOW_ETC}/role.d --hostname="hostname" --mac="mac_nic1" --bridge="bridge_nic1" --ip="ip_nic1" --gateway="gw_nic1" --netmask="mask_nic1" --role=snow,"role" --copyhosts --password=\""pwd"\" "force" "img_dst)
         }'
-    if [[ ! -f ${SNOW_ETC}/domains/${domain}.cfg ]]; then
+    if [[ ! -f ${SNOW_SRV}/domains/${domain}.cfg ]]; then
         error_exit "Unable to install the domain, please report the issue to HPCNow!"
         error_check 1 "Deployment of ${domain} Failed."
     else
         second_nic=$(gawk -v guest=${domain} '{if($1 == guest){print $10}}' ${SNOW_DOMAINS})
-        if [[ "$second_nic" != "none" && -e ${SNOW_ETC}/domains/${domain}.cfg ]]; then
+        if [[ "$second_nic" != "none" && -e ${SNOW_SRV}/domains/${domain}.cfg ]]; then
             guest_network=$(gawk -v guest=${domain} '{if($1 == guest){print "vif        = [ '\''ip="$4", mac="$6", bridge="$5"'\'', '\''ip="$10", mac="$12", bridge="$11"'\'' ]"}}' ${SNOW_DOMAINS})
-            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_ETC}/domains/${domain}.cfg > ${SNOW_ETC}/domains/${domain}.cfg.extended
-            mv ${SNOW_ETC}/domains/${domain}.cfg.extended ${SNOW_ETC}/domains/${domain}.cfg
+            gawk -v gnet="$guest_network" '{if($1 == "vif"){print gnet}else{print $0}}' ${SNOW_SRV}/domains/${domain}.cfg > ${SNOW_SRV}/domains/${domain}.cfg.extended
+            mv ${SNOW_SRV}/domains/${domain}.cfg.extended ${SNOW_SRV}/domains/${domain}.cfg
         fi
         error_check 0 "Deployment of ${domain} completed."
     fi
@@ -1021,7 +1021,7 @@ function remove_domain_xen()
 {
     local domain=$1
     get_server_distribution $domain
-    if [[ ! -f ${SNOW_ETC}/domains/$domain.cfg ]]; then
+    if [[ ! -f ${SNOW_SRV}/domains/$domain.cfg ]]; then
         error_msg "There is no domain with this name. Please, review the name of the domain to be removed."
     else
         if [[ -n "$IMG_DST" ]]; then
@@ -1033,14 +1033,14 @@ function remove_domain_xen()
             if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
                 xl destroy ${domain}
                 xen-delete-image $IMG_DST_OPT --hostname=${domain}
-                rm -f ${SNOW_ETC}/domains/${domain}.cfg
+                rm -f ${SNOW_SRV}/domains/${domain}.cfg
             else
                 error_exit "Well done. It's better to be sure."
             fi
         else
             xl destroy ${domain}
             xen-delete-image $IMG_DST_OPT --hostname=${domain}
-            rm -f ${SNOW_ETC}/domains/${domain}.cfg
+            rm -f ${SNOW_SRV}/domains/${domain}.cfg
         fi
     fi
 } 1>>$LOGFILE 2>&1
@@ -2091,7 +2091,7 @@ function set_image_type()
 
 function avail_domains()
 {
-    local domains_cfg=$(find ${SNOW_ETC}/domains/ -type f -name "*.cfg")
+    local domains_cfg=$(find ${SNOW_SRV}/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "Domain" "HW status" "OS status" "Roles" "Host" 1>&3
     printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "------" "---------" "---------" "-----" "----" 1>&3
     for domain_cfg in ${domains_cfg}; do
@@ -2241,7 +2241,7 @@ function check_host_status()
 function boot_domain()
 {
     local domain=$1
-    if [[ -f ${SNOW_ETC}/domains/${domain}.cfg ]]; then
+    if [[ -f ${SNOW_SRV}/domains/${domain}.cfg ]]; then
         if (( "${#SNOW_NODES[@]}" > 1 )); then
             crm resource cleanup ${domain}
             crm resource start ${domain}
@@ -2249,7 +2249,7 @@ function boot_domain()
             local is_up=$(xl list ${domain})
             if [[ "${is_up}" == "" ]]; then
                 sleep 1
-                xl create ${SNOW_ETC}/domains/${domain}.cfg
+                xl create ${SNOW_SRV}/domains/${domain}.cfg
             else
                 warning_msg "The domain ${domain} is already runnning"
             fi

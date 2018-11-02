@@ -7,10 +7,10 @@ set -o errtrace  # trace ERR through 'time command' and other functions
 SNOW_ROOT=/sNow
 SNOW_ROOT=$SNOW_ROOT/snow-tools
 # Load sNow! functions
-if [[ -f ${SNOW_ROOT}/share/common.sh ]]; then
+if [[ -f ${SNOW_LIB}/common.sh ]]; then
     LOGFILE=/root/first-boot.log
     RETAIN_NUM_LINES=10
-    source ${SNOW_ROOT}/share/common.sh
+    source ${SNOW_LIB}/common.sh
     logsetup
     get_os_distro
     architecture_identification

@@ -21,23 +21,10 @@
 
 #                 [ sNow & NFS Server ]
 #
-# The paths where the different parts of the snow suite will be stored.
-# At the time of writing this guide, some of them are hardcoded so it is
-# not a good idea to change them unles you know exactly what you are
-# doing
-#
-
-#SNOW_ROOT=/sNow
-#SNOW_HOME=/home
-#SNOW_SOFT=${SNOW_ROOT}/easybuild
-#SNOW_SRV=${SNOW_ROOT}/srv
-
-#
 # Path where snow writes it's log. Remember to keep the 600 permissions
 # on it as it may contain plain text passwords
 #
 
-SNOW_LOG=${SNOW_ROOT}/log
 LOGFILE=${SNOW_LOG}/snow.log
 
 #
@@ -68,12 +55,12 @@ VIRT_TECH=XEN
 IMG_DST='lvm=snow_vg'
 
 # Loopback file: The domains will be stored inside a loopback file located
-# inside /sNow/domains folder.
-#IMG_DST='dir=/sNow'
+# inside /sNow/srv/domains folder.
+#IMG_DST='dir=${SNOW_SRV}'
 
 # NFSROOT: The domains file system will be stored and served through a NFS
 # server
-#IMG_DST='nfs=$NFS_SERVER:/sNow/domains' # (experimental)
+#IMG_DST='nfs=$NFS_SERVER:/sNow/srv/domains' # (experimental)
 
 
 #                [ sNow! Management Servers ]
