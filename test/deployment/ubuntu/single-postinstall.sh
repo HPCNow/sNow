@@ -33,6 +33,9 @@ fi
 
 cat /sNow/test/deployment/ubuntu/hosts >> /etc/hosts
 
+### Setup hostname
+echo snowha01 > /etc/hostname
+
 ### Enable First Boot actions
 cp -p /sNow/test/deployment/ubuntu/first_boot.service /lib/systemd/system/
 cp -p /sNow/test/deployment/ubuntu/first_boot /usr/local/bin/first_boot
@@ -46,3 +49,4 @@ cp -p /sNow/test/deployment/ubuntu/single-stage-01.sh /usr/local/first_boot/
 chmod 700 /usr/local/first_boot/single-stage-01.sh
 systemctl enable first_boot
 netplan apply
+reboot

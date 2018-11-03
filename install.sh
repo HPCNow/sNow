@@ -228,7 +228,6 @@ if is_snow_node; then
         fi
         # Allow to re-use existing or already customised snow.conf
         if [[ -z "$PRIVATE_GIT_TOKEN" && -z "$PRIVATE_GIT_REPO" ]]; then
-            mkdir -p $SNOW_SRV/deploy_files/
             # Transfer the SSH host keys to the configspace
             mkdir -p $SNOW_SRV/deploy_files/etc/ssh/
             cp -pr /etc/ssh/ssh_host_* $SNOW_SRV/deploy_files/etc/ssh/

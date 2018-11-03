@@ -112,7 +112,6 @@ if [[ ! -f $SNOW_SRV/templates/postconfig.sh ]]; then
     if [[ ! -d $SNOW_SRV ]]; then
         mkdir $SNOW_SRV
     fi
-    cp -pr $SNOW_ROOT/etc/config_template.d/boot $SNOW_SRV/
     SNOW_PROXY_SERVER=$(gawk '{if($2 ~ /proxy/){print $4}}' $SNOW_ROOT/etc/domains.conf)
     if  [[ ! -z "$SNOW_PROXY_SERVER" && ! -z "$SITE_PROXY_SERVER" ]]; then
         PROXY_SERVER=$SNOW_PROXY_SERVER
@@ -143,7 +142,7 @@ if [[ ! -e $SNOW_SRV/deploy_files/etc/repos ]]; then
     cp -pr $SNOW_ROOT/etc/config_template.d/repos/* $SNOW_SRV/deploy_files/etc/repos/
 fi
 
-# Download linux kernels to boot OS from PXE defined in $SNOW_ROOT/etc/config_template.d/boot/templates/pxe_kernels.conf
+# Download linux kernels to boot OS from PXE defined in $SNOW_SRV/templates/pxe_kernels.conf
 while read line; do
     download_path=$(echo $line | gawk '{print $2}')
     download_url=$(echo $line | gawk '{print $1}')
