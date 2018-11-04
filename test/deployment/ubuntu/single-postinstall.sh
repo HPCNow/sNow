@@ -19,22 +19,25 @@
 
 ### Fetching CI setup
 snow_release="milestone-2.0.0"
-### sNow! Installation
+### Remove existing sNow! installation
 if [[ ! -e /sNow ]]; then
     mkdir /sNow
 fi
 rm -fr /sNow/* /sNow/.git /sNow/.gitignore
 git clone https://github.com/HPCNow/sNow.git -b ${snow_release} /sNow/
+
+### Setup network configuration
 if [[ -e /sNow/etc/snow.conf ]]; then
     cp -p /sNow/test/deployment/ubuntu/netplan_snow02 /etc/netplan/01-netcfg.yaml
 else
     cp -p /sNow/test/deployment/ubuntu/netplan_snow01 /etc/netplan/01-netcfg.yaml
 fi
-
-cat /sNow/test/deployment/ubuntu/hosts >> /etc/hosts
+netplan apply
 
 ### Setup hostname
 echo snowha01 > /etc/hostname
+cat /sNow/test/deployment/ubuntu/hosts >> /etc/hosts
+
 
 ### Enable First Boot actions
 cp -p /sNow/test/deployment/ubuntu/first_boot.service /lib/systemd/system/
@@ -48,5 +51,3 @@ chown root /usr/local/first_boot
 cp -p /sNow/test/deployment/ubuntu/single-stage-01.sh /usr/local/first_boot/
 chmod 700 /usr/local/first_boot/single-stage-01.sh
 systemctl enable first_boot
-netplan apply
-reboot

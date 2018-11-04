@@ -18,21 +18,19 @@
 ###
 #apt install linux-headers-$(uname -r) -y
 
+### Wait for all the services to initiate
+sleep 120
 snow_release="milestone-2.0.0"
+apt update
+apt upgrade -y
 source /etc/profile
 ### sNow! Installation
-cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 if [[ -e /sNow/etc/snow.conf ]]; then
-    cp -p /sNow/test/deployment/ubuntu/netplan_snow02 /etc/netplan/01-netcfg.yaml
-else
-    cp -p /sNow/test/deployment/ubuntu/netplan_snow01 /etc/netplan/01-netcfg.yaml
+  cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 fi
 export SNOW_EULA=accepted
 cd /sNow
 ./install.sh ${snow_release}
-
-apt update
-apt upgrade -y
 ### sNow! Configuration
 cp -p /sNow/test/deployment/ubuntu/single-snow.conf /sNow/etc/snow.conf
 cp -p /sNow/test/deployment/ubuntu/active-domains.conf /sNow/etc/
@@ -41,8 +39,10 @@ snow init
 
 ### Enable stage 02
 #systemctl enable first_boot
-#rm -f /usr/local/first_boot/stage-01.sh
-#cp -p /sNow/test/deployment/ubuntu//stage-02.sh /usr/local/first_boot/
+cp -p /sNow/test/deployment/ubuntu/single-stage-02.sh /usr/local/first_boot/
+chmod 700 /usr/local/first_boot/single-stage-02.sh
+systemctl enable first_boot
 
 ### Reboot the system with new kernel and configuration
+sleep 60
 reboot
