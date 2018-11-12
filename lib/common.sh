@@ -1161,6 +1161,116 @@ function add_repository()
     fi
 }
 
+function add_repositories()
+{
+    if [[ $# -lt 3 ]]; then
+        error_exit "No enough parameters have been provided."
+    fi
+    local repository=$1
+    shift
+    local repositories_json
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
+    while test $# -gt 0; do
+        case "$1" in
+            -o|--os)
+                if [[ -n "$2" ]]; then
+                    local os="$2"
+                    shift
+                else
+                    error_exit "Option OS missing"
+                fi
+                ;;
+            -v|--dist_version)
+                if [[ -n "$2" ]]; then
+                    local dist_version="$2"
+                    shift
+                else
+                    error_exit "Option dist_version missing"
+                fi
+                ;;
+            -t|--type)
+                if [[ -n "$2" ]]; then
+                    local type="$2"
+                    shift
+                else
+                    error_exit "Option type missing"
+                fi
+                ;;
+            -a|--architecture)
+                if [[ -n "$2" ]]; then
+                    local architecture="$2"
+                    shift
+                else
+                    error_exit "Option architecture missing"
+                fi
+                ;;
+            -u|--repository_url)
+                if [[ -n "$2" ]]; then
+                    local repository_url="$2"
+                    shift
+                else
+                    error_exit "Option repository_url missing"
+                fi
+                ;;
+            -k|--key_url)
+                if [[ -n "$2" ]]; then
+                    local key_url="$2"
+                    shift
+                else
+                    error_exit "Option key_url missing"
+                fi
+                ;;
+            -V|--vmlinuz_path)
+                if [[ -n "$2" ]]; then
+                    local console_options="$2"
+                    shift
+                else
+                    error_exit "Option vmlinuz_path missing"
+                fi
+                ;;
+            -I|--initrd_path)
+                if [[ -n "$2" ]]; then
+                    local initrd_path="$2"
+                else
+                    error_exit "Option initrd_path missing"
+                fi
+                ;;
+            -D|--description)
+                if [[ -n "$2" ]]; then
+                    local description="$2"
+                    shift
+                else
+                    error_exit "Option description missing"
+                fi
+                ;;
+            -h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
+    repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
+    if [[ "${repository_query}" != "null" ]]; then
+        error_msg "There repository $repository already exist in the database."
+    else
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\" = {} ")
+        set_repositories_json
+    fi
+    warning_msg "Do you want to apply the changes in the repository $repository? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${repositories_json}" > ${SNOW_ETC}/repositories.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
+} 1>>$LOGFILE 2>&1
+
 function add_node()
 {
     local nodelist=$1
@@ -1303,6 +1413,114 @@ function show_nodes()
 } 1>>$LOGFILE 2>&1
 
 ### Set actions
+function set_repositories()
+{
+    if [[ $# -lt 3 ]]; then
+        error_exit "No enough parameters have been provided."
+    fi
+    local repository=$1
+    shift
+    local repositories_json
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
+    while test $# -gt 0; do
+        case "$1" in
+            -o|--os)
+                if [[ -n "$2" ]]; then
+                    local os="$2"
+                    shift
+                else
+                    error_exit "Option OS missing"
+                fi
+                ;;
+            -v|--dist_version)
+                if [[ -n "$2" ]]; then
+                    local dist_version="$2"
+                    shift
+                else
+                    error_exit "Option dist_version missing"
+                fi
+                ;;
+            -t|--type)
+                if [[ -n "$2" ]]; then
+                    local type="$2"
+                    shift
+                else
+                    error_exit "Option type missing"
+                fi
+                ;;
+            -a|--architecture)
+                if [[ -n "$2" ]]; then
+                    local architecture="$2"
+                    shift
+                else
+                    error_exit "Option architecture missing"
+                fi
+                ;;
+            -u|--repository_url)
+                if [[ -n "$2" ]]; then
+                    local repository_url="$2"
+                    shift
+                else
+                    error_exit "Option repository_url missing"
+                fi
+                ;;
+            -k|--key_url)
+                if [[ -n "$2" ]]; then
+                    local key_url="$2"
+                    shift
+                else
+                    error_exit "Option key_url missing"
+                fi
+                ;;
+            -V|--vmlinuz_path)
+                if [[ -n "$2" ]]; then
+                    local console_options="$2"
+                    shift
+                else
+                    error_exit "Option vmlinuz_path missing"
+                fi
+                ;;
+            -I|--initrd_path)
+                if [[ -n "$2" ]]; then
+                    local initrd_path="$2"
+                else
+                    error_exit "Option initrd_path missing"
+                fi
+                ;;
+            -D|--description)
+                if [[ -n "$2" ]]; then
+                    local description="$2"
+                    shift
+                else
+                    error_exit "Option description missing"
+                fi
+                ;;
+            -h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
+    repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
+    if [[ "${repository_query}" == "null" ]]; then
+        error_msg "There repository $repository does not exist in the database."
+    else
+        set_repositories_json
+    fi
+    warning_msg "Do you want to apply the changes in the repository $repository? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${repositories_json}" > ${SNOW_ETC}/repositories.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
+} 1>>$LOGFILE 2>&1
 
 function set_node()
 {
@@ -1405,7 +1623,7 @@ function set_node()
                 unset nic
                 unset mac_address
                 ;;
-            -?|-h|--help)
+            -h|--help)
                 shelp
                 exit
                 ;;
@@ -1434,6 +1652,38 @@ function set_node()
         error_exit "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
+
+function set_repositories_json()
+{
+    # setup the defaults
+    if [[ -n "${os}" ]]; then
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"os\" = \"${os}\"")
+    fi
+    if [[ -n "${dist_version}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"dist_version\" = \"${dist_version}\"")
+    fi
+    if [[ -n "${type}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"type\" = \"${type}\"")
+    fi
+    if [[ -n "${architecture}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"architecture\" = \"${architecture}\"")
+    fi
+    if [[ -n "$repository_url" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${repository_url}\"")
+    fi
+    if [[ -n "${key_url}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"key_url\" = \"${key_url}\"")
+    fi
+    if [[ -n "${vmlinuz_path}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"vmlinuz_path\" = \"${vmlinuz_path}\"")
+    fi
+    if [[ -n "${initrd_path}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"initrd_path\" = \"${initrd_path}\"")
+    fi
+    if [[ -n "${description}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"description\" = \"${description}\"")
+    fi
+}
 
 function set_snow_json()
 {
