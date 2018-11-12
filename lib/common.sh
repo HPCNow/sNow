@@ -1260,7 +1260,7 @@ function add_node()
 
 
 ### Show actions
-function show_repository()
+function show_repositories()
 {
     local repository=$1
     local repository_avail_json
