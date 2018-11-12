@@ -1267,10 +1267,10 @@ function show_repositories()
     local repository_query
     repository_avail_json=$(cat ${SNOW_ETC}/repositories.json)
     if [[ -z "$repository" ]]; then
-        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repository\"")
+        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repositories\"")
         echo "${repository_query}" | jq '.' 1>&3
     else
-        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repository\".\"${repository}\"")
+        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
