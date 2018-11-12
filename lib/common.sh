@@ -418,63 +418,6 @@ function add_repos()
     done
 }
 
-function add_template()
-{
-    local template=$1
-    local repository=$2
-    # Check type (investigate name, URL format, etc.)
-
-    # Create the template directory if it doesn't exist
-    if [[ ! -d $SNOW_SRV ]]; then
-        mkdir $SNOW_SRV
-    fi
-    # Transfer template to SRV
-    cp -pr $SNOW_ETC/templates/$template $SNOW_SRV/boot/templates/
-
-    # Parsing environment to the template
-    for file in $(find $SNOW_SRV/templates/$template -type f); do
-        sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
-        sed -i "s|__LANG__|$LANG|g" $file
-        sed -i "s|__KEYMAP__|$KEYMAP|g" $file
-        sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
-        sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" $file
-        sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
-        sed -i "s|__SNOW_HOME__|$SNOW_HOME|g" $file
-        sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
-        sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file
-        sed -i "s|__TFTP_SERVER__|$TFTP_SERVER|g" $file
-    done
-
-    # Download repository based on the template description
-    if [[ -z $repository ]]; then
-        # iterate for each repository
-        default_repository=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $2}')
-        default_repository_url=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $1}')
-        add_repository $default_repository $default_repository_url local
-    fi
-}
-
-function add_repository()
-{
-    local repository=$1
-    local repository_url=$2
-    local repository_type=$3
-    # Check type (investigate name, URL format, etc.)
-
-    # Create the repos directory if it doesn't exist
-    if [[ ! -d $SNOW_SRV/repos ]]; then
-        mkdir $SNOW_SRV/repos
-    fi
-    # Download repository based on the URL
-    if [[ "$repository_type" == "local" ]]; then
-        download_path=$SNOW_SRV/repos/$repository
-        download_url=${repository_url}
-        if [[ ! -e ${download_path} ]]; then
-            mkdir -p ${download_path}
-        fi
-        download ${download_url} ${download_path}
-    fi
-}
 
 function install_software()
 {
@@ -1074,6 +1017,8 @@ function deploy_domain_xen()
     fi
 } 1>>$LOGFILE 2>&1
 
+### Remove action
+
 function remove_domain_xen()
 {
     local domain=$1
@@ -1154,6 +1099,65 @@ function remove_node()
         error_exit "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
+
+### Add actions
+function add_template()
+{
+    local template=$1
+    local repository=$2
+    # Check type (investigate name, URL format, etc.)
+
+    # Create the template directory if it doesn't exist
+    if [[ ! -d $SNOW_SRV ]]; then
+        mkdir $SNOW_SRV
+    fi
+    # Transfer template to SRV
+    cp -pr $SNOW_ETC/templates/$template $SNOW_SRV/boot/templates/
+
+    # Parsing environment to the template
+    for file in $(find $SNOW_SRV/templates/$template -type f); do
+        sed -i "s|__DEFAULT_TEMPLATE__|$tmpl|g" $file
+        sed -i "s|__LANG__|$LANG|g" $file
+        sed -i "s|__KEYMAP__|$KEYMAP|g" $file
+        sed -i "s|__TIMEZONE__|$TIMEZONE|g" $file
+        sed -i "s|__MASTER_PASSWORD__|$MASTER_PASSWORD|g" $file
+        sed -i "s|__NFS_SERVER__|$NFS_SERVER|g" $file
+        sed -i "s|__SNOW_HOME__|$SNOW_HOME|g" $file
+        sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
+        sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file
+        sed -i "s|__TFTP_SERVER__|$TFTP_SERVER|g" $file
+    done
+
+    # Download repository based on the template description
+    if [[ -z $repository ]]; then
+        # iterate for each repository
+        default_repository=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $2}')
+        default_repository_url=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $1}')
+        add_repository $default_repository $default_repository_url local
+    fi
+}
+
+function add_repository()
+{
+    local repository=$1
+    local repository_url=$2
+    local repository_type=$3
+    # Check type (investigate name, URL format, etc.)
+
+    # Create the repos directory if it doesn't exist
+    if [[ ! -d $SNOW_SRV/repos ]]; then
+        mkdir $SNOW_SRV/repos
+    fi
+    # Download repository based on the URL
+    if [[ "$repository_type" == "local" ]]; then
+        download_path=$SNOW_SRV/repos/$repository
+        download_url=${repository_url}
+        if [[ ! -e ${download_path} ]]; then
+            mkdir -p ${download_path}
+        fi
+        download ${download_url} ${download_path}
+    fi
+}
 
 function add_node()
 {
@@ -1252,6 +1256,23 @@ function add_node()
     fi
 } 1>>$LOGFILE 2>&1
 
+
+### Show actions
+function show_repository()
+{
+    local repository=$1
+    local repository_avail_json
+    local repository_query
+    repository_avail_json=$(cat ${SNOW_ETC}/repositories.json)
+    if [[ -z "$repository" ]]; then
+        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repository\"")
+        echo "${repository_query}" | jq '.' 1>&3
+    else
+        error_msg "Please, provide a repository name."
+    fi
+} 1>>$LOGFILE 2>&1
+
+
 function show_nodes()
 {
     local nodelist=$1
@@ -1273,6 +1294,7 @@ function show_nodes()
     fi
 } 1>>$LOGFILE 2>&1
 
+### Set actions
 
 function set_node()
 {
@@ -2146,7 +2168,7 @@ function set_image_type()
     fi
 }
 
-function avail_domains()
+function list_domains()
 {
     local domains_cfg=$(find ${SNOW_SRV}/domains/ -type f -name "*.cfg")
     printf "%-20s  %-10s  %-40s  %-20s %-20s\n" "Domain" "HW status" "OS status" "Roles" "Host" 1>&3
@@ -2194,7 +2216,7 @@ function avail_roles()
     done
 }
 
-function avail_templates()
+function list_templates()
 {
     local templates=$(find ${SNOW_SRV}/templates/ -type d | sed -e "s|${SNOW_SRV}/templates/||g")
     printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
@@ -2222,7 +2244,7 @@ function avail_templates()
     done
 } 1>>$LOGFILE 2>&1
 
-function avail_images()
+function list_images()
 {
     local images=$(find ${SNOW_SRV}/images/* -type d -prune | sed -e "s|${SNOW_SRV}/images/||g")
     printf "%-30s    %-80s\n" "Image Name" "Description" 1>&3
@@ -2251,7 +2273,7 @@ function avail_images()
     done
 }
 
-function avail_nodes()
+function list_nodes()
 {
     if [[ -z $1 ]]; then
         for i in "${!CLUSTERS[@]}"; do

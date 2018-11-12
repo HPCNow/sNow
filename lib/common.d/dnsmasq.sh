@@ -53,6 +53,8 @@ function setup_dnsmasq()
         # 0.0.0.0 Means to reference self for this option
         dhcp-range=$DHCP_NIC,${NET_COMP[2]},${last_ip},24h
         dhcp-boot=pxelinux.0
+        dhcp-match=set:efi-x86_64,option:client-arch,7
+        dhcp-boot=tag:efi-x86_64,grubx64.efi
         addn-hosts=/etc/static_hosts
         dhcp-sequential-ip
         clear-on-reload

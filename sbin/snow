@@ -53,7 +53,7 @@ if [[ -f ${CONFIG_FILE} ]]; then
     export PDSH_RCMD_TYPE
 else
     readonly LOGFILE=${SNOW_LOG}/snow.log
-    if [[ "$opt1" =~ ^([h][e][l][p]|[-][h][e][l][p]|[-][-][h][e][l][p]|[\?])$ ]]; then
+    if [[ "$opt1" =~ ^([h][e][l][p]|[-][h][e][l][p]|[-][-][h][e][l][p])$ ]]; then
         echo "[W] ${CONFIG_FILE} must be configured before to use snow command."
     else
         echo "[E] ${CONFIG_FILE} must be configured before to use snow command."
@@ -131,6 +131,10 @@ case $opt1 in
             image)
                 remove_image $opt3
                 ;;
+            repo|repository)
+                remove_repository $opt3
+                ;;
+
             *)
                 error_msg "You can remove: domain, node, template, image"
                 ;;
@@ -176,6 +180,9 @@ case $opt1 in
             image)
                 add_image $opt3
                 ;;
+            repo|repository)
+                add_repository $opt3
+                ;;
             *)
                 error_msg "You can add: domain, node, template, image"
                 ;;
@@ -190,33 +197,63 @@ case $opt1 in
                 shift 3
                 set_node $opt3 "$@"
                 ;;
-            #template)
-            #    set_template $opt3
-            #    ;;
-            #image)
-            #    set_image $opt3
-            #    ;;
+            template)
+                shift 3
+                set_template $opt3 "$@"
+                ;;
+            repo|repository)
+                shift 3
+                set_repository $opt3 "$@"
+                ;;
             *)
                 error_msg "You can set: domain, node, template, image"
                 ;;
         esac
         ;;
+  avail|available)
+      case $opt2 in
+          role|roles)
+              avail_roles "$opt3"
+              ;;
+          domain|domains)
+              avail_domains "$opt3"
+              ;;
+          template|templates)
+              avail_templates "$opt3"
+              ;;
+          image|images)
+              avail_images "$opt3"
+              ;;
+          repo|repository|repos|repositories)
+              list_repositories "$opt3"
+              ;;
+          node|nodes)
+              avail_nodes "$opt3"
+              ;;
+          *)
+              error_msg "You can list: domains, templates, images, nodes, roles"
+              ;;
+      esac
+      ;;
     list)
         case $opt2 in
             role|roles)
-                avail_roles "$opt3"
+                list_roles "$opt3"
                 ;;
             domain|domains)
-                avail_domains "$opt3"
+                list_domains "$opt3"
                 ;;
             template|templates)
-                avail_templates "$opt3"
+                list_templates "$opt3"
                 ;;
             image|images)
-                avail_images "$opt3"
+                list_images "$opt3"
+                ;;
+            repo|repository|repos|repositories)
+                list_repositories "$opt3"
                 ;;
             node|nodes)
-                avail_nodes "$opt3"
+                list_nodes "$opt3"
                 ;;
             *)
                 error_msg "You can list: domains, templates, images, nodes, roles"
@@ -228,12 +265,12 @@ case $opt1 in
             #domains)
             #    avail_domains "$opt3"
             #    ;;
-            #templates)
-            #    avail_templates "$opt3"
-            #    ;;
-            #images)
-            #    avail_images "$opt3"
-            #    ;;
+            templates)
+                show_templates "$opt3"
+                ;;
+            repo|repository)
+                show_repositories "$opt3"
+                ;;
             node|nodes)
                 show_nodes "$opt3"
                 ;;
@@ -339,4 +376,4 @@ case $opt1 in
 # Log the sNow! activity
 #
 
-echo "$(date)  $SUDO_USER as $USER    $@" >> ${SNOW_LOG}/snow_actions.log
+echo "$(date)  $SUDO_USER as $USER    $*" >> ${SNOW_LOG}/snow_actions.log
