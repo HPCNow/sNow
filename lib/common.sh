@@ -1126,6 +1126,8 @@ function add_template()
         sed -i "s|__PROXY_SERVER__|$PROXY_SERVER|g" $file
         sed -i "s|__PROXY_PORT__|$PROXY_PORT|g" $file
         sed -i "s|__TFTP_SERVER__|$TFTP_SERVER|g" $file
+        sed -i "s|__SNOW_SRV__|$SNOW_SRV|g" $file
+        sed -i "s|__SNOW_SHARE__|$SNOW_SHARE|g" $file
     done
 
     # Download repository based on the template description
@@ -1268,7 +1270,13 @@ function show_repository()
         repository_query=$(echo ${repository_avail_json} | jq -r ".\"repository\"")
         echo "${repository_query}" | jq '.' 1>&3
     else
-        error_msg "Please, provide a repository name."
+        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repository\".\"${repository}\"")
+        if [[ "${repository_query}" == "null" ]]; then
+            error_msg "The repository $repository does not exist in the database."
+        else
+            echo "\"${repository}\":" 1>&3
+            echo "${repository_query}" | jq '.' 1>&3
+        fi
     fi
 } 1>>$LOGFILE 2>&1
 
