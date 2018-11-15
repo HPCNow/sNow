@@ -181,6 +181,7 @@ case $opt1 in
                 add_image $opt3
                 ;;
             repo|repository)
+                local repo_action="add"
                 add_repository $opt3
                 ;;
             *)
@@ -203,6 +204,7 @@ case $opt1 in
                 ;;
             repo|repository)
                 shift 3
+                local repo_action="set"
                 set_repository $opt3 "$@"
                 ;;
             *)

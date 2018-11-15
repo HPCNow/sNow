@@ -1,0 +1,37 @@
+{
+  "repositories": {
+    "centos-7.5-x86_64": {
+      "os": "centos",
+      "dist_version": "7.5",
+      "type": "remote",
+      "architecture": "x86_64",
+      "repository_url": "http://vault.centos.org/7.5.1804/os/x86_64/",
+      "key_url": "http://vault.centos.org/7.5.1804/os/x86_64/",
+      "vmlinuz_path": "images/pxeboot/vmlinuz",
+      "initrd_path": "images/pxeboot/initrd.img",
+      "description": "Official CentOS 7.5 repository."
+    },
+    "centos-7.4-x86_64": {
+      "os": "centos",
+      "dist_version": "7.4",
+      "type": "remote",
+      "architecture": "x86_64",
+      "repository_url": "http://vault.centos.org/7.4.1708/os/x86_64/",
+      "key_url": "http://vault.centos.org/7.4.1708/os/x86_64/",
+      "vmlinuz_path": "images/pxeboot/vmlinuz",
+      "initrd_path": "images/pxeboot/initrd.img",
+      "description": "Official CentOS 7.4 repository."
+    },
+    "hpcnow-centos-x86_64": {
+      "os": "centos",
+      "dist_version": "7",
+      "type": "local",
+      "architecture": "x86_64",
+      "repository_url": "file:///sNow/srv/repositories/hpcnow-centos/x86_64/",
+      "key_url": "file:///sNow/srv/repositories/hpcnow-centos/x86_64/hpcnow.key",
+      "vmlinuz_path": "images/pxeboot/vmlinuz",
+      "initrd_path": "images/pxeboot/initrd.img",
+      "description": "Official HPCNow! repository for CentOS and RedHat."
+    }
+  }
+}
