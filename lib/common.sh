@@ -1135,39 +1135,53 @@ function add_template()
         # iterate for each repository
         default_repository=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $2}')
         default_repository_url=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $1}')
-        add_repository $default_repository $default_repository_url local
+        add_repositories $default_repository $default_repository_url local
     fi
 }
 
 function add_repository()
 {
     local repository=$1
-    local repository_url=$2
-    local repository_type=$3
-    # Check type (investigate name, URL format, etc.)
-
-    # Create the repos directory if it doesn't exist
-    if [[ ! -d $SNOW_SRV/repos ]]; then
-        mkdir $SNOW_SRV/repos
-    fi
-    # Download repository based on the URL
-    if [[ "$repository_type" == "local" ]]; then
-        download_path=$SNOW_SRV/repos/$repository
-        download_url=${repository_url}
-        if [[ ! -e ${download_path} ]]; then
-            mkdir -p ${download_path}
+    local repository_avail_json
+    local repository_query
+    repository_json=$(cat ${SNOW_ETC}/repositories.json)
+    repository_avail_json=$(cat ${SNOW_ETC}/repositories_avail.json)
+    if [[ -f "$repository" ]]; then
+        # Assuming the repository variable points to a json file with repositories description
+        repository_avail_json=$(cat $repository)
+        repo_list=$(echo "${repository_avail_json}" | jq -r ".repositories| keys[]")
+        for i in ${repo_list}; do
+            get_repository_variables
+            set_repository
+        done
+    elif [[ $# -lt 2 ]] && [[ ! -f "$repository" ]]; then
+        # Only one name is provided, assuming the repository is defined in available repositories database
+        repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
+        if [[ "${repository_query}" != "null" ]]; then
+            error_msg "The repository $repository already exist in the database."
+        else
+            repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\" = {} ")
+            get_repository_variables
+            set_repository
         fi
-        download ${download_url} ${download_path}
+    elif [[ $# -gt 2 ]]; then
+        # several parameters, assuming a repository definition is provided from CLI
+        set_repository $opt3 "$@"
     fi
-}
+} 1>>$LOGFILE 2>&1
 
-function add_repositories()
+function get_repository_variables()
 {
-    if [[ $# -lt 3 ]]; then
-        error_exit "No enough parameters have been provided."
-    fi
-    local repository=$1
-    set_repository $opt3 "$@"
+    os=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"os\"")
+    dist_version=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"dist_version\"")
+    type=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"type\"")
+    architecture=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"architecture\"")
+    repository_url_src=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url_src\"")
+    repository_url=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url\"")
+    key_url=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"key_url\"")
+    vmlinuz_path=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"vmlinuz_path\"")
+    initrd_path=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"initrd_path\"")
+    description=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"description\"")
 } 1>>$LOGFILE 2>&1
 
 function add_node()
@@ -1312,7 +1326,7 @@ function show_nodes()
 } 1>>$LOGFILE 2>&1
 
 ### Set actions
-function set_repositories()
+function set_repository()
 {
     if [[ $# -lt 3 ]]; then
         error_exit "No enough parameters have been provided."
@@ -1448,10 +1462,15 @@ function set_repositories()
             warning_msg "Do you want to download a local copy of the repository $repository? [y/N] (20 seconds)"
             read -t 20 -u 3 answer
             if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-                local download_path=${SNOW_SRV}/repositories/$repository/$architecture/
-                download ${repository_url_src} ${download_path}
-                lftp -e "open ${repository_url_src} && mirror -P 8 -c --delete centos && exit"
-                warning_msg "This operation may take a while. Please, wait."
+                local download_path=${SNOW_SRV}/repositories/$repository/$os/${dist_version}/$architecture/
+                if [[ -e "${download_path}" ]]; then
+                    warning_msg "Consider re-creating this repository again or just update it."
+                    error_exit "The folder ${download_path} is not empty. Cancelling the download."
+                else
+                    mkdir -p "${download_path}"
+                    warning_msg "This operation may take a while. Please, do not cancell it, just wait."
+                    lftp -e "open ${repository_url_src} && lcd ${download_path} && mirror -P 8 -c --delete . && exit"
+                fi
             else
                 error_exit "Well done. It's better to be sure."
             fi
@@ -2449,7 +2468,7 @@ function list_repositories()
         printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
         repository_query=$(echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t \(.[$r] | .description)"')
     else
-        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"centos-7.4-x86_64\".\"description\"")
+        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"${repository}\".\"description\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else

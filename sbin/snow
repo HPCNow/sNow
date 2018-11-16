@@ -131,7 +131,7 @@ case $opt1 in
             image)
                 remove_image $opt3
                 ;;
-            repo|repository)
+            repo|repository|repos|repositories)
                 remove_repository $opt3
                 ;;
 
@@ -180,9 +180,9 @@ case $opt1 in
             image)
                 add_image $opt3
                 ;;
-            repo|repository)
+            repo|repository|repos|repositories)
                 local repo_action="add"
-                add_repository $opt3
+                add_repository $opt3 "$@"
                 ;;
             *)
                 error_msg "You can add: domain, node, template, image"
@@ -202,7 +202,7 @@ case $opt1 in
                 shift 3
                 set_template $opt3 "$@"
                 ;;
-            repo|repository)
+            repo|repository|repos|repositories)
                 shift 3
                 local repo_action="set"
                 set_repository $opt3 "$@"
