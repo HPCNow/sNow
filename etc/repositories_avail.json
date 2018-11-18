@@ -29,9 +29,9 @@
       "dist_version": "7",
       "type": "local",
       "architecture": "x86_64",
-      "repository_url_src": "file:///sNow/srv/repositories/hpcnow-centos/x86_64/",
-      "repository_url": "file:///sNow/srv/repositories/hpcnow-centos/x86_64/",
-      "key_url": "file:///sNow/srv/repositories/hpcnow-centos/x86_64/hpcnow.key",
+      "repository_url_src": "http://snow.hpcnow.com/rpm/centos/7/",
+      "repository_url": "http://snow.hpcnow.com/rpm/centos/7/",
+      "key_url": "http://snow.hpcnow.com/hpcnow.gpg.key",
       "vmlinuz_path": "images/pxeboot/vmlinuz",
       "initrd_path": "images/pxeboot/initrd.img",
       "description": "Official HPCNow! repository for CentOS and RedHat."

@@ -1173,7 +1173,7 @@ function add_repository()
         repo_list=$(echo "${repositories_avail_json}" | jq -r ".repositories| keys[]")
         for i in ${repo_list}; do
             get_repository_variables
-            set_repository
+            set_repository $repository
         done
     elif [[ $# -lt 2 ]] && [[ ! -f "$repository" ]]; then
         # Only one name is provided, assuming the repository is defined in available repositories database
@@ -1182,13 +1182,12 @@ function add_repository()
         if [[ "${repository_query}" != "null" ]]; then
             error_msg "The repository $repository already exist in the database."
         else
-            #repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\" = {} ")
             get_repository_variables
-            set_repository
+            set_repository $repository
         fi
     elif [[ $# -gt 2 ]]; then
         # several parameters, assuming a repository definition is provided from CLI
-        set_repository $opt3 "$@"
+        set_repository $repository "$@"
     fi
 } 1>>$LOGFILE 2>&1
 
@@ -1486,7 +1485,7 @@ function set_repository()
                     warning_msg "Consider re-creating this repository again or just update it."
                     error_exit "The folder ${download_path} is not empty. Cancelling the download."
                 else
-                    mkdir -p "${download_path}"
+                    mkdir -p ${download_path}
                     warning_msg "This operation may take a while. Please, do not cancell it, just wait."
                     lftp -e "open ${repository_url_src} && lcd ${download_path} && mirror -P 8 -c --delete . && exit"
                 fi
