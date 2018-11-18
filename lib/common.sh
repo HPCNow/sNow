@@ -1350,7 +1350,7 @@ function show_nodes()
 function set_repository()
 {
     local repository=$1
-    shift 2
+    shift
     local repositories_json
     repositories_json=$(cat ${SNOW_ETC}/repositories.json)
     while test $# -gt 0; do
@@ -1446,6 +1446,8 @@ function set_repository()
         shift
     done
 
+    local download_path=${SNOW_SRV}/repositories/$repository/$os/${dist_version}/$architecture/
+
     if [[ "${repo_action}" == "add" ]]; then
         repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" != "null" ]]; then
@@ -1480,7 +1482,6 @@ function set_repository()
             warning_msg "Do you want to download a local copy of the repository $repository? [y/N] (20 seconds)"
             read -t 20 -u 3 answer
             if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-                local download_path=${SNOW_SRV}/repositories/$repository/$os/${dist_version}/$architecture/
                 if [[ -e "${download_path}" ]]; then
                     warning_msg "Consider re-creating this repository again or just update it."
                     error_exit "The folder ${download_path} is not empty. Cancelling the download."
@@ -1643,7 +1644,11 @@ function set_repositories_json()
       repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"architecture\" = \"${architecture}\"")
     fi
     if [[ -n "$repository_url" ]]; then
+      if [[ "${type}" == "local" ]]; then
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"type\" = \"${download_path}\"")
+      else
       repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${repository_url}\"")
+      fi
     fi
     if [[ -n "${key_url}" ]]; then
       repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"key_url\" = \"${key_url}\"")
