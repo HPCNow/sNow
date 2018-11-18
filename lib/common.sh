@@ -1100,6 +1100,27 @@ function remove_node()
     fi
 } 1>>$LOGFILE 2>&1
 
+function remove_repository()
+{
+    local repository=$1
+    local repository_json
+    local repository_query
+    repository_json=$(cat ${SNOW_ETC}/repositories.json)
+    repository_query=$(echo ${repository_json} | jq -r ".\"repositories\".\"${repository}\"")
+    if [[ "${repository_query}" == "null" ]]; then
+        error_msg "The repository $repository does not exist in the database."
+    else
+        repository_json=$(echo ${repository_json} | jq "del(.\"repositories\".\"${repository}\")")
+    fi
+    warning_msg "Do you want to remove the repository ${repository}? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${repository_json}" > ${SNOW_ETC}/repositories.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
+} 1>>$LOGFILE 2>&1
+
 ### Add actions
 function add_template()
 {
