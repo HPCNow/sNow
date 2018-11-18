@@ -181,7 +181,8 @@ case $opt1 in
                 add_image $opt3
                 ;;
             repo|repository|repos|repositories)
-                local repo_action="add"
+                shift 3
+                repo_action="add"
                 add_repository $opt3 "$@"
                 ;;
             *)
@@ -204,7 +205,7 @@ case $opt1 in
                 ;;
             repo|repository|repos|repositories)
                 shift 3
-                local repo_action="set"
+                repo_action="set"
                 set_repository $opt3 "$@"
                 ;;
             *)
@@ -227,7 +228,7 @@ case $opt1 in
               avail_images "$opt3"
               ;;
           repo|repository|repos|repositories)
-              list_repositories "$opt3"
+              avail_repositories "$opt3"
               ;;
           node|nodes)
               avail_nodes "$opt3"

@@ -1332,7 +1332,7 @@ function set_repository()
         error_exit "No enough parameters have been provided."
     fi
     local repository=$1
-    shift
+    shift 2
     local repositories_json
     repositories_json=$(cat ${SNOW_ETC}/repositories.json)
     while test $# -gt 0; do
@@ -2425,9 +2425,9 @@ function avail_repositories()
     if [[ -z "$repository" ]]; then
         printf "%-30s    %-80s\n" "Repository Name" "Description" 1>&3
         printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
-        repository_query=$(echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t \(.[$r] | .description)"')
+        echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
     else
-        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"centos-7.4-x86_64\".\"description\"")
+        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"$repository\".\"description\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
@@ -2466,7 +2466,7 @@ function list_repositories()
     if [[ -z "$repository" ]]; then
         printf "%-30s    %-80s\n" "Repository Name" "Description" 1>&3
         printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
-        repository_query=$(echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t \(.[$r] | .description)"')
+        echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
     else
         repository_query=$(echo ${repository_json} | jq -r ".repositories.\"${repository}\".\"description\"")
         if [[ "${repository_query}" == "null" ]]; then
