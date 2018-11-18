@@ -1103,19 +1103,19 @@ function remove_node()
 function remove_repository()
 {
     local repository=$1
-    local repository_json
+    local repositories_json
     local repository_query
-    repository_json=$(cat ${SNOW_ETC}/repositories.json)
-    repository_query=$(echo ${repository_json} | jq -r ".\"repositories\".\"${repository}\"")
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
+    repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
     if [[ "${repository_query}" == "null" ]]; then
         error_msg "The repository $repository does not exist in the database."
     else
-        repository_json=$(echo ${repository_json} | jq "del(.\"repositories\".\"${repository}\")")
+        repositories_json=$(echo ${repositories_json} | jq "del(.\"repositories\".\"${repository}\")")
     fi
     warning_msg "Do you want to remove the repository ${repository}? [y/N] (20 seconds)"
     read -t 20 -u 3 answer
     if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        echo "${repository_json}" > ${SNOW_ETC}/repositories.json
+        echo "${repositories_json}" > ${SNOW_ETC}/repositories.json
     else
         error_exit "Well done. It's better to be sure."
     fi
@@ -1163,14 +1163,14 @@ function add_template()
 function add_repository()
 {
     local repository=$1
-    local repository_avail_json
+    local repositories_avail_json
     local repository_query
-    repository_json=$(cat ${SNOW_ETC}/repositories.json)
-    repository_avail_json=$(cat ${SNOW_ETC}/repositories_avail.json)
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
+    repositories_avail_json=$(cat ${SNOW_ETC}/repositories_avail.json)
     if [[ -f "$repository" ]]; then
         # Assuming the repository variable points to a json file with repositories description
-        repository_avail_json=$(cat $repository)
-        repo_list=$(echo "${repository_avail_json}" | jq -r ".repositories| keys[]")
+        repositories_avail_json=$(cat $repository)
+        repo_list=$(echo "${repositories_avail_json}" | jq -r ".repositories| keys[]")
         for i in ${repo_list}; do
             get_repository_variables
             set_repository
@@ -1178,10 +1178,11 @@ function add_repository()
     elif [[ $# -lt 2 ]] && [[ ! -f "$repository" ]]; then
         # Only one name is provided, assuming the repository is defined in available repositories database
         repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
+        repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" != "null" ]]; then
             error_msg "The repository $repository already exist in the database."
         else
-            repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\" = {} ")
+            #repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\" = {} ")
             get_repository_variables
             set_repository
         fi
@@ -1193,16 +1194,16 @@ function add_repository()
 
 function get_repository_variables()
 {
-    os=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"os\"")
-    dist_version=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"dist_version\"")
-    type=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"type\"")
-    architecture=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"architecture\"")
-    repository_url_src=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url_src\"")
-    repository_url=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url\"")
-    key_url=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"key_url\"")
-    vmlinuz_path=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"vmlinuz_path\"")
-    initrd_path=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"initrd_path\"")
-    description=$(echo "${repository_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"description\"")
+    os=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"os\"")
+    dist_version=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"dist_version\"")
+    type=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"type\"")
+    architecture=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"architecture\"")
+    repository_url_src=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url_src\"")
+    repository_url=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url\"")
+    key_url=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"key_url\"")
+    vmlinuz_path=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"vmlinuz_path\"")
+    initrd_path=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"initrd_path\"")
+    description=$(echo "${repositories_avail_json}" | jq -r ".\"repositories\".\"${repository}\".\"description\"")
 } 1>>$LOGFILE 2>&1
 
 function add_node()
@@ -1307,14 +1308,14 @@ function add_node()
 function show_repositories()
 {
     local repository=$1
-    local repository_avail_json
+    local repositories_avail_json
     local repository_query
-    repository_avail_json=$(cat ${SNOW_ETC}/repositories.json)
+    repositories_avail_json=$(cat ${SNOW_ETC}/repositories.json)
     if [[ -z "$repository" ]]; then
-        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repositories\"")
+        repository_query=$(echo ${repositories_avail_json} | jq -r ".\"repositories\"")
         echo "${repository_query}" | jq '.' 1>&3
     else
-        repository_query=$(echo ${repository_avail_json} | jq -r ".\"repositories\".\"${repository}\"")
+        repository_query=$(echo ${repositories_avail_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
@@ -2440,15 +2441,15 @@ function list_domains()
 function avail_repositories()
 {
     local repository=$1
-    local repository_json
+    local repositories_json
     local repository_query
-    repository_json=$(cat ${SNOW_ETC}/repositories_avail.json)
+    repositories_json=$(cat ${SNOW_ETC}/repositories_avail.json)
     if [[ -z "$repository" ]]; then
         printf "%-30s    %-80s\n" "Repository Name" "Description" 1>&3
         printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
-        echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
+        echo ${repositories_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
     else
-        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"$repository\".\"description\"")
+        repository_query=$(echo ${repositories_json} | jq -r ".repositories.\"$repository\".\"description\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
@@ -2481,15 +2482,15 @@ function avail_roles()
 function list_repositories()
 {
     local repository=$1
-    local repository_json
+    local repositories_json
     local repository_query
-    repository_json=$(cat ${SNOW_ETC}/repositories.json)
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
     if [[ -z "$repository" ]]; then
         printf "%-30s    %-80s\n" "Repository Name" "Description" 1>&3
         printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
-        echo ${repository_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
+        echo ${repositories_json} | jq -r '.repositories| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
     else
-        repository_query=$(echo ${repository_json} | jq -r ".repositories.\"${repository}\".\"description\"")
+        repository_query=$(echo ${repositories_json} | jq -r ".repositories.\"${repository}\".\"description\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
