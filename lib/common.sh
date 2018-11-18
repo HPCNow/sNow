@@ -1350,9 +1350,6 @@ function show_nodes()
 ### Set actions
 function set_repository()
 {
-    if [[ $# -lt 3 ]]; then
-        error_exit "No enough parameters have been provided."
-    fi
     local repository=$1
     shift 2
     local repositories_json
