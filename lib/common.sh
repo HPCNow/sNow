@@ -1205,7 +1205,6 @@ function add_repository()
     elif [[ $# -lt 2 ]] && [[ ! -f "$repository" ]]; then
         # Only one name is provided, assuming the repository is defined in available repositories database
         repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
-        repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" != "null" ]]; then
             error_msg "The repository $repository already exist in the database."
         else
@@ -1514,7 +1513,7 @@ function set_repository()
                     error_exit "The folder ${download_path} is not empty. Cancelling the download."
                 else
                     mkdir -p ${download_path}
-                    info_msg "This operation may take a while. Please, do not cancell it, just wait."
+                    info_msg "This operation may take a while. Please, do not cancel it, just wait."
                     download_lftp ${repository_url_src} ${download_path}
                 fi
             else
@@ -1672,7 +1671,7 @@ function set_repositories_json()
     fi
     if [[ -n "$repository_url" ]]; then
       if [[ "${type}" == "local" ]]; then
-        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"type\" = \"${download_path}\"")
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${download_path}\"")
       else
       repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${repository_url}\"")
       fi
