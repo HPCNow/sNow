@@ -1201,7 +1201,7 @@ function add_repository()
         # Assuming the repository variable points to a json file with repositories description
         repositories_avail_json=$(cat $repository)
         repo_list=$(echo "${repositories_avail_json}" | jq -r ".repositories| keys[]")
-        for i in ${repo_list}; do
+        for repository in ${repo_list}; do
             get_repository_variables
             set_repository $repository
         done
