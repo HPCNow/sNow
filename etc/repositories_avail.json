@@ -32,8 +32,8 @@
       "repository_url_src": "http://snow.hpcnow.com/rpm/centos/7/",
       "repository_url": "http://snow.hpcnow.com/rpm/centos/7/",
       "key_url": "http://snow.hpcnow.com/hpcnow.gpg.key",
-      "vmlinuz_path": "images/pxeboot/vmlinuz",
-      "initrd_path": "images/pxeboot/initrd.img",
+      "vmlinuz_path": "none",
+      "initrd_path": "none",
       "description": "Official HPCNow! repository for CentOS and RedHat."
     }
   }

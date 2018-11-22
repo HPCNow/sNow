@@ -178,7 +178,23 @@ Start corosync service on all the nodes
 ```
 systemctl start corosync
 ```
-
+### Test the configuration
+In order to verify the corosync installation, check whether cluster communication is happy by using the corosync-cfgtool command:
+```
+corosync-cfgtool -s
+```
+The following command will verify if both nodes have joined the cluster.
+```
+pcs status corosync
+```
+The expected output will be similar to the following text:
+```
+Membership information
+\----------------------
+    Nodeid      Votes Name
+         1          1 snow01 (local)
+         2          1 snow02
+```
 ## Xen configuration
 Review if /etc/default/xendomains has an empty value for XENDOMAINS_SAVE variable or if it's commented. Otherwise, comment this variable.
 

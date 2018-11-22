@@ -38,6 +38,10 @@ netplan apply
 echo snowha01 > /etc/hostname
 cat /sNow/test/deployment/ubuntu/hosts >> /etc/hosts
 
+### Setup NAT rules
+#cp -p /etc/ufw/before.rules /etc/ufw/before.rules.orig
+#cat /sNow/test/deployment/ubuntu/nat_rules > /etc/ufw/before.rules
+#cat /etc/ufw/before.rules.orig >> /etc/ufw/before.rules
 
 ### Enable First Boot actions
 cp -p /sNow/test/deployment/ubuntu/first_boot.service /lib/systemd/system/

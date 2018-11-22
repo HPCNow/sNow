@@ -1,0 +1,14 @@
+# NAT table rules
+*nat
+#:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+#
+# # Port Forwardings
+#-A PREROUTING -i eth0 -p tcp --dport 22 -j DNAT --to-destination 192.168.1.10
+# Allow traffic to local network
+-A POSTROUTING -s 10.1.0.0/16 -d 10.1.0.0/16 -j ACCEPT
+# Forward traffic through 10.1.0.0/16
+-A POSTROUTING -s 10.1.0.0/16 -j MASQUERADE
+# don't delete the 'COMMIT' line or these nat table rules won't
+# be processed
+COMMIT

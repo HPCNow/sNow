@@ -262,6 +262,15 @@ function download()
     esac
 } 1>>$LOGFILE 2>&1
 
+function download_lftp()
+{
+    local download_url=$1
+    local download_path=$2
+    local text_msg="Downloading ${download_url} "
+    lftp -e "open ${download_url} && lcd ${download_path} && mirror -P 8 -c --delete . && exit" && error_check 0 "${text_msg}" || error_check 1 "${text_msg}" &
+    spinner $! "${text_msg} "
+} 1>>$LOGFILE 2>&1
+
 function bkp()
 {
     local bkpfile=$1
@@ -750,6 +759,16 @@ function init_domains_conf()
     fi
 }
 
+function init_repositories()
+{
+    local force=$1
+    local repositories_json
+    if [[ ! -e ${SNOW_ETC}/repositories.json || "$force" == "yes" ]]; then
+        repositories_json='{"repositories": {}}'
+        echo "${repositories_json}" | jq '.' > ${SNOW_ETC}/repositories.json
+    fi
+}
+
 function init_hosts()
 {
     local force=$1
@@ -823,6 +842,7 @@ function init()
     init_domains_conf $force
     init_hosts $force
     init_ssh_config $force
+    init_repositories $force
 } 1>>$LOGFILE 2>&1
 
 function update_tools()
@@ -1110,12 +1130,19 @@ function remove_repository()
     if [[ "${repository_query}" == "null" ]]; then
         error_msg "The repository $repository does not exist in the database."
     else
+        get_repository_variables
         repositories_json=$(echo ${repositories_json} | jq "del(.\"repositories\".\"${repository}\")")
     fi
     warning_msg "Do you want to remove the repository ${repository}? [y/N] (20 seconds)"
     read -t 20 -u 3 answer
     if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
         echo "${repositories_json}" > ${SNOW_ETC}/repositories.json
+        if [[ "${type}" == "local" ]]; then
+            if [[ -e "${repository_url}" ]]; then
+                info_msg "Removing the repository ${repository}. Please, wait."
+                rm -fr ${repository_url}
+            fi
+        fi
     else
         error_exit "Well done. It's better to be sure."
     fi
@@ -1487,8 +1514,8 @@ function set_repository()
                     error_exit "The folder ${download_path} is not empty. Cancelling the download."
                 else
                     mkdir -p ${download_path}
-                    warning_msg "This operation may take a while. Please, do not cancell it, just wait."
-                    lftp -e "open ${repository_url_src} && lcd ${download_path} && mirror -P 8 -c --delete . && exit"
+                    info_msg "This operation may take a while. Please, do not cancell it, just wait."
+                    download_lftp ${repository_url_src} ${download_path}
                 fi
             else
                 error_exit "Well done. It's better to be sure."
