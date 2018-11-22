@@ -271,7 +271,7 @@ case $opt1 in
             templates)
                 show_templates "$opt3"
                 ;;
-            repo|repository)
+            repo|repository|repos|repositories)
                 show_repositories "$opt3"
                 ;;
             node|nodes)

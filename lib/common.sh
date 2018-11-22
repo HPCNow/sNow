@@ -268,7 +268,7 @@ function download_lftp()
     local download_path=$2
     local text_msg="Downloading ${download_url} "
     lftp -e "open ${download_url} && lcd ${download_path} && mirror -P 8 -c --delete . && exit" && error_check 0 "${text_msg}" || error_check 1 "${text_msg}" &
-    spinner $! "${text_msg} "
+    spinner $! "${text_msg}"
 } 1>>$LOGFILE 2>&1
 
 function bkp()
@@ -1130,7 +1130,7 @@ function remove_repository()
     if [[ "${repository_query}" == "null" ]]; then
         error_msg "The repository $repository does not exist in the database."
     else
-        get_repository_variables
+        repository_url=$(echo "${repositories_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url\"")
         repositories_json=$(echo ${repositories_json} | jq "del(.\"repositories\".\"${repository}\")")
     fi
     warning_msg "Do you want to remove the repository ${repository}? [y/N] (20 seconds)"
