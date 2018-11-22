@@ -1125,11 +1125,14 @@ function remove_repository()
     local repository=$1
     local repositories_json
     local repository_query
+    local type
+    local repository_url
     repositories_json=$(cat ${SNOW_ETC}/repositories.json)
     repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
     if [[ "${repository_query}" == "null" ]]; then
         error_msg "The repository $repository does not exist in the database."
     else
+        type=$(echo "${repositories_json}" | jq -r ".\"repositories\".\"${repository}\".\"type\"")
         repository_url=$(echo "${repositories_json}" | jq -r ".\"repositories\".\"${repository}\".\"repository_url\"")
         repositories_json=$(echo ${repositories_json} | jq "del(.\"repositories\".\"${repository}\")")
     fi
