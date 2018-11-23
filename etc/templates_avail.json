@@ -1,5 +1,19 @@
 {
   "templates": {
+    "centos-7.4-x86_64-minimal": {
+      "os": "centos",
+      "dist_version": "7.4",
+      "architecture": "x86_64",
+      "boot_type": "legacy",
+      "install_repo": "centos-7.4-x86_64",
+      "install_proxy": "",
+      "repositories": [ "centos-7.4-x86_64", "hpcnow-centos-x86_64" ],
+      "pre_install_hooks": [],
+      "post_install_hooks": [],
+      "first_boot_hooks": [],
+      "roles": [],
+      "description": "Official CentOS 7.4 repository."
+    },
     "centos-7.5-x86_64-minimal": {
       "os": "centos",
       "dist_version": "7.5",
