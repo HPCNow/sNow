@@ -1,0 +1,16 @@
+{
+  "templates": {
+    "centos-7.5-x86_64-minimal": {
+      "os": "centos",
+      "dist_version": "7.5",
+      "boot_type": "remote",
+      "architecture": "x86_64",
+      "install_repo": "http://vault.centos.org/7.5.1804/os/x86_64/",
+      "install_proxy": "http://vault.centos.org/7.5.1804/os/x86_64/",
+      "key_url": "http://vault.centos.org/7.5.1804/os/x86_64/",
+      "vmlinuz_path": "images/pxeboot/vmlinuz",
+      "initrd_path": "images/pxeboot/initrd.img",
+      "description": "Official CentOS 7.5 repository."
+    }
+  }
+}

@@ -125,7 +125,7 @@ case $opt1 in
             node|nodes)
                 remove_node $opt3
                 ;;
-            template)
+            template|templates)
                 remove_template $opt3
                 ;;
             image)
@@ -154,7 +154,7 @@ case $opt1 in
                 clone_node $opt3 $opt4 $opt5 "$opt6" "$opt7" && error_check 0 "System cloned " || error_check 1 "System cloned " &
                 spinner $!             "Cloning $opt3"
                 ;;
-            template)
+            template|templates)
                 clone_template $opt3 $opt4 "$opt5"
                 ;;
             image)
@@ -174,7 +174,7 @@ case $opt1 in
                 shift 3
                 add_node $opt3 "$@"
                 ;;
-            template)
+            template|templates)
                 add_template $opt3
                 ;;
             image)
@@ -199,7 +199,7 @@ case $opt1 in
                 shift 3
                 set_node $opt3 "$@"
                 ;;
-            template)
+            template|templates)
                 shift 3
                 set_template $opt3 "$@"
                 ;;
@@ -268,7 +268,7 @@ case $opt1 in
             #domains)
             #    avail_domains "$opt3"
             #    ;;
-            templates)
+            template|templates)
                 show_templates "$opt3"
                 ;;
             repo|repository|repos|repositories)

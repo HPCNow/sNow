@@ -1333,17 +1333,38 @@ function add_node()
 
 
 ### Show actions
+
+function show_templates()
+{
+    local template=$1
+    local templates_json
+    local template_query
+    templates_json=$(cat ${SNOW_ETC}/templates.json)
+    if [[ -z "$template" ]]; then
+        template_query=$(echo ${templates_json} | jq -r ".\"templates\"")
+        echo "${template_query}" | jq '.' 1>&3
+    else
+        template_query=$(echo ${templates_json} | jq -r ".\"templates\".\"${template}\"")
+        if [[ "${template_query}" == "null" ]]; then
+            error_msg "The template $template does not exist in the database."
+        else
+            echo "\"${template}\":" 1>&3
+            echo "${template_query}" | jq '.' 1>&3
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
+
 function show_repositories()
 {
     local repository=$1
-    local repositories_avail_json
+    local repositories_json
     local repository_query
-    repositories_avail_json=$(cat ${SNOW_ETC}/repositories.json)
+    repositories_json=$(cat ${SNOW_ETC}/repositories.json)
     if [[ -z "$repository" ]]; then
-        repository_query=$(echo ${repositories_avail_json} | jq -r ".\"repositories\"")
+        repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\"")
         echo "${repository_query}" | jq '.' 1>&3
     else
-        repository_query=$(echo ${repositories_avail_json} | jq -r ".\"repositories\".\"${repository}\"")
+        repository_query=$(echo ${repositories_json} | jq -r ".\"repositories\".\"${repository}\"")
         if [[ "${repository_query}" == "null" ]]; then
             error_msg "The repository $repository does not exist in the database."
         else
@@ -1869,16 +1890,6 @@ function boot_copy()
     echo "${nodes_json}" > ${SNOW_ETC}/nodes.json
 }
 
-function list_templates()
-{
-    local templates_path=${SNOW_SRV}/templates
-    local templates_avail=$(ls -1 ${templates_path}/*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
-    for template in ${templates_avail}; do
-        local template_desc=${templates_path}/${template}/${template}.desc
-        print_msg "$template"
-        cat ${template_desc} | tee /dev/fd/3
-    done
-}
 
 function deploy()
 {
@@ -2508,6 +2519,38 @@ function avail_roles()
     done
 }
 
+function list_templates_old()
+{
+    local templates_path=${SNOW_SRV}/templates
+    local templates_avail=$(ls -1 ${templates_path}/*/*.pxe | sed -e "s|${templates_path}||g" | cut -d"/" -f1)
+    for template in ${templates_avail}; do
+        local template_desc=${templates_path}/${template}/${template}.desc
+        print_msg "$template"
+        cat ${template_desc} | tee /dev/fd/3
+    done
+}
+
+function list_templates()
+{
+    local template=$1
+    local templates_json
+    local template_query
+    templates_json=$(cat ${SNOW_ETC}/templates.json)
+    if [[ -z "$template" ]]; then
+        printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+        printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+        echo ${templates_json} | jq -r '.templates| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
+    else
+        template_query=$(echo ${templates_json} | jq -r ".templates.\"${template}\".\"description\"")
+        if [[ "${template_query}" == "null" ]]; then
+            error_msg "The template $template does not exist in the database."
+        else
+            printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+            printf "%-30s    %-80s\n" "-------------" "-----------" 1>&3
+            printf "%-30s    %-80s\n" "${template}" "${template_query}" 1>&3
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
 
 function list_repositories()
 {
