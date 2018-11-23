@@ -759,6 +759,16 @@ function init_domains_conf()
     fi
 }
 
+function init_templates()
+{
+    local force=$1
+    local templates_json
+    if [[ ! -e ${SNOW_ETC}/templates.json || "$force" == "yes" ]]; then
+        templates_json='{"templates": {}}'
+        echo "${templates_json}" | jq '.' > ${SNOW_ETC}/templates.json
+    fi
+}
+
 function init_repositories()
 {
     local force=$1
@@ -843,6 +853,7 @@ function init()
     init_hosts $force
     init_ssh_config $force
     init_repositories $force
+    init_templates $force
 } 1>>$LOGFILE 2>&1
 
 function update_tools()
