@@ -175,6 +175,8 @@ case $opt1 in
                 add_node $opt3 "$@"
                 ;;
             template|templates)
+                shift 3
+                template_action="add"
                 add_template $opt3
                 ;;
             image)
@@ -201,6 +203,7 @@ case $opt1 in
                 ;;
             template|templates)
                 shift 3
+                template_action="set"
                 set_template $opt3 "$@"
                 ;;
             repo|repository|repos|repositories)

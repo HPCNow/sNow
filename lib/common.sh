@@ -1152,10 +1152,15 @@ function remove_repository()
 } 1>>$LOGFILE 2>&1
 
 ### Add actions
-function add_template()
+function add_template_files()
 {
     local template=$1
     local repository=$2
+    local vmlinuz_path
+    local initrd_path
+    get_repository_variables
+    vmlinuz_path=repositories/$repository/${vmlinuz_path}
+    initrd_path=repositories/$repository/${initrd_path}
     # Check type (investigate name, URL format, etc.)
 
     # Create the template directory if it doesn't exist
@@ -1163,7 +1168,7 @@ function add_template()
         mkdir $SNOW_SRV
     fi
     # Transfer template to SRV
-    cp -pr $SNOW_ETC/templates/$template $SNOW_SRV/boot/templates/
+    cp -pr $SNOW_ETC/templates/$template $SNOW_SRV/templates/
 
     # Parsing environment to the template
     for file in $(find $SNOW_SRV/templates/$template -type f); do
@@ -1179,16 +1184,40 @@ function add_template()
         sed -i "s|__TFTP_SERVER__|$TFTP_SERVER|g" $file
         sed -i "s|__SNOW_SRV__|$SNOW_SRV|g" $file
         sed -i "s|__SNOW_SHARE__|$SNOW_SHARE|g" $file
+        sed -i "s|__VMLINUZ_PATH__|$vmlinuz_path|g" $file
+        sed -i "s|__INITRD_PATH__|${initrd_path}|g" $file
     done
-
-    # Download repository based on the template description
-    if [[ -z $repository ]]; then
-        # iterate for each repository
-        default_repository=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $2}')
-        default_repository_url=$(cat $SNOW_SRV/templates/$template/repos | gawk '{print $1}')
-        add_repositories $default_repository $default_repository_url local
-    fi
 }
+
+function add_template()
+{
+    local template=$1
+    local templates_avail_json
+    local template_query
+    templates_json=$(cat ${SNOW_ETC}/templates.json)
+    templates_avail_json=$(cat ${SNOW_ETC}/templates_avail.json)
+    if [[ -f "$template" ]]; then
+        # Assuming the template variable points to a json file with templates description
+        templates_avail_json=$(cat $template)
+        repo_list=$(echo "${templates_avail_json}" | jq -r ".templates| keys[]")
+        for template in ${repo_list}; do
+            get_template_variables
+            set_template $template
+        done
+    elif [[ $# -lt 2 ]] && [[ ! -f "$template" ]]; then
+        # Only one name is provided, assuming the template is defined in available templates database
+        template_query=$(echo ${templates_json} | jq -r ".\"templates\".\"${template}\"")
+        if [[ "${template_query}" != "null" ]]; then
+            error_msg "The template $template already exist in the database."
+        else
+            get_template_variables
+            set_template $template
+        fi
+    elif [[ $# -gt 2 ]]; then
+        # several parameters, assuming a template definition is provided from CLI
+        set_template $template "$@"
+    fi
+} 1>>$LOGFILE 2>&1
 
 function add_repository()
 {
@@ -1218,6 +1247,22 @@ function add_repository()
         # several parameters, assuming a repository definition is provided from CLI
         set_repository $repository "$@"
     fi
+} 1>>$LOGFILE 2>&1
+
+function get_template_variables()
+{
+    os=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"os\"")
+    dist_version=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"dist_version\"")
+    boot_type=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"boot_type\"")
+    architecture=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"architecture\"")
+    install_repo=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"install_repo\"")
+    install_proxy=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"install_proxy\"")
+    repositories=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"repositories\"")
+    pre_install_hooks=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"pre_install_hooks\"")
+    post_install_hooks=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"post_install_hooks\"")
+    first_boot_hooks=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"first_boot_hooks\"")
+    roles=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"roles\"")
+    description=$(echo "${templates_avail_json}" | jq -r ".\"templates\".\"${template}\".\"description\"")
 } 1>>$LOGFILE 2>&1
 
 function get_repository_variables()
@@ -1397,6 +1442,194 @@ function show_nodes()
 } 1>>$LOGFILE 2>&1
 
 ### Set actions
+function set_template()
+{
+    local template=$1
+    shift
+    local templates_json
+    templates_json=$(cat ${SNOW_ETC}/templates.json)
+    while test $# -gt 0; do
+        case "$1" in
+            -o|--os)
+                if [[ -n "$2" ]]; then
+                    local os="$2"
+                    shift
+                else
+                    error_exit "Option OS missing"
+                fi
+                ;;
+            -v|--dist_version)
+                if [[ -n "$2" ]]; then
+                    local dist_version="$2"
+                    shift
+                else
+                    error_exit "Option dist_version missing"
+                fi
+                ;;
+            -b|--boot_type)
+                if [[ -n "$2" ]]; then
+                    local boot_type="$2"
+                    shift
+                else
+                    error_exit "Option boot_type missing"
+                fi
+                ;;
+            -a|--architecture)
+                if [[ -n "$2" ]]; then
+                    local architecture="$2"
+                    shift
+                else
+                    error_exit "Option architecture missing"
+                fi
+                ;;
+            -i|--install_repo)
+                if [[ -n "$2" ]]; then
+                    local install_repo="$2"
+                    shift
+                else
+                    error_exit "Option install_repo missing"
+                fi
+                ;;
+            -p|--install_proxy)
+                if [[ -n "$2" ]]; then
+                    local install_proxy="$2"
+                    shift
+                else
+                    error_exit "Option install_proxy missing"
+                fi
+                ;;
+            -r|--repositories)
+                if [[ -n "$2" ]]; then
+                    local repositories="$2"
+                    shift
+                else
+                    error_exit "Option repositories missing"
+                fi
+                ;;
+            --pre_install_hooks)
+                if [[ -n "$2" ]]; then
+                    local pre_install_hooks="$2"
+                    shift
+                else
+                    error_exit "Option pre_install_hooks missing"
+                fi
+                ;;
+            --post_install_hooks)
+                if [[ -n "$2" ]]; then
+                    local post_install_hooks="$2"
+                else
+                    error_exit "Option post_install_hooks missing"
+                fi
+                ;;
+            --first_boot_hooks)
+                if [[ -n "$2" ]]; then
+                    local first_boot_hooks="$2"
+                else
+                    error_exit "Option first_boot_hooks missing"
+                fi
+                ;;
+            -R|--roles)
+                if [[ -n "$2" ]]; then
+                    local roles="$2"
+                else
+                    error_exit "Option roles missing"
+                fi
+                ;;
+            -D|--description)
+                if [[ -n "$2" ]]; then
+                    local description="$2"
+                    shift
+                else
+                    error_exit "Option description missing"
+                fi
+                ;;
+            -h|--help)
+                shelp
+                exit
+                ;;
+            *)
+                error_exit "Option ($1) not recognised"
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [[ "${template_action}" == "add" ]]; then
+        template_query=$(echo ${templates_json} | jq -r ".\"templates\".\"${template}\"")
+        if [[ "${template_query}" != "null" ]]; then
+            error_msg "The template $template already exist in the database."
+        else
+            templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\" = {} ")
+            set_templates_json
+            for repository in $repositories; do
+              add_repository $repository
+            done
+            add_template_files $template $install_repo
+        fi
+    fi
+
+    if [[ "${template_action}" == "set" ]]; then
+        template_query=$(echo ${templates_json} | jq -r ".\"templates\".\"${template}\"")
+        if [[ "${template_query}" == "null" ]]; then
+            error_msg "The template $template does not exist in the database."
+        else
+            set_templates_json
+        fi
+    fi
+
+    warning_msg "Do you want to apply the changes in the template $template? [y/N] (20 seconds)"
+    read -t 20 -u 3 answer
+    if [[ $answer =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "${templates_json}" > ${SNOW_ETC}/templates.json
+    else
+        error_exit "Well done. It's better to be sure."
+    fi
+} 1>>$LOGFILE 2>&1
+
+
+function set_templates_json()
+{
+    # setup the defaults
+    if [[ -n "${os}" ]]; then
+        templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"os\" = \"${os}\"")
+    fi
+    if [[ -n "${dist_version}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"dist_version\" = \"${dist_version}\"")
+    fi
+    if [[ -n "${boot_type}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"boot_type\" = \"${boot_type}\"")
+    fi
+    if [[ -n "${architecture}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"architecture\" = \"${architecture}\"")
+    fi
+    if [[ -n "$install_repo" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"install_repo\" = \"${install_repo}\"")
+    fi
+    if [[ -n "${install_proxy}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"install_proxy\" = \"${install_proxy}\"")
+    fi
+    if [[ -n "${repositories}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"repositories\" = \"${repositories}\"")
+    fi
+    if [[ -n "${pre_install_hooks}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"pre_install_hooks\" = \"${pre_install_hooks}\"")
+    fi
+    if [[ -n "${post_install_hooks}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"post_install_hooks\" = \"${post_install_hooks}\"")
+    fi
+    if [[ -n "${first_boot_hooks}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"first_boot_hooks\" = \"${first_boot_hooks}\"")
+    fi
+    if [[ -n "${roles}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"roles\" = \"${roles}\"")
+    fi
+    if [[ -n "${description}" ]]; then
+      templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\".\"description\" = \"${description}\"")
+    fi
+}
+
+
 function set_repository()
 {
     local repository=$1
@@ -1547,6 +1780,44 @@ function set_repository()
     fi
 } 1>>$LOGFILE 2>&1
 
+
+function set_repositories_json()
+{
+    # setup the defaults
+    if [[ -n "${os}" ]]; then
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"os\" = \"${os}\"")
+    fi
+    if [[ -n "${dist_version}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"dist_version\" = \"${dist_version}\"")
+    fi
+    if [[ -n "${type}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"type\" = \"${type}\"")
+    fi
+    if [[ -n "${architecture}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"architecture\" = \"${architecture}\"")
+    fi
+    if [[ -n "$repository_url" ]]; then
+      if [[ "${type}" == "local" ]]; then
+        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${download_path}\"")
+      else
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${repository_url}\"")
+      fi
+    fi
+    if [[ -n "${key_url}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"key_url\" = \"${key_url}\"")
+    fi
+    if [[ -n "${vmlinuz_path}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"vmlinuz_path\" = \"${vmlinuz_path}\"")
+    fi
+    if [[ -n "${initrd_path}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"initrd_path\" = \"${initrd_path}\"")
+    fi
+    if [[ -n "${description}" ]]; then
+      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"description\" = \"${description}\"")
+    fi
+}
+
+
 function set_node()
 {
     if [[ $# -lt 3 ]]; then
@@ -1677,42 +1948,6 @@ function set_node()
         error_exit "Well done. It's better to be sure."
     fi
 } 1>>$LOGFILE 2>&1
-
-function set_repositories_json()
-{
-    # setup the defaults
-    if [[ -n "${os}" ]]; then
-        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"os\" = \"${os}\"")
-    fi
-    if [[ -n "${dist_version}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"dist_version\" = \"${dist_version}\"")
-    fi
-    if [[ -n "${type}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"type\" = \"${type}\"")
-    fi
-    if [[ -n "${architecture}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"architecture\" = \"${architecture}\"")
-    fi
-    if [[ -n "$repository_url" ]]; then
-      if [[ "${type}" == "local" ]]; then
-        repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${download_path}\"")
-      else
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"repository_url\" = \"${repository_url}\"")
-      fi
-    fi
-    if [[ -n "${key_url}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"key_url\" = \"${key_url}\"")
-    fi
-    if [[ -n "${vmlinuz_path}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"vmlinuz_path\" = \"${vmlinuz_path}\"")
-    fi
-    if [[ -n "${initrd_path}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"initrd_path\" = \"${initrd_path}\"")
-    fi
-    if [[ -n "${description}" ]]; then
-      repositories_json=$(echo "${repositories_json}" | jq ".\"repositories\".\"${repository}\".\"description\" = \"${description}\"")
-    fi
-}
 
 function set_snow_json()
 {
