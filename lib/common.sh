@@ -1573,7 +1573,9 @@ function set_template()
         else
             templates_json=$(echo "${templates_json}" | jq ".\"templates\".\"${template}\" = {} ")
             set_templates_json
-            for repository in $repositories; do
+            info_msg "Adding required repositories"
+            repos=$(echo ${templates_json} | jq -r ".\"templates\".\"${template}\".\".repositories\"[]")
+            for repository in $repos; do
               add_repository $repository
             done
             add_template_files $template $install_repo
