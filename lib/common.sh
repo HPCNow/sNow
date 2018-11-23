@@ -2479,6 +2479,28 @@ function list_domains()
 
 ### Available functions
 
+function avail_templates()
+{
+    local template=$1
+    local templates_json
+    local template_query
+    templates_json=$(cat ${SNOW_ETC}/templates_avail.json)
+    if [[ -z "$template" ]]; then
+        printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+        printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
+        echo ${templates_json} | jq -r '.templates| keys[] as $r | "\($r) \t\t \(.[$r] | .description)"' 1>&3
+    else
+        template_query=$(echo ${templates_json} | jq -r ".templates.\"$template\".\"description\"")
+        if [[ "${template_query}" == "null" ]]; then
+            error_msg "The template $template does not exist in the database."
+        else
+            printf "%-30s    %-80s\n" "Template Name" "Description" 1>&3
+            printf "%-30s    %-80s\n" "---------------" "-----------" 1>&3
+            printf "%-30s    %-80s\n" "${template}" "${template_query}" 1>&3
+        fi
+    fi
+} 1>>$LOGFILE 2>&1
+
 function avail_repositories()
 {
     local repository=$1
